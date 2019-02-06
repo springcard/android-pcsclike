@@ -116,7 +116,7 @@ class DeviceFragment : Fragment() {
             mainActivity.logInfo("onPowerInfo")
 
             /* Info dialog */
-           /* val builder = AlertDialog.Builder(activity!!)
+            val builder = AlertDialog.Builder(activity!!)
 
             builder.setTitle(bluetoothDevice.name)
 
@@ -145,7 +145,7 @@ class DeviceFragment : Fragment() {
 
             // Finally, make the alert dialog using builder
             val dialog: AlertDialog = builder.create()
-            dialog.show()*/
+            dialog.show()
         }
 
         override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
