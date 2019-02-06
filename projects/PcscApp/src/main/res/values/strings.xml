@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">PcscOverBle</string>
+    <string name="ble_not_supported">BLE not supported</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="DeviceInfos">Device Information</string>
+    <string name="transmit">Run</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="scan_button">scan_button</string>
+    <string name="infos">info</string>
+    <string name="logo">Logo</string>
+    <string name="application_information">Application Information</string>
+    <string name="linkSpringcard">www.springcard.com</string>
+    <string name="library_information">Library Information</string>
+    <string name="enable_logs">Enable Logs</string>
+    <string name="stop_on_error">Stop on error</string>
+    <string name="time_measurment">Time measurment</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
