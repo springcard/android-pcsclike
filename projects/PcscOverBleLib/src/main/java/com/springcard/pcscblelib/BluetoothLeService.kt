@@ -850,6 +850,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                     mBluetoothGatt.readCharacteristic(chr)
                 }
                 else {
+                    currentState = State.Idle
                     /* read done --> send callback */
                     scardDevice.mHandler.post {
                         callbacks.onPowerInfo(
