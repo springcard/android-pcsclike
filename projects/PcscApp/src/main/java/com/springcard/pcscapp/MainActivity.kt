@@ -6,24 +6,14 @@
 
 package com.springcard.pcscapp
 
-import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.SystemClock
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
-import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.view.MenuItem
-import android.widget.Toast
 import android.support.design.widget.NavigationView
 import android.support.v4.widget.DrawerLayout
 import com.android.volley.Request
@@ -38,11 +28,6 @@ import org.json.JSONArray
 
 
 open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-    /* System support BLE ? */
-    private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
-
-    private val BluetoothAdapter.isDisabled: Boolean
-        get() = !isEnabled
 
     private val TAG = this::class.java.simpleName
     private val scanFragment = ScanFragment()
@@ -74,86 +59,6 @@ open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItem
         fragmentTransaction.commit()
         nav_view.setCheckedItem(R.id.nav_scan)
 
-        /* Check if device  support BLE */
-        packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) }?.also {
-            Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
-            finish()
-        }
-
-        /* Location permission */
-
-       /* var lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        var gps_enabled = false
-        var network_enabled = false
-
-        try {
-            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        } catch(ex: Exception) {}
-
-        try {
-            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        } catch(ex: Exception) {}
-
-        if(!gps_enabled && !network_enabled) {
-            // notify user
-            var dialog = AlertDialog.Builder(this)
-            dialog.setMessage(resources.getString(R.string.gps_network_not_enabled))
-            dialog.setPositiveButton(resources.getString(R.string.open_location_settings),  DialogInterface.OnClickListener {
-
-                fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
-                    // TODO Auto-generated method stub
-                    var myIntent: Intent = Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivity(myIntent)
-                }
-            })
-            dialog.setNegativeButton(getString(R.string.Cancel), DialogInterface.OnClickListener() {
-                fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
-                        // TODO Auto-generated method stub
-                }
-            })
-            dialog.show()
-        }*/
-
-        // TODO CRA : check if location already activated
-       /* val intent: Intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-        startActivity(intent)*/
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val PERMISSION_REQUEST_COARSE_LOCATION = 5
-            // Android M Permission check
-            if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                val builder = AlertDialog.Builder(this)
-                builder.setTitle("This app needs location access")
-                builder.setMessage("Please grant location access so this app can detect beacons.")
-                builder.setPositiveButton(android.R.string.ok, null)
-                builder.setOnDismissListener {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
-                        PERMISSION_REQUEST_COARSE_LOCATION
-                    )
-                }
-                builder.show()
-            }
-        }
-
-        /* Set up BLE */
-
-        /* Bluetooth Adapter */
-        val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
-            val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            bluetoothManager.adapter
-        }
-        val REQUEST_ENABLE_BT = 6
-        // Ensures Bluetooth is available on the device and it is enabled. If not,
-        // displays a dialog requesting user permission to enable Bluetooth.
-        mBluetoothAdapter?.takeIf { it.isDisabled }?.apply {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            //Toast.makeText(applicationContext, R.string.ble_disabled, Toast.LENGTH_SHORT).show()
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-        }
-
-
-        //------------------------------------------------------------------------------------------------------
 
         /* Get Apdu model List */
         // Instantiate the RequestQueue.
