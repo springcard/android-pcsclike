@@ -37,18 +37,7 @@ import com.springcard.pscblelib.BuildConfig
 import org.json.JSONArray
 
 
-open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
-    OptionsFragment.OnFragmentInteractionListener,
-    ScanFragment.OnFragmentInteractionListener,
-    DeviceFragment.OnFragmentInteractionListener,
-    AboutFragment.OnFragmentInteractionListener,
-    LogFragment.OnFragmentInteractionListener {
-
-    override fun onFragmentInteraction(uri: Uri) {
-        Log.d(TAG, "test")
-       // TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
+open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     /* System support BLE ? */
     private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
 

@@ -25,8 +25,6 @@ import kotlinx.android.synthetic.main.content_main.*
 
 class DeviceFragment : Fragment() {
 
-    private var listener: OnFragmentInteractionListener? = null
-
     private val TAG = this::class.java.simpleName
 
     private lateinit var scardDevice: SCardReaderList
@@ -254,14 +252,6 @@ class DeviceFragment : Fragment() {
         }
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            listener = context
-        } else {
-            throw RuntimeException("$context must implement OnFragmentInteractionListener")
-        }
-    }
 
     private lateinit var  bluetoothDevice: BluetoothDevice
     fun init(bleDevice: BluetoothDevice) {
@@ -388,28 +378,7 @@ class DeviceFragment : Fragment() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-
-        try {
-            listener = activity as OnFragmentInteractionListener?
-        } catch (e: ClassCastException) {
-            throw ClassCastException(activity!!.toString() + " must implement OnFragmentInteractionListener")
-        }
-
-    }
-
     // TODO  override fun onBackPressed()
-
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
-    }
 
     private var apduListStartTime: Long = 0
     private var apduListStopTime: Long = 0

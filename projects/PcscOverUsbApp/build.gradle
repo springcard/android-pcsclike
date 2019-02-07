@@ -34,7 +34,7 @@ android {
     }
     sourceSets {
         main {
-            res.srcDirs = ['../PcscApp/src/main/res']
+            res.srcDirs += '../PcscApp/src/main/res'
         }
     }
 }
