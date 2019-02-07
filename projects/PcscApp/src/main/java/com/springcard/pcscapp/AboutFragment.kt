@@ -34,9 +34,9 @@ class AboutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-      /* addNewLine(appInfoTable,"Version Code", com.springcard.pcscoverble.BuildConfig.VERSION_CODE.toString())
-        addNewLine(appInfoTable,"Version Name", com.springcard.pcscoverble.BuildConfig.VERSION_NAME)
-        addNewLine(appInfoTable,"Debug", com.springcard.pcscoverble.BuildConfig.DEBUG.toString())*/
+        addNewLine(appInfoTable,"Version Code", com.springcard.pcscapp.BuildConfig.VERSION_CODE.toString())
+        addNewLine(appInfoTable,"Version Name", com.springcard.pcscapp.BuildConfig.VERSION_NAME)
+        addNewLine(appInfoTable,"Debug", com.springcard.pcscapp.BuildConfig.DEBUG.toString())
 
         addNewLine(libInfoTable,"Library Name", BuildConfig.libraryName)
         addNewLine(libInfoTable,"Version Name", BuildConfig.libraryVersion)
