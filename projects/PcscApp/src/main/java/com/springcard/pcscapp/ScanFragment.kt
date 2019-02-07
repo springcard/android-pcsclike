@@ -28,7 +28,6 @@ import android.widget.ProgressBar
 class ScanFragment : Fragment() {
     // TODO: Rename and change types of parameters
 
-    private var listener: OnFragmentInteractionListener? = null
     private val TAG = this::class.java.simpleName
 
     private var deviceList = ArrayList<DeviceListElement>()
@@ -40,15 +39,12 @@ class ScanFragment : Fragment() {
     private lateinit var mainActivity: MainActivity
 
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        setHasOptionsMenu(true);
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
+        setHasOptionsMenu(true)
 
         /* Bluetooth Adapter */
         val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
@@ -98,26 +94,6 @@ class ScanFragment : Fragment() {
         inflater.inflate(R.menu.scan_app_bar, menu)
     }
 
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-        if (context is OnFragmentInteractionListener) {
-            listener = context
-        } else {
-            throw RuntimeException(context.toString() + " must implement OnFragmentInteractionListener")
-        }
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-
-
-    interface OnFragmentInteractionListener {
-        fun onFragmentInteraction(uri: Uri)
-    }
 
     private fun scanLeDevice(enable: Boolean) {
         var mHandler = Handler()

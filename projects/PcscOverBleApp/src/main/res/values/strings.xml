@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PcscOverBle</string>
+    <string name="app_name">PCSC over BLE</string>
     <string name="ble_not_supported">BLE not supported</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

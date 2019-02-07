@@ -16,9 +16,8 @@
             android:layout_width="58dp"
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/nav_header_vertical_spacing"
-            app:srcCompat="@mipmap/ic_launcher_round"
             android:contentDescription="@string/nav_header_desc"
-            android:id="@+id/imageView"/>
+    />
 
     <TextView
             android:layout_width="wrap_content"
