@@ -6,16 +6,21 @@
 
 package com.springcard.pcscapp
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
-import android.net.Uri
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.ParcelUuid
 import android.support.v4.app.Fragment
+import android.support.v4.content.ContextCompat.getSystemService
+import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.widget.AdapterView
 import com.springcard.pcscblelib.GattAttributesD600
@@ -24,9 +29,12 @@ import kotlinx.android.synthetic.main.fragment_scan.*
 import java.util.ArrayList
 import android.view.*
 import android.widget.ProgressBar
+import android.widget.Toast
 
 class ScanFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+    /* System support BLE ? */
+    private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
 
     private val TAG = this::class.java.simpleName
 
@@ -35,6 +43,9 @@ class ScanFragment : Fragment() {
     private var bleDeviceList = ArrayList<BluetoothDevice>()
     private var mScanning: Boolean = false
     private var mBluetoothScanner: BluetoothLeScanner? = null
+
+    private val android.bluetooth.BluetoothAdapter.isDisabled: Boolean
+        get() = !isEnabled
 
     private lateinit var mainActivity: MainActivity
 
@@ -45,17 +56,91 @@ class ScanFragment : Fragment() {
     ): View? {
 
         setHasOptionsMenu(true)
+        mainActivity = activity as MainActivity
+        mainActivity.setActionBarTitle("Scan")
+
+
+        /* Check if device  support BLE */
+        mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) }?.also {
+           /* Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
+            finish()*/
+        }
+
+        /* Location permission */
+
+        /* var lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+         var gps_enabled = false
+         var network_enabled = false
+
+         try {
+             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+         } catch(ex: Exception) {}
+
+         try {
+             network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+         } catch(ex: Exception) {}
+
+         if(!gps_enabled && !network_enabled) {
+             // notify user
+             var dialog = AlertDialog.Builder(this)
+             dialog.setMessage(resources.getString(R.string.gps_network_not_enabled))
+             dialog.setPositiveButton(resources.getString(R.string.open_location_settings),  DialogInterface.OnClickListener {
+
+                 fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
+                     // TODO Auto-generated method stub
+                     var myIntent: Intent = Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                     startActivity(myIntent)
+                 }
+             })
+             dialog.setNegativeButton(getString(R.string.Cancel), DialogInterface.OnClickListener() {
+                 fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
+                         // TODO Auto-generated method stub
+                 }
+             })
+             dialog.show()
+         }*/
+
+        // TODO CRA : check if location already activated
+        /* val intent: Intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+         startActivity(intent)*/
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val PERMISSION_REQUEST_COARSE_LOCATION = 5
+            // Android M Permission check
+            if (mainActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                val builder = AlertDialog.Builder(mainActivity)
+                builder.setTitle("This app needs location access")
+                builder.setMessage("Please grant location access so this app can detect beacons.")
+                builder.setPositiveButton(android.R.string.ok, null)
+                builder.setOnDismissListener {
+                    requestPermissions(
+                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                        PERMISSION_REQUEST_COARSE_LOCATION
+                    )
+                }
+                builder.show()
+            }
+        }
+
+        //------------------------------------------------------------------------------------------------------
+
+        /* Set up BLE */
 
         /* Bluetooth Adapter */
         val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
-            val bluetoothManager = activity?.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothManager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             bluetoothManager.adapter
         }
+        val REQUEST_ENABLE_BT = 6
+        // Ensures Bluetooth is available on the device and it is enabled. If not,
+        // displays a dialog requesting user permission to enable Bluetooth.
+        mBluetoothAdapter?.takeIf { it.isDisabled }?.apply {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            //Toast.makeText(applicationContext, R.string.ble_disabled, Toast.LENGTH_SHORT).show()
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
 
-        mainActivity = activity as MainActivity
         mBluetoothScanner = mBluetoothAdapter?.bluetoothLeScanner
-
-        mainActivity.setActionBarTitle("Scan")
 
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_scan, container, false)
