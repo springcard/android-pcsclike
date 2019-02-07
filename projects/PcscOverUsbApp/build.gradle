@@ -32,11 +32,11 @@ android {
             outputFileName = "SpringCardPcscOverUsbAndroid_${getRevision()}_${formattedDate}_${buildType}.apk"
         }
     }
-    sourceSets {
+   /* sourceSets {
         main {
             res.srcDirs += '../PcscApp/src/main/res'
         }
-    }
+    }*/
 }
 
 

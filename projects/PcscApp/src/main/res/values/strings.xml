@@ -17,6 +17,10 @@
     <string name="enable_logs">Enable Logs</string>
     <string name="stop_on_error">Stop on error</string>
     <string name="time_measurment">Time measurment</string>
+    <string name="device_list">device_list</string>
+    <string name="about">About</string>
+    <string name="options">Options</string>
+    <string name="log">Log</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>

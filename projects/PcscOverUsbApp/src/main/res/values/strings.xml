@@ -1,2 +1,4 @@
 <resources>
+    <string name="app_name">PCSC over USB</string>
+    <string name="device_list">Devices</string>
 </resources>
