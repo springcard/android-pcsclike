@@ -23,16 +23,16 @@ import com.android.volley.toolbox.Volley
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import com.springcard.pscblelib.BuildConfig
+import com.springcard.pcscblelib.BuildConfig
 import org.json.JSONArray
 
 
-open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private val TAG = this::class.java.simpleName
-    private val scanFragment = ScanFragment()
+    abstract val scanFragment : ScanFragment
     private val optionsFragment = OptionsFragment()
-    private val deviceFragment = DeviceFragment()
+    abstract val deviceFragment : DeviceFragment
     private val aboutFragment = AboutFragment()
     private val logFragment = LogFragment()
 
@@ -155,9 +155,9 @@ open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItem
         return true
     }
 
-    fun goToDeviceFragment(bleDevice: BluetoothDevice) {
+    fun goToDeviceFragment(_device: Any) {
 
-        deviceFragment.init(bleDevice)
+        deviceFragment.init(_device)
 
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.fragment_container, deviceFragment)
@@ -186,4 +186,32 @@ open class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItem
         // Always log in the console
         Log.d(TAG, message)
     }
+
+    protected fun setAboutInfo(appInfo: ApplicationInfo, libInfo: LibraryInfo) {
+        aboutFragment.setAboutInfo(appInfo, libInfo)
+    }
+
+    public data class ApplicationInfo(
+        val DEBUG: Boolean,
+        val APPLICATION_ID: String,
+        val BUILD_TYPE: String,
+        val FLAVOR: String,
+        val VERSION_CODE: Int,
+        val VERSION_NAME: String,
+        val appDebug: Boolean)
+
+    public data class LibraryInfo(
+        val DEBUG: Boolean,
+        val APPLICATION_ID: String,
+        val BUILD_TYPE: String,
+        val FLAVOR: String,
+        val VERSION_CODE: Int,
+        val VERSION_NAME: String,
+        val libraryDebug: Boolean,
+        val libraryName: String,
+        val librarySpecial: String,
+        val libraryVersion: String,
+        val libraryVersionBuild: Int,
+        val libraryVersionMajor: Int,
+        val libraryVersionMinor: Int)
 }

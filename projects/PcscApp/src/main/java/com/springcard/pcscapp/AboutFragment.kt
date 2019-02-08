@@ -10,7 +10,6 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.*
-import com.springcard.pscblelib.BuildConfig
 import kotlinx.android.synthetic.main.fragment_about.*
 import android.widget.TextView
 import android.widget.TableLayout
@@ -18,6 +17,9 @@ import android.widget.TableRow
 
 
 class AboutFragment : Fragment() {
+
+    private lateinit var appInfo: MainActivity.ApplicationInfo
+    private lateinit var libInfo: MainActivity.LibraryInfo
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,13 +36,13 @@ class AboutFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        addNewLine(appInfoTable,"Version Code", com.springcard.pcscapp.BuildConfig.VERSION_CODE.toString())
-        addNewLine(appInfoTable,"Version Name", com.springcard.pcscapp.BuildConfig.VERSION_NAME)
-        addNewLine(appInfoTable,"Debug", com.springcard.pcscapp.BuildConfig.DEBUG.toString())
+        addNewLine(appInfoTable,"Version Code", appInfo.VERSION_CODE.toString())
+        addNewLine(appInfoTable,"Version Name", appInfo.VERSION_NAME)
+        addNewLine(appInfoTable,"Debug", appInfo.DEBUG.toString())
 
-        addNewLine(libInfoTable,"Library Name", BuildConfig.libraryName)
-        addNewLine(libInfoTable,"Version Name", BuildConfig.libraryVersion)
-        addNewLine(libInfoTable,"Debug", BuildConfig.libraryDebug.toString())
+        addNewLine(libInfoTable,"Library Name", libInfo.libraryName)
+        addNewLine(libInfoTable,"Version Name", libInfo.libraryVersion)
+        addNewLine(libInfoTable,"Debug", libInfo.libraryDebug.toString())
     }
 
     private fun addNewLine(table: TableLayout, key: String, value: String) {
@@ -61,5 +63,10 @@ class AboutFragment : Fragment() {
 
         // add row to table
         table.addView(row)
+    }
+
+    public fun setAboutInfo(app: MainActivity.ApplicationInfo, lib: MainActivity.LibraryInfo) {
+        appInfo = app
+        libInfo = lib
     }
 }

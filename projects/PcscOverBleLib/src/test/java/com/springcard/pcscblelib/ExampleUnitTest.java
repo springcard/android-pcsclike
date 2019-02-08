@@ -1,4 +1,4 @@
-package com.springcard.pscblelib;
+package com.springcard.pcscblelib;
 
 import org.junit.Test;
 
