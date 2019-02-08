@@ -7,9 +7,6 @@
 package com.springcard.pcscapp
 
 import android.app.ProgressDialog
-import android.bluetooth.BluetoothDevice
-import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.support.v4.app.Fragment
@@ -23,11 +20,13 @@ import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*
 
 
-class DeviceFragment : Fragment() {
+abstract class DeviceFragment : Fragment() {
 
     private val TAG = this::class.java.simpleName
 
-    private lateinit var scardDevice: SCardReaderList
+    protected lateinit var scardDevice: SCardReaderList
+    protected lateinit var deviceName: String
+    protected lateinit var device : Any
     private lateinit var progressDialog: ProgressDialog
     private lateinit var currentChannel: SCardChannel
     private var currentSlot: SCardReader? = null
@@ -40,11 +39,11 @@ class DeviceFragment : Fragment() {
     var connectToNewDevice = true
 
 
-    private lateinit var  mainActivity: MainActivity
+    protected lateinit var  mainActivity: MainActivity
 
 
     // Various callback methods defined by the BLE API.
-    private var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
+    protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
         override fun onConnect(device: SCardReaderList) {
             mainActivity.logInfo("onConnect")
             device.create()
@@ -116,7 +115,7 @@ class DeviceFragment : Fragment() {
             /* Info dialog */
             val builder = AlertDialog.Builder(activity!!)
 
-            builder.setTitle(bluetoothDevice.name)
+            builder.setTitle(deviceName)
 
             var deviceInfo = "Vendor: ${scardDevice.vendorName}\n" +
                     "Product: ${scardDevice.productName}\n" +
@@ -125,7 +124,7 @@ class DeviceFragment : Fragment() {
                     "FW Version Major: ${scardDevice.firmwareVersionMajor}\n" +
                     "FW Version Minor: ${scardDevice.firmwareVersionMinor}\n" +
                     "FW Version Build: ${scardDevice.firmwareVersionBuild}\n" +
-                    "Battery Level: ${batteryLevel}%\n"
+                    "Battery Level: $batteryLevel%\n"
 
             when (powerState) {
                 0 -> deviceInfo += "Unknown source of power"
@@ -253,11 +252,6 @@ class DeviceFragment : Fragment() {
     }
 
 
-    private lateinit var  bluetoothDevice: BluetoothDevice
-    fun init(bleDevice: BluetoothDevice) {
-        // TODO FLAG
-         bluetoothDevice =  bleDevice
-    }
 
     override fun onResume() {
         super.onResume()
@@ -276,11 +270,9 @@ class DeviceFragment : Fragment() {
 
             //-------------------------------------------------------------------
 
-           // mainActivity.setActionBarTitle(bluetoothDevice.name)
 
-            scardDevice = SCardReaderList(bluetoothDevice, scardCallbacks)
-
-            scardDevice.connect(mainActivity)
+            connectToDevice()
+            mainActivity.setActionBarTitle(deviceName)
 
             // No auto-correct
             //capduTextBox.inputType = InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
@@ -377,6 +369,10 @@ class DeviceFragment : Fragment() {
             mainActivity.logInfo("DeviceFragment onResume, device already connected")
         }
     }
+
+    abstract fun connectToDevice()
+
+    abstract fun init(_device: Any)
 
     // TODO  override fun onBackPressed()
 
