@@ -170,6 +170,15 @@ class SCardReaderList(private val bluetoothDevice: BluetoothDevice, internal val
         process(ActionEvent.ActionCreate())
     }
 
+    /**
+     * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
+     * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
+     */
+    fun create(secureConnexionParameters: CcidSecureParameters) {
+        ccidHandler = CcidHandler(secureConnexionParameters)
+        process(ActionEvent.ActionCreate())
+    }
+
 
     /**
      * Get battery level and power state from the device.

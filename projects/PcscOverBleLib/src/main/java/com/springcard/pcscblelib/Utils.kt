@@ -6,6 +6,9 @@
 
 package com.springcard.pcscblelib
 
+import android.util.Log
+import kotlin.experimental.xor
+
 
 private val HEX_CHARS = "0123456789ABCDEF".toCharArray()
 
@@ -17,7 +20,7 @@ private val HEX_CHARS = "0123456789ABCDEF".toCharArray()
  * @receiver ByteArray to convert
  * @return Hexadecimal string
  */
-fun ByteArray.byteArrayToHexString(): String {
+fun ByteArray.toHexString(): String {
     val result = StringBuffer()
 
     forEach {
@@ -31,10 +34,66 @@ fun ByteArray.byteArrayToHexString(): String {
     return result.toString()
 }
 
+
+
+fun Collection<Byte>.toHexString(): String {
+    return this.toByteArray().toHexString()
+}
+
+/*
+fun MutableCollection<Byte>.toHexString(): String {
+    return this.toByteArray().toHexString()
+}*/
+
+
+/**
+ *  Rotate an array by one byte to the left
+ */
+fun ByteArray.RotateLeftOneByte(): ByteArray {
+    val result = ByteArray(this.size)
+
+    for (i in 1 until this.size)
+        result[i - 1] = this[i]
+    result[this.size - 1] = this[0]
+
+    return result
+}
+
+
+/**
+ * Rotate an array by one byte to the right
+ */
+fun ByteArray.RotateRightOneByte(): ByteArray {
+    val result = ByteArray(size)
+
+    for (i in size - 1 downTo 1)
+        result[i] = this[i - 1]
+    result[0] = this[size - 1]
+
+    return result
+}
+
+/**
+ * Logical XOR of two arrays: result = buffer1 XOR buffer2. The length of the resulting array is set to the shortest of both.
+ */
+fun XOR(buffer1: MutableList<Byte>, buffer2: MutableList<Byte>): MutableList<Byte> {
+
+    var result = mutableListOf<Byte>()
+
+    if(buffer1.size != buffer2.size) {
+        Log.d("Utils", "XOR: Buffers don't have the same size")
+    }
+
+    for (i in buffer1.indices) {
+        result.add(buffer1[i] xor buffer2[i])
+    }
+    return result
+}
+
 /**
  * Convert an hexadecimal String to a ByteArray
  * ex: ```1FABCD -> [ 0x1F, 0xAB, 0xCD ]```.
- * See [ByteArray.byteArrayToHexString] to do the inverse
+ * See [ByteArray.toHexString] to do the inverse
  *
  * @receiver String to convert
  * @return ByteArray
@@ -91,3 +150,4 @@ internal fun Int.bytes(): ByteArray {
 
     return b.toByteArray()
 }
+

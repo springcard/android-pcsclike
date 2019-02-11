@@ -13,7 +13,7 @@ import kotlin.experimental.and
 import kotlin.experimental.inv
 import kotlin.experimental.or
 
-internal abstract class CcidFrame {
+abstract class CcidFrame {
 
     private val TAG: String
         get() = this::class.java.simpleName
@@ -21,7 +21,7 @@ internal abstract class CcidFrame {
     /* Array containing the whole data */
     /* initialize with header (10 first bytes) to zero */
     var raw = mutableListOf<Byte>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        protected set
+        internal set
 
     /* Two parts of the frame */
 
@@ -56,15 +56,15 @@ internal abstract class CcidFrame {
             raw[0] = value
         }
 
-    var isCiphered: Boolean
+    var ciphered: Boolean
         get() {
-            return raw[1] == CIPHERED_BIT
+            return raw[4] == CIPHERED_BIT
         }
-        private set(value) {
+        internal set(value) {
             if(value)
-                raw[1] = raw[1] or CIPHERED_BIT
+                raw[4] = raw[4] or CIPHERED_BIT
             else
-                raw[1] = raw[1] and CIPHERED_BIT.inv()
+                raw[4] = raw[4] and CIPHERED_BIT.inv()
         }
 
     var length: Int
@@ -82,7 +82,7 @@ internal abstract class CcidFrame {
             }
             return expectedSize
         }
-    protected set(value) {
+    set(value) {
         val lengthArray = value.bytes()
         raw[1] = (raw[1] and CIPHERED_BIT) or lengthArray[0]
         raw[2] = lengthArray[1]
@@ -114,7 +114,7 @@ internal abstract class CcidFrame {
 
 }
 
-internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArray) : CcidFrame() {
+class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArray) : CcidFrame() {
 
     enum class CommandCode(var value: Byte) {
         PC_To_RDR_IccPowerOn(0x62.toByte()),
@@ -138,7 +138,7 @@ internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data:
 }
 
 
-internal class CcidResponse(rawFrame: ByteArray) : CcidFrame() {
+class CcidResponse(rawFrame: ByteArray) : CcidFrame() {
 
     enum class ResponseCode(var value: Byte) {
         RDR_To_PC_DataBlock(0x80.toByte()),

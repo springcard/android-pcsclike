@@ -4,8 +4,12 @@
       <w>apdu</w>
       <w>apdus</w>
       <w>ccid</w>
+      <w>cmac</w>
+      <w>kenc</w>
+      <w>kmac</w>
       <w>pcsc</w>
       <w>rapdu</w>
+      <w>recv</w>
       <w>scard</w>
       <w>springcard</w>
     </words>
