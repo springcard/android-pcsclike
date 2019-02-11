@@ -4,23 +4,31 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_desc">Navigation header</string>
-    <string name="DeviceInfos">Device Information</string>
+    <string name="DeviceInfo">Device Information</string>
     <string name="transmit">Run</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="scan_button">scan_button</string>
-    <string name="infos">info</string>
+    <string name="info">info</string>
     <string name="logo">Logo</string>
     <string name="application_information">Application Information</string>
     <string name="linkSpringcard">www.springcard.com</string>
     <string name="library_information">Library Information</string>
     <string name="enable_logs">Enable Logs</string>
     <string name="stop_on_error">Stop on error</string>
-    <string name="time_measurment">Time measurment</string>
+    <string name="time_measurement">Time measurement</string>
     <string name="device_list">device_list</string>
     <string name="about">About</string>
     <string name="options">Options</string>
     <string name="log">Log</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="atr">ATR</string>
+    <string name="cardMute">card mute</string>
+    <string name="retrievingDeviceInformation">Retrieving device information</string>
+    <string name="loading">Loading…</string>
+    <string name="absent">Absent</string>
+    <string name="present">Present</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>

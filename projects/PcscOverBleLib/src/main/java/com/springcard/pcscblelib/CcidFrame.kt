@@ -37,7 +37,7 @@ abstract class CcidFrame {
         }
         protected set(newPayload) {
             // keep old header and append new payload
-            var headerSaved = header.toList()
+            val headerSaved = header.toList()
             raw = mutableListOf<Byte>()
             raw.addAll(headerSaved)
             raw.addAll(newPayload.toList())
@@ -69,9 +69,9 @@ abstract class CcidFrame {
 
     var length: Int
         get() {
-            var lengthArray =  raw.slice(1 .. 4).toByteArray()
+            val lengthArray =  raw.slice(1 .. 4).toByteArray()
             lengthArray[3] = lengthArray[3] and CIPHERED_BIT.inv()
-            var buffer = ByteBuffer.wrap(lengthArray)
+            val buffer = ByteBuffer.wrap(lengthArray)
             buffer.order(ByteOrder.LITTLE_ENDIAN)
 
             val expectedSize = buffer.int

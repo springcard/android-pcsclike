@@ -23,7 +23,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @param command The C-APDU to send to the card
      */
     fun transmit(command: ByteArray) {
-        var ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index, command)
+        val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index, command)
         parent.parent.process(ActionEvent.ActionWriting(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, ccidCmd))
     }
 
@@ -31,7 +31,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * Disconnect from the card (close the communication channel + power down)
      */
     fun disconnect() {
-        var ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index)
+        val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index)
         parent.parent.process(ActionEvent.ActionWriting(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, ccidCmd))
     }
 

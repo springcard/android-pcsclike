@@ -65,7 +65,7 @@ class AboutFragment : Fragment() {
         table.addView(row)
     }
 
-    public fun setAboutInfo(app: MainActivity.ApplicationInfo, lib: MainActivity.LibraryInfo) {
+    fun setAboutInfo(app: MainActivity.ApplicationInfo, lib: MainActivity.LibraryInfo) {
         appInfo = app
         libInfo = lib
     }

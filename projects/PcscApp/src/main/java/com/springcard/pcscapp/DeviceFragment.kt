@@ -31,10 +31,10 @@ abstract class DeviceFragment : Fragment() {
     private lateinit var currentChannel: SCardChannel
     private var currentSlot: SCardReader? = null
 
-    private var c_apdu = mutableListOf<ByteArray>()
+    private var cApdu = mutableListOf<ByteArray>()
     private var cptApdu = 0
 
-    private val sendCommands = listOf<String>("Transmit", "Control")
+    private val sendCommands = listOf("Transmit", "Control")
     private var modelsApdus = mutableListOf<ApduModel>()
     var connectToNewDevice = true
 
@@ -66,7 +66,7 @@ abstract class DeviceFragment : Fragment() {
             }
 
             val adapter = ArrayAdapter<String>(
-                activity,
+                activity?.applicationContext!!,
                 android.R.layout.simple_spinner_item, spinnerList
             )
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -81,14 +81,14 @@ abstract class DeviceFragment : Fragment() {
             // capduTextBox.text.append("FFCA0000\n")
 
             val dataAdapter = ArrayAdapter<String>(
-                activity,
+                activity?.applicationContext!!,
                 android.R.layout.simple_spinner_item, sendCommands
             )
             // Drop down layout style - list view
             dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerTransmitControl.adapter = dataAdapter
 
-            textState.text = "Absent"
+            textState.text = getString(R.string.absent)
 
             currentSlot = scardDevice.getReader(spinnerSlots.selectedItemPosition)
 
@@ -163,7 +163,7 @@ abstract class DeviceFragment : Fragment() {
         override fun onCardConnected(channel: SCardChannel) {
             mainActivity.logInfo("onCardConnected")
             currentChannel = channel
-            textState.text = "Connected"
+            textState.text = getString(R.string.connected)
             textAtr.text = channel.atr.toHexString()
         }
 
@@ -171,8 +171,8 @@ abstract class DeviceFragment : Fragment() {
         override fun onCardDisconnected(channel: SCardChannel) {
             mainActivity.logInfo("onCardDisconnected")
             currentChannel = channel
-            textState.text = "Disconnected"
-            textAtr.text = "ATR"
+            textState.text = getString(R.string.disconnected)
+            textAtr.text = getString(R.string.atr)
         }
 
         override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
@@ -198,7 +198,7 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
             mainActivity.logInfo("onReaderOrCardError")
             rapduTextBox.text.clear()
-            rapduTextBox.text.append("card mute")
+            rapduTextBox.text.append(getString(R.string.cardMute))
         }
     }
 
@@ -266,8 +266,8 @@ abstract class DeviceFragment : Fragment() {
         if(connectToNewDevice) {
             progressDialog = ProgressDialog(activity)
             progressDialog.isIndeterminate = true
-            progressDialog.setTitle("Retrieving device information")
-            progressDialog.setMessage("Loading...")
+            progressDialog.setTitle(getString(R.string.retrievingDeviceInformation))
+            progressDialog.setMessage(getString(R.string.loading))
             progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER)
             progressDialog.setInverseBackgroundForced(false)
             progressDialog.setCancelable(false)
@@ -300,7 +300,7 @@ abstract class DeviceFragment : Fragment() {
                     /* TODO CRA */
                     // addExecutedApdu(capduTextBox.text.toString())
 
-                    c_apdu = mutableListOf<ByteArray>()
+                    cApdu = mutableListOf<ByteArray>()
                     for (line in capduTextBox.text.lines()) {
 
                         /* Remove all nasty characters */
@@ -313,7 +313,7 @@ abstract class DeviceFragment : Fragment() {
 
                         if (!line2.isEmpty()) {
                             if (line2.isHex()) {
-                                c_apdu.add(line2.hexStringToByteArray())
+                                cApdu.add(line2.hexStringToByteArray())
                             } else {
                                 mainActivity.logInfo("Warning: $line2 is not an hexadecimal string")
                             }
@@ -344,14 +344,14 @@ abstract class DeviceFragment : Fragment() {
 
             /* Load Model List  */
 
-            var listApduString = mutableListOf<String>()
+            val listApduString = mutableListOf<String>()
 
             for (apdu in modelsApdus) {
                 listApduString.add("${apdu.id} - ${apdu.title}")
             }
 
             val dataAdapter = ArrayAdapter<String>(
-                activity,
+                activity?.applicationContext!!,
                 android.R.layout.simple_spinner_item, listApduString
             )
             // Drop down layout style - list view
@@ -391,12 +391,12 @@ abstract class DeviceFragment : Fragment() {
         mainActivity.logInfo("sendApdu")
         // TODO CRA create resource string
         if(spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
-            currentChannel.transmit(c_apdu[cptApdu])
+            currentChannel.transmit(cApdu[cptApdu])
         }
         else if (spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Control")) {
-            scardDevice.control(c_apdu[cptApdu])
+            scardDevice.control(cApdu[cptApdu])
         }
-        mainActivity.logInfo("<${c_apdu[cptApdu].toHexString()}")
+        mainActivity.logInfo("<${cApdu[cptApdu].toHexString()}")
     }
 
     private fun handleRapdu(response: ByteArray) {
@@ -411,14 +411,14 @@ abstract class DeviceFragment : Fragment() {
             }
             else {
                 cptApdu++
-                if(cptApdu < c_apdu.size) {
+                if(cptApdu < cApdu.size) {
                     sendApdu()
                 }
                 else {
                     if(mainActivity.enableTimeMeasurement) {
                         apduListStopTime = SystemClock.elapsedRealtime()
                         var elapsedTime = apduListStopTime - apduListStartTime
-                        Toast.makeText(activity, "${c_apdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
+                        Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -494,17 +494,17 @@ abstract class DeviceFragment : Fragment() {
     private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
         if(cardPresent && !cardPowered) {
             slot.cardConnect()
-            textAtr?.text = "ATR"
-            textState?.text = "Present"
+            textAtr?.text = getString(R.string.atr)
+            textState?.text = getString(R.string.present)
         }
         else if(cardPresent && cardPowered) {
             textAtr.text = currentSlot?.channel!!.atr.toHexString()
-            textState?.text = "Connected"
+            textState?.text = getString(R.string.connected)
             currentChannel = slot.channel
         }
         else if(!cardPresent && !cardPowered) {
-            textAtr?.text = "ATR"
-            textState?.text = "Absent"
+            textAtr?.text = getString(R.string.atr)
+            textState?.text = getString(R.string.absent)
         }
         else{
            mainActivity.logInfo("Impossible value: card not present but powered!")
