@@ -84,8 +84,7 @@ object GattAttributesSpringCore : GattAttributes() {
 
     var isCcidServiceBonded = false
 
-    var UUID_SPRINGCARD_CCID_SERVICE  =
-        UUID_SPRINGCARD_CCID_PLAIN_SERVICE
+    val UUID_SPRINGCARD_CCID_SERVICE : UUID
     get() {
         return if( !isCcidServiceBonded)
             UUID_SPRINGCARD_CCID_PLAIN_SERVICE
@@ -93,7 +92,7 @@ object GattAttributesSpringCore : GattAttributes() {
             UUID_SPRINGCARD_CCID_BONDED_SERVICE
     }
 
-    var UUID_CCID_PC_TO_RDR_CHAR = UUID_CCID_PC_TO_RDR_PLAIN_CHAR
+    val UUID_CCID_PC_TO_RDR_CHAR: UUID
     get() {
         return if( !isCcidServiceBonded)
             UUID_CCID_PC_TO_RDR_PLAIN_CHAR
@@ -101,7 +100,7 @@ object GattAttributesSpringCore : GattAttributes() {
             UUID_CCID_PC_TO_RDR_BONDED_CHAR
     }
 
-    var UUID_CCID_RDR_TO_PC_CHAR = UUID_CCID_RDR_TO_PC_PLAIN_CHAR
+    val UUID_CCID_RDR_TO_PC_CHAR: UUID
     get() {
         return if( !isCcidServiceBonded)
             UUID_CCID_RDR_TO_PC_PLAIN_CHAR
@@ -109,7 +108,7 @@ object GattAttributesSpringCore : GattAttributes() {
             UUID_CCID_RDR_TO_PC_BONDED_CHAR
     }
 
-    var UUID_CCID_STATUS_CHAR = UUID_CCID_STATUS_PLAIN_CHAR
+    val UUID_CCID_STATUS_CHAR: UUID
     get() {
         return if( !isCcidServiceBonded)
             UUID_CCID_STATUS_PLAIN_CHAR

@@ -80,7 +80,7 @@ class SCardReaderList(private val bluetoothDevice: BluetoothDevice, internal val
      * @param command control APDU to send to the device
      */
     fun control(command: ByteArray) {
-        var ccidCmd = ccidHandler.scardControl(command)
+        val ccidCmd = ccidHandler.scardControl(command)
         process(ActionEvent.ActionWriting(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, ccidCmd))
     }
 
@@ -130,7 +130,7 @@ class SCardReaderList(private val bluetoothDevice: BluetoothDevice, internal val
 
     val slots : List<String>
     get() {
-        var slotsName = mutableListOf<String>()
+        val slotsName = mutableListOf<String>()
         for (slot in readers) {
             slotsName.add(slot.name)
         }

@@ -202,7 +202,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
             return
         }
 
-        var slotCount = data[0]
+        val slotCount = data[0]
 
         /* Is slot count  matching nb of bytes*/
         if (slotCount > 4 * (data.size - 1)) {
@@ -222,10 +222,10 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
 
         for (i in 1 until data.size) {
             for (j in 0..3) {
-                var slotNumber = (i - 1) * 4 + j
+                val slotNumber = (i - 1) * 4 + j
                 if (slotNumber < slotCount) {
 
-                    var slotStatus = (data[i].toInt() shr j*2) and 0x03
+                    val slotStatus = (data[i].toInt() shr j*2) and 0x03
                     Log.i(TAG, "Slot $slotNumber")
 
                     /* Update SCardReadList slot status */
@@ -550,7 +550,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                     }
 
                     // trigger 1st read
-                    var chr = characteristicsToRead[0]
+                    val chr = characteristicsToRead[0]
                     mBluetoothGatt.readCharacteristic(chr)
 
                 } else {
@@ -580,7 +580,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                     GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardDevice.softwareVersion = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardDevice.hardwareVersion = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> {
-                        var firmwareVerFull = event.characteristic.value.toString(charset("ASCII"))
+                        val firmwareVerFull = event.characteristic.value.toString(charset("ASCII"))
                         scardDevice.firmwareVersion = firmwareVerFull
                         scardDevice.firmwareVersionMajor = firmwareVerFull.split("-")[0].split(".")[0].toInt()
                         scardDevice.firmwareVersionMinor = firmwareVerFull.split("-")[0].split(".")[1].toInt()
@@ -611,7 +611,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
 
                 indexCharToBeRead++
                 if (indexCharToBeRead < characteristicsToRead.size) {
-                    var chr = characteristicsToRead[indexCharToBeRead]
+                    val chr = characteristicsToRead[indexCharToBeRead]
                     mBluetoothGatt.readCharacteristic(chr)
                 }
                 else {
@@ -638,7 +638,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
 
                 indexCharToBeSubscribed++
                 if (indexCharToBeSubscribed < characteristicsCanIndicate.size) {
-                    var chr = characteristicsCanIndicate[indexCharToBeSubscribed]
+                    val chr = characteristicsCanIndicate[indexCharToBeSubscribed]
                     enableNotifications(chr)
                 }
                 else {
@@ -716,7 +716,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
 
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
                 {
-                    var ccidResponse = scardDevice.ccidHandler.getCcidResponse(event.characteristic.value)
+                    val ccidResponse = scardDevice.ccidHandler.getCcidResponse(event.characteristic.value)
                     if(authenticateStep == 1) {
 
                         scardDevice.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)
@@ -777,8 +777,8 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                     }
                     else {
                         /* Put data in ccid frame */
-                        var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
-                        var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
+                        val ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
+                        val slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
 
                         /* Update slot status (present, powered) */
                         interpretSlotsStatusInCcidHeader(
@@ -900,7 +900,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                 /* Read next */
                 indexCharToReadPower++
                 if(indexCharToReadPower<characteristicsToReadPower.size) {
-                    var chr = characteristicsToReadPower[indexCharToReadPower]
+                    val chr = characteristicsToReadPower[indexCharToReadPower]
                     mBluetoothGatt.readCharacteristic(chr)
                 }
                 else {
@@ -918,7 +918,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
             is ActionEvent.ActionReadPowerInfo -> {
                 /* Trigger 1st read */
                 indexCharToReadPower = 0
-                var chr = characteristicsToReadPower[indexCharToReadPower]
+                val chr = characteristicsToReadPower[indexCharToReadPower]
                 mBluetoothGatt.readCharacteristic(chr)
             }
             is ActionEvent.EventCharacteristicChanged -> {
@@ -983,9 +983,8 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                     else {
 
                         /* Put data in ccid frame */
-                        var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
-
-                        var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
+                        val ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
+                        val slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
 
                         /* Update slot status (present, powered) */
                         interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)

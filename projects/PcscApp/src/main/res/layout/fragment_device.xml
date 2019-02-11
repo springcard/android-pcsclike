@@ -42,7 +42,7 @@
             app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.0"
             android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginEnd="6dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0" android:contentDescription="@string/DeviceInfos"
+            app:layout_constraintHorizontal_bias="1.0" android:contentDescription="@string/DeviceInfo"
             android:background="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
     <ImageButton
             android:layout_width="wrap_content"
@@ -52,7 +52,7 @@
             app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.0"
             android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginEnd="6dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.905" android:contentDescription="@string/DeviceInfos"
+            app:layout_constraintHorizontal_bias="0.905" android:contentDescription="@string/DeviceInfo"
             android:background="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
     <Button
             android:text="@string/transmit"

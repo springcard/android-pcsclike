@@ -6,7 +6,6 @@
 
 package com.springcard.pcscapp
 
-import android.bluetooth.BluetoothDevice
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.SystemClock
@@ -71,8 +70,8 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             Request.Method.GET, url,
             Response.Listener<String> { response ->
                 // Display the first 500 characters of the response string.
-                var jsonArray = JSONArray(response.toString())
-                var gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssX").create()
+                val jsonArray = JSONArray(response.toString())
+                val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssX").create()
 
                 if (jsonArray.length() > 0) {
                     logInfo("Nb of apdu examples in model = ${jsonArray.length()}" )
@@ -191,7 +190,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         aboutFragment.setAboutInfo(appInfo, libInfo)
     }
 
-    public data class ApplicationInfo(
+    data class ApplicationInfo(
         val DEBUG: Boolean,
         val APPLICATION_ID: String,
         val BUILD_TYPE: String,
@@ -200,7 +199,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         val VERSION_NAME: String,
         val appDebug: Boolean)
 
-    public data class LibraryInfo(
+    data class LibraryInfo(
         val DEBUG: Boolean,
         val APPLICATION_ID: String,
         val BUILD_TYPE: String,

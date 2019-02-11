@@ -7,6 +7,7 @@
       <w>cmac</w>
       <w>kenc</w>
       <w>kmac</w>
+      <w>ourself</w>
       <w>pcsc</w>
       <w>rapdu</w>
       <w>recv</w>

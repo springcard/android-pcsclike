@@ -78,7 +78,7 @@ fun ByteArray.RotateRightOneByte(): ByteArray {
  */
 fun XOR(buffer1: MutableList<Byte>, buffer2: MutableList<Byte>): MutableList<Byte> {
 
-    var result = mutableListOf<Byte>()
+    val result = mutableListOf<Byte>()
 
     if(buffer1.size != buffer2.size) {
         Log.d("Utils", "XOR: Buffers don't have the same size")
@@ -142,7 +142,7 @@ fun String.isHex(): Boolean {
 
 // LSB first 5555555 = 0xE3 0xB5 0x4F  0x03
 internal fun Int.bytes(): ByteArray {
-    var b = mutableListOf<Byte>(0, 0, 0, 0)
+    val b = mutableListOf<Byte>(0, 0, 0, 0)
 
     for (i in 0 until 4) {
         b[i] = (this shr (i*8)).toByte()
