@@ -9,7 +9,7 @@ package com.springcard.pcscblelib
 import android.util.Log
 import java.lang.Exception
 
-internal class CcidHandler {
+internal class CcidHandler() {
 
     private var sequenceNumber = 0
     internal var commandSend = CcidCommand.CommandCode.PC_To_RDR_Escape
@@ -17,8 +17,21 @@ internal class CcidHandler {
 
     internal var currentReaderIndex: Int = 0
 
+    internal var isSecure: Boolean = false
+        private set
+    var authenticateOk: Boolean = false
+    internal lateinit var ccidSecure: CcidSecure
+        private set
+
     private val TAG: String
         get() = this::class.java.simpleName
+
+    /* Secondary Constructor */
+
+    constructor(parameters: CcidSecureParameters) : this() {
+        isSecure = true
+        ccidSecure = CcidSecure(parameters)
+    }
 
     /* CCID Commands */
 
@@ -42,6 +55,8 @@ internal class CcidHandler {
         return buildCcidCommand(CcidCommand.CommandCode.PC_To_RDR_Escape,0 , apdu)
     }
 
+    /* Build Ccid commands and get Ccid responses*/
+
     private fun buildCcidCommand(code: CcidCommand.CommandCode, slotNumber: Int, payload: ByteArray): ByteArray {
 
         if(slotNumber > 255) {
@@ -53,33 +68,51 @@ internal class CcidHandler {
         commandSend = code
         currentReaderIndex = slotNumber
 
-        val command = CcidCommand(code, slotNumber.toByte(), sequenceNumber.toByte(), payload)
+        var command = CcidCommand(code, slotNumber.toByte(), sequenceNumber.toByte(), payload)
+
+        /* authenticateOk --> cipher and mmc frame */
+        if(isSecure && authenticateOk) {
+            command = ccidSecure.encryptCcidBuffer(command)
+        }
 
         return command.raw.toByteArray()
     }
 
     fun getCcidResponse(frame: ByteArray): CcidResponse {
-        val response = CcidResponse(frame)
+        var response = CcidResponse(frame)
 
         if(frame.size < 10) {
-            val msg = "Too few data to build a CCID response (${frame.byteArrayToHexString()})"
+            val msg = "Too few data to build a CCID response (${frame.toHexString()})"
             Log.e(TAG, msg)
             throw Exception(msg)
+        }
+
+        if(frame.size-CcidFrame.HEADER_SIZE != response.length ) {
+              Log.d(TAG, "Frame not complete, excepted length = ${response.length}")
+        }
+
+        if(isSecure && authenticateOk) {
+            response = ccidSecure.decryptCcidBuffer(response)
         }
 
         currentReaderIndex = response.slotNumber.toInt()
 
         /* TODO CRA if(sequenceNumber.toByte() != response.sequenceNumber) {
-            val msg = "Sequence number in frame (${response.sequenceNumber}) does not match sequence number in cache ($sequenceNumber)"
-            Log.e(TAG, msg)
-            throw Exception(msg)
+        val msg = "Sequence number in frame (${response.sequenceNumber}) does not match sequence number in cache ($sequenceNumber)"
+        Log.e(TAG, msg)
+        throw Exception(msg)
         }*/
 
         sequenceNumber++
         if(sequenceNumber > 255)
-            sequenceNumber = 0
+        sequenceNumber = 0
 
 
         return response
     }
+
+    fun getCcidLength(frame: ByteArray): Int {
+        return CcidResponse(frame).length
+    }
+
 }

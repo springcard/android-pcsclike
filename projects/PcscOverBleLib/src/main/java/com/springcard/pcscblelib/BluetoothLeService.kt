@@ -21,6 +21,7 @@ internal enum class State{
     ReadingInformation,
     SubscribingNotifications,
     ReadingSlotsName,
+    Authenticate,
     ConnectingToCard,
     Idle,
     ReadingPowerInfo,
@@ -40,6 +41,7 @@ internal sealed class ActionEvent {
     class EventCharacteristicWrite(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventCharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class ActionWriting(val charUuid: UUID, val command: ByteArray) : ActionEvent()
+    class ActionAuthenticate : ActionEvent()
     class ActionDisconnect : ActionEvent()
     class EventDisconnected : ActionEvent()
     class ActionReadPowerInfo : ActionEvent()
@@ -443,6 +445,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
             State.ReadingInformation -> handleStateReadingInformation(event)
             State.SubscribingNotifications -> handleStateSubscribingNotifications(event)
             State.ReadingSlotsName ->  handleStateReadingSlotsName(event)
+            State.Authenticate -> handleStateAuthenticate(event)
             State.ConnectingToCard -> handleStateConnectingToCard(event)
             State.Idle ->  handleStateIdle(event)
             State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
@@ -584,7 +587,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                         scardDevice.firmwareVersionBuild = firmwareVerFull.split("-")[1].toInt()
                     }
                     GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardDevice.vendorName = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardDevice.pnpId = event.characteristic.value.byteArrayToHexString()
+                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardDevice.pnpId = event.characteristic.value.toHexString()
                     GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
                         val slotCount = event.characteristic.value[0]
 
@@ -682,7 +685,53 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                             }
                         }
 
-                        /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                        /* Go to authenticate state if necessary */
+                        if(scardDevice.ccidHandler.isSecure) {
+                            currentState = State.Authenticate
+                            process(ActionEvent.ActionAuthenticate())
+                        }
+                        else {
+                            /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                            processNextSlotConnection()
+                        }
+                    }
+                }
+                else {
+                    Log.w(TAG, "Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
+                }
+            }
+            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+        }
+    }
+
+    private var authenticateStep = 0
+    private fun handleStateAuthenticate(event: ActionEvent) {
+        when (event) {
+            is ActionEvent.ActionAuthenticate -> {
+                writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardDevice.ccidHandler.scardControl(scardDevice.ccidHandler.ccidSecure.hostAuthCmd()))
+                authenticateStep = 1
+            }
+            is ActionEvent.EventCharacteristicChanged -> {
+                Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+
+                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
+                {
+                    var ccidResponse = scardDevice.ccidHandler.getCcidResponse(event.characteristic.value)
+                    if(authenticateStep == 1) {
+
+                        scardDevice.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)
+                        writeChar(
+                            GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR,
+                            scardDevice.ccidHandler.scardControl(
+                                scardDevice.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
+                            )
+                        )
+                        authenticateStep = 2
+                    }
+                    else if(authenticateStep == 2) {
+                        scardDevice.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)
+
+                        scardDevice.ccidHandler.authenticateOk = true
                         processNextSlotConnection()
                     }
                 }
@@ -693,12 +742,14 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
+
+
     private var rxBuffer = mutableListOf<Byte>()
     private fun handleStateConnectingToCard(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionWriting -> {
-                Log.d(TAG, "Writing ${event.command.byteArrayToHexString()} on characteristic ${event.charUuid}")
+                Log.d(TAG, "Writing ${event.command.toHexString()} on characteristic ${event.charUuid}")
 
                 /* Clear and set data to write */
                 dataToWrite.clear()
@@ -718,41 +769,44 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                 if (event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
 
                     rxBuffer.addAll(event.characteristic.value.toList())
-                    /* Put data in ccid frame to get theoretical size */
-                    var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
-                    var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
-
-                    /* Update slot status (present, powered) */
-                    interpretSlotsStatusInCcidHeader(
-                        ccidResponse.slotStatus,
-                        slot
-                    )
-
-                    /* Check slot error */
-                    if (!interpretSlotsErrorInCcidHeader(
-                            ccidResponse.slotError,
-                            ccidResponse.slotStatus,
-                            slot,
-                            false // do not post callback
-                        )
-                    ) {
-                        Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
-
-                        /* Remove reader we just processed */
-                        listReadersToConnect.remove(slot)
-
-                        processNextSlotConnection()
-
-                        /* Do not go further */
-                        return
-                    }
+                    val ccidLength = scardDevice.ccidHandler.getCcidLength(rxBuffer.toByteArray())
 
                     /* Check if the response is compete or not */
-                    if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidResponse.length) {
-                        Log.d(TAG, "Frame not complete, excepted length = ${ccidResponse.length}")
-                    } else {
+                    if( rxBuffer.size-CcidFrame.HEADER_SIZE != ccidLength) {
+                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
+                    }
+                    else {
+                        /* Put data in ccid frame */
+                        var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
+                        var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
+
+                        /* Update slot status (present, powered) */
+                        interpretSlotsStatusInCcidHeader(
+                            ccidResponse.slotStatus,
+                            slot
+                        )
+
+                        /* Check slot error */
+                        if (!interpretSlotsErrorInCcidHeader(
+                                ccidResponse.slotError,
+                                ccidResponse.slotStatus,
+                                slot,
+                                false // do not post callback
+                            )
+                        ) {
+                            Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
+                            /* reset rxBuffer */
+                            rxBuffer = mutableListOf<Byte>()
+
+                            /* Remove reader we just processed */
+                            listReadersToConnect.remove(slot)
+
+                            processNextSlotConnection()
+
+                            /* Do not go further */
+                            return
+                        }
+
                         Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
 
                         /* reset rxBuffer */
@@ -792,7 +846,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
             }
             is ActionEvent.ActionWriting -> {
                 currentState = State.WritingCommand
-                Log.d(TAG, "Writing ${event.command.byteArrayToHexString()} on characteristic ${event.charUuid}")
+                Log.d(TAG, "Writing ${event.command.toHexString()} on characteristic ${event.charUuid}")
 
                 /* Clear and set data to write */
                 dataToWrite.clear()
@@ -920,29 +974,33 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
 
                     rxBuffer.addAll(event.characteristic.value.toList())
-                    /* Put data in ccid frame to get theoretical size */
-                    var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
-
-                    var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
-
-                    /* Update slot status (present, powered) */
-                    interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)
-
-                    /* Check slot error */
-                    if(!interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)) {
-                        Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
-                        currentState = State.Idle
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
-                        /* Do not go further */
-                        return
-                    }
+                    val ccidLength = scardDevice.ccidHandler.getCcidLength(rxBuffer.toByteArray())
 
                     /* Check if the response is compete or not */
-                    if( rxBuffer.size-CcidFrame.HEADER_SIZE != ccidResponse.length ) {
-                        Log.d(TAG, "Frame not complete, excepted length = ${ccidResponse.length}")
+                    if( rxBuffer.size-CcidFrame.HEADER_SIZE != ccidLength) {
+                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
                     }
                     else {
+
+                        /* Put data in ccid frame */
+                        var ccidResponse = scardDevice.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
+
+                        var slot = scardDevice.readers[ccidResponse.slotNumber.toInt()]
+
+                        /* Update slot status (present, powered) */
+                        interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)
+
+                        /* Check slot error */
+                        if(!interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)) {
+                            Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
+                            currentState = State.Idle
+                            /* reset rxBuffer */
+                            rxBuffer = mutableListOf<Byte>()
+                            /* Do not go further */
+                            return
+                        }
+
+
                         currentState = State.Idle
                         Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
 
@@ -954,7 +1012,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
                                 CcidCommand.CommandCode.PC_To_RDR_Escape -> scardDevice.mHandler.post {
                                     callbacks.onControlResponse(
                                         scardDevice,
-                                        event.characteristic.value
+                                        ccidResponse.payload
                                     )
                                 }
                                 else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardDevice.ccidHandler.commandSend}")
@@ -1063,7 +1121,7 @@ internal class BluetoothLeService(private var bluetoothDevice: BluetoothDevice, 
         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
         if(listReadersToConnect.size > 0) {
             currentState = State.ConnectingToCard
-             listReadersToConnect[0].cardConnect()
+            listReadersToConnect[0].cardConnect()
         }
         /* Otherwise go to idle state */
         else {

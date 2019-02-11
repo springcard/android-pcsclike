@@ -46,7 +46,14 @@ abstract class DeviceFragment : Fragment() {
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
         override fun onConnect(device: SCardReaderList) {
             mainActivity.logInfo("onConnect")
-            device.create()
+            device.create(
+                CcidSecureParameters(
+                    CcidSecureParameters.AuthenticationMode.Aes128,
+                    CcidSecureParameters.AuthenticationKeyIndex.User,
+                    mutableListOf<Byte>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                    CcidSecureParameters.CommunicationMode.MacAndCipher
+                )
+            )
         }
 
         override fun onReaderListCreated(device: SCardReaderList) {
@@ -157,7 +164,7 @@ abstract class DeviceFragment : Fragment() {
             mainActivity.logInfo("onCardConnected")
             currentChannel = channel
             textState.text = "Connected"
-            textAtr.text = channel.atr.byteArrayToHexString()
+            textAtr.text = channel.atr.toHexString()
         }
 
 
@@ -389,11 +396,11 @@ abstract class DeviceFragment : Fragment() {
         else if (spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Control")) {
             scardDevice.control(c_apdu[cptApdu])
         }
-        mainActivity.logInfo("<${c_apdu[cptApdu].byteArrayToHexString()}")
+        mainActivity.logInfo("<${c_apdu[cptApdu].toHexString()}")
     }
 
     private fun handleRapdu(response: ByteArray) {
-        val responseString = response.byteArrayToHexString()
+        val responseString = response.toHexString()
         mainActivity.logInfo(">$responseString")
         rapduTextBox.text.append(responseString + "\n")
 
@@ -491,7 +498,7 @@ abstract class DeviceFragment : Fragment() {
             textState?.text = "Present"
         }
         else if(cardPresent && cardPowered) {
-            textAtr.text = currentSlot?.channel!!.atr.byteArrayToHexString()
+            textAtr.text = currentSlot?.channel!!.atr.toHexString()
             textState?.text = "Connected"
             currentChannel = slot.channel
         }
