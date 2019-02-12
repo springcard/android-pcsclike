@@ -22,7 +22,7 @@ import com.android.volley.toolbox.Volley
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import com.springcard.pcscblelib.BuildConfig
+import com.springcard.pcsclib.BuildConfig
 import org.json.JSONArray
 
 

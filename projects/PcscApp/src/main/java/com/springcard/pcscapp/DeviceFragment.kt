@@ -14,7 +14,7 @@ import android.support.v4.view.GravityCompat
 import android.support.v7.app.AlertDialog
 import android.view.*
 import android.widget.*
-import com.springcard.pcscblelib.*
+import com.springcard.pcsclib.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*

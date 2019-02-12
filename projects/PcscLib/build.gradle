@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'org.jetbrains.dokka-android'
 
 
 android {
@@ -11,6 +11,13 @@ android {
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
         versionName getRevision()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "libraryName", "\"PC/SC-Like Library\""
+        buildConfigField "String", "librarySpecial", "\"\""
+        buildConfigField "String", "libraryVersion", "\""+getRevision()+"\""
+        buildConfigField "int", "libraryVersionMajor", getRevisionMajor()
+        buildConfigField "int", "libraryVersionMinor", getRevisionMinor()
+        buildConfigField "int", "libraryVersionBuild", getRevisionBuild()
     }
     buildTypes {
         release {
@@ -24,33 +31,34 @@ android {
     }
     libraryVariants.all { variant ->
         variant.outputs.all {
-            def buildType = variant.buildType.name
+            def buildType =  variant.buildType.name
             def date = new Date()
             def formattedDate = date.format('yyyy_MM_dd')
-            outputFileName = "SpringCardPcscApp_${getRevision()}_${formattedDate}_${buildType}.aar"
+            outputFileName = "SpringCardPcscAndroidLibrary_${getRevision()}_${formattedDate}_${buildType}.aar"
         }
     }
-    sourceSets {
-        main {
-            java.srcDirs += '../PcscOverBle/src/main/java'
-        }
+
+
+    task publishDoc(type: Copy) {
+        from "$buildDir/javadoc"
+        into 'V:\\Dossiers\\SpringCard\\A-Online\\apis\\Android\\PCSC-Like'
     }
+
+    dokka {
+        outputFormat = 'html'
+        outputDirectory = "$buildDir/javadoc"
+    }
+    dokka.finalizedBy publishDoc
 }
 
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    implementation 'com.android.support:support-v4:28.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.android.support:design:28.0.0'
-    implementation 'com.android.volley:volley:1.1.1'
-    implementation 'com.google.code.gson:gson:2.8.2'
-    implementation project(':PcscLib')
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
 repositories {

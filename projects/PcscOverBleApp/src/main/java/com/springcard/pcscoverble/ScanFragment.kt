@@ -21,8 +21,7 @@ import android.os.ParcelUuid
 import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.widget.AdapterView
-import com.springcard.pcscblelib.GattAttributesD600
-import com.springcard.pcscblelib.GattAttributesSpringCore
+import com.springcard.pcsclib.*
 import kotlinx.android.synthetic.main.fragment_scan.*
 import java.util.ArrayList
 import android.view.*
