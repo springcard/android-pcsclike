@@ -9,10 +9,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/PcscApp" />
+            <option value="$PROJECT_DIR$/PcscLib" />
             <option value="$PROJECT_DIR$/PcscOverBleApp" />
-            <option value="$PROJECT_DIR$/PcscOverBleLib" />
             <option value="$PROJECT_DIR$/PcscOverUsbApp" />
-            <option value="$PROJECT_DIR$/PcscOverUsbLib" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

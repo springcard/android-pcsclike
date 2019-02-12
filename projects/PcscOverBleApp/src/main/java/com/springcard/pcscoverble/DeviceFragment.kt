@@ -8,7 +8,7 @@ package com.springcard.pcscoverble
 
 
 import android.bluetooth.BluetoothDevice
-import com.springcard.pcscblelib.*
+import com.springcard.pcsclib.*
 
 
 class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
@@ -17,14 +17,13 @@ class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
 
         if(device is BluetoothDevice) {
             deviceName = (device as BluetoothDevice).name
-            scardDevice = SCardReaderList(device as BluetoothDevice, scardCallbacks)
+            scardDevice = SCardReaderListBle(device as BluetoothDevice, scardCallbacks)
             scardDevice.connect(mainActivity)
         }
         else {
             mainActivity.logInfo("Device is not a BLE device")
         }
     }
-
 
     override fun init(_device: Any) {
 

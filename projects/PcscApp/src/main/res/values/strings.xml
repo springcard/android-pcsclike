@@ -26,7 +26,7 @@
     <string name="disconnected">Disconnected</string>
     <string name="atr">ATR</string>
     <string name="cardMute">card mute</string>
-    <string name="retrievingDeviceInformation">Retrieving device information</string>
+    <string name="retrievingDeviceInformation">Retrieving readerList information</string>
     <string name="loading">Loading…</string>
     <string name="absent">Absent</string>
     <string name="present">Present</string>
