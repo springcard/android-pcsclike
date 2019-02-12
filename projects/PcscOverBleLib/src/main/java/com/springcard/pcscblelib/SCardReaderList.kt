@@ -170,9 +170,12 @@ class SCardReaderList(private val bluetoothDevice: BluetoothDevice, internal val
         process(ActionEvent.ActionCreate())
     }
 
+
     /**
      * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
      * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
+     * It also creates a secure communication channel based on info given in parameter
+     * @param secureConnexionParameters CcidSecureParameters
      */
     fun create(secureConnexionParameters: CcidSecureParameters) {
         ccidHandler = CcidHandler(secureConnexionParameters)

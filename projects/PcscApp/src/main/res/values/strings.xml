@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">PCSC</string>
     <string name="ble_not_supported">BLE not supported</string>
+    <string name="usb_host_not_supported">USB HOST not supported</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_desc">Navigation header</string>

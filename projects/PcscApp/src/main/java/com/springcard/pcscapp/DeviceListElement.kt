@@ -6,5 +6,5 @@
 
 package com.springcard.pcscapp
 
-data class DeviceListElement (val name: String? = "", val rssi: Int)
+data class DeviceListElement (val name: String = "", val info: String)
 

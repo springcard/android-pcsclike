@@ -7,6 +7,7 @@
 package com.springcard.pcscapp
 
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.*
@@ -15,6 +16,9 @@ import android.view.*
 abstract class ScanFragment : Fragment() {
 
     protected val TAG = this::class.java.simpleName
+
+    /* System support feature ? */
+    protected fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
 
     protected lateinit var mainActivity: MainActivity
 
