@@ -31,9 +31,6 @@ import com.springcard.pcscapp.*
 
 class ScanFragment : com.springcard.pcscapp.ScanFragment() {
 
-    /* System support BLE ? */
-    private fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
-
     private var deviceList = ArrayList<DeviceListElement>()
     private var adapter: DeviceListAdapter? = null
     private var bleDeviceList = ArrayList<BluetoothDevice>()
@@ -248,9 +245,9 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
             result: ScanResult
         ) {
             val newItem: DeviceListElement = if (result.scanRecord!!.deviceName != null) {
-                DeviceListElement(result.scanRecord!!.deviceName, result.rssi)
+                DeviceListElement(result.scanRecord!!.deviceName, result.rssi.toString())
             } else {
-                DeviceListElement(result.device.address, result.rssi)
+                DeviceListElement(result.device.address, result.rssi.toString())
             }
 
             if (!deviceListContains(newItem)) {

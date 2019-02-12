@@ -44,7 +44,7 @@ class DeviceListAdapter(private val context: Context,
         val device = getItem(position) as DeviceListElement
 
         titleTextView.text = device.name
-        subtitleTextView.text = device.rssi.toString()
+        subtitleTextView.text = device.info.toString()
 
         return rowView
     }

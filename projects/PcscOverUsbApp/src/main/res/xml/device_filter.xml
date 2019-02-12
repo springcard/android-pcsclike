@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28928" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28929" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28930" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28931" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28932" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28933" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28934" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28935" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28936" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28937" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28938" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28939" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28940" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28941" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28942" />
+    <!-- vendor and product ID for SpringCard PC/SC reader -->
+    <usb-device vendor-id="7220" product-id="28943" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28944" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28945" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28946" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28947" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28948" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28949" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28950" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28951" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28952" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="28953" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29072" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29073" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29074" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29075" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29076" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29077" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29078" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29079" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29080" />
+    <!-- vendor and product ID for SpringCard CrazyWriter -->
+    <usb-device vendor-id="7220" product-id="29081" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28960" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28961" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28962" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28963" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28964" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28965" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28966" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28967" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28968" />
+    <!-- vendor and product ID for SpringCard CSB6 -->
+    <usb-device vendor-id="7220" product-id="28969" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28976" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28977" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28978" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28979" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28980" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28981" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28982" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28983" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28984" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28985" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28986" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28987" />
+    <!-- vendor and product ID for SpringCard EasyFinger -->
+    <usb-device vendor-id="7220" product-id="28988" />
+    <!-- vendor and product ID for SpringCard Prox'N'Roll -->
+    <usb-device vendor-id="7220" product-id="28993" />
+    <!-- vendor and product ID for SpringCard Prox'N'Roll NFC -->
+    <usb-device vendor-id="7220" product-id="33089" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29008" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29009" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29010" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29011" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29012" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29013" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29014" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29015" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29016" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29017" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29018" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29019" />
+    <!-- vendor and product ID for SpringCard SpringWap -->
+    <usb-device vendor-id="7220" product-id="29020" />
+    <!-- vendor and product ID for SpringCard TagPad -->
+    <usb-device vendor-id="7220" product-id="29025" />
+    <!-- vendor and product ID for SpringCard TagPad NFC -->
+    <usb-device vendor-id="7220" product-id="33121" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29040" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29041" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29042" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29043" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29044" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29045" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29046" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29047" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29048" />
+    <!-- vendor and product ID for SpringCard SpeedyLogger -->
+    <usb-device vendor-id="7220" product-id="29049" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37136" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37137" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37138" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37139" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37140" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37141" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37142" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37143" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37144" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37145" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37146" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37147" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37148" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37264" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37265" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37266" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37267" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37268" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37269" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37270" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37271" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37272" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37273" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37274" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37275" />
+    <!-- vendor and product ID for SpringCard CrazyWriter HSP -->
+    <usb-device vendor-id="7220" product-id="37276" />
+    <!-- vendor and product ID for SpringCard CSB HSP T -->
+    <usb-device vendor-id="7220" product-id="37152" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37153" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37154" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37155" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37156" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37157" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37158" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37159" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37160" />
+    <!-- vendor and product ID for SpringCard CSB HSP -->
+    <usb-device vendor-id="7220" product-id="37161" />
+    <!-- vendor and product ID for SpringCard CSB HSP T -->
+    <usb-device vendor-id="7220" product-id="37162" />
+    <!-- vendor and product ID for SpringCard CSB HSP T -->
+    <usb-device vendor-id="7220" product-id="37163" />
+    <!-- vendor and product ID for SpringCard CSB HSP T -->
+    <usb-device vendor-id="7220" product-id="37164" />
+    <!-- vendor and product ID for SpringCard SpringCard -->
+    <usb-device vendor-id="7220" product-id="37200" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37201" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37202" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37203" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37204" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37205" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37206" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37207" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37208" />
+    <!-- vendor and product ID for SpringCard SpringProx -->
+    <usb-device vendor-id="7220" product-id="37209" />
+    <!-- vendor and product ID for SpringCard SpringCard -->
+    <usb-device vendor-id="7220" product-id="37210" />
+    <!-- vendor and product ID for SpringCard SpringCard -->
+    <usb-device vendor-id="7220" product-id="37211" />
+    <!-- vendor and product ID for SpringCard SpringCard -->
+    <usb-device vendor-id="7220" product-id="37212" />
+    <!-- vendor and product ID for SpringCard MHSP -->
+    <usb-device vendor-id="7220" product-id="37280" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37281" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37282" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37283" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37284" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37285" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37286" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37287" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37288" />
+    <!-- vendor and product ID for SpringCard H632 -->
+    <usb-device vendor-id="7220" product-id="37289" />
+    <!-- vendor and product ID for SpringCard MHSP -->
+    <usb-device vendor-id="7220" product-id="37290" />
+    <!-- vendor and product ID for SpringCard MHSP -->
+    <usb-device vendor-id="7220" product-id="37291" />
+    <!-- vendor and product ID for SpringCard MHSP -->
+    <usb-device vendor-id="7220" product-id="37292" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37297" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37298" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37299" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37300" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37301" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37302" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37303" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37304" />
+    <!-- vendor and product ID for SpringCard H663 -->
+    <usb-device vendor-id="7220" product-id="37305" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41248" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41249" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41250" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41251" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41252" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41253" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41254" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41255" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41256" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41257" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41261" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41262" />
+    <!-- vendor and product ID for SpringCard CSB NFC -->
+    <usb-device vendor-id="7220" product-id="41263" />
+    <!-- vendor and product ID for SpringCard Prox'N'Roll NFC -->
+    <usb-device vendor-id="7220" product-id="41281" />
+    <!-- vendor and product ID for SpringCard Prox'N'Roll NFC -->
+    <usb-device vendor-id="7220" product-id="41294" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41297" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41298" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41299" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41300" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41301" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41302" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41303" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41304" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41305" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41309" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41310" />
+    <!-- vendor and product ID for SpringCard SpringProx NFC -->
+    <usb-device vendor-id="7220" product-id="41311" />
+    <!-- vendor and product ID for SpringCard TagPad NFC -->
+    <usb-device vendor-id="7220" product-id="41313" />
+    <!-- vendor and product ID for SpringCard TagPad NFC -->
+    <usb-device vendor-id="7220" product-id="41326" />
+    <!-- vendor and product ID for SpringCard SpringTag -->
+    <usb-device vendor-id="7220" product-id="41345" />
+    <!-- vendor and product ID for SpringCard SpringTag -->
+    <usb-device vendor-id="7220" product-id="41358" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41377" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41378" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41379" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41380" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41381" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41382" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41383" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41384" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41385" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41389" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41390" />
+    <!-- vendor and product ID for SpringCard HNFC -->
+    <usb-device vendor-id="7220" product-id="41391" />
+</resources>
