@@ -22,7 +22,7 @@ import kotlinx.android.synthetic.main.content_main.*
 
 abstract class DeviceFragment : Fragment() {
 
-    private val TAG = this::class.java.simpleName
+    protected val TAG = this::class.java.simpleName
 
     protected lateinit var scardDevice: SCardReaderList
     protected lateinit var deviceName: String

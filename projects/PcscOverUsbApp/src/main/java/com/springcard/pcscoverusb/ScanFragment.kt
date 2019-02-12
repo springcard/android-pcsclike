@@ -6,6 +6,7 @@
 
 package com.springcard.pcscoverusb
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
@@ -19,7 +20,6 @@ import kotlinx.android.synthetic.main.fragment_scan.*
 import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
-import android.os.Parcelable
 import android.util.Log
 import android.widget.Toast
 
@@ -29,6 +29,12 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
     private var deviceList = ArrayList<DeviceListElement>()
     private var adapter: DeviceListAdapter? = null
     private var usbDeviceList = ArrayList<UsbDevice>()
+    val usbManager: UsbManager by lazy {
+        mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
+    }
+    val mPermissionIntent: PendingIntent by lazy {
+        PendingIntent.getBroadcast(mainActivity, 0, Intent(ACTION_USB_PERMISSION), 0)
+    }
 
 
     override fun onCreateView(
@@ -48,18 +54,36 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
         val mUsbAttachReceiver: BroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 val action = intent.action
-                val device =  intent.getParcelableExtra(UsbManager.EXTRA_DEVICE) as UsbDevice
+                val usbDevice =  intent.getParcelableExtra(UsbManager.EXTRA_DEVICE) as UsbDevice
 
                 if (UsbManager.ACTION_USB_DEVICE_ATTACHED == action) {
-                    addDevice(device)
-                } else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
-                    removeDevice(device)
+                    addDevice(usbDevice)
                 }
+                else if (UsbManager.ACTION_USB_DEVICE_DETACHED == action) {
+                    removeDevice(usbDevice)
+                }
+                else if(ACTION_USB_PERMISSION == intent.action) {
+                    synchronized(this) {
+
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            usbDevice?.apply {
+                                /* call method to set up device communication */
+                                mainActivity.goToDeviceFragment(usbDevice)
+                            }
+
+                        } else {
+                            Log.d(TAG, "Permission denied for device $usbDevice")
+                        }
+                    }
+                }
+
             }
         }
 
         mainActivity.applicationContext.registerReceiver(mUsbAttachReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED))
         mainActivity.applicationContext.registerReceiver(mUsbAttachReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
+
+        mainActivity.applicationContext.registerReceiver(mUsbAttachReceiver, IntentFilter(ACTION_USB_PERMISSION))
 
 
         // Inflate the layout for this fragment
@@ -79,7 +103,7 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
         /* Click on item of ListView */
         device_list_view.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             mainActivity.logInfo("Device ${usbDeviceList[position].deviceName} selected")
-            mainActivity.goToDeviceFragment(usbDeviceList[position])
+            usbManager.requestPermission(usbDeviceList[position], mPermissionIntent)
         }
 
         /* Request permission */
@@ -122,8 +146,8 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
         adapter?.notifyDataSetChanged()
 
         /* Scan USB de vices already present */
-        val manager = mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
-        val deviceList: HashMap<String, UsbDevice> = manager.deviceList
+        val usbManager = mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
+        val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
         deviceList.values.forEach { device ->
             /* Filter on SpringCard PID */
             if(device.vendorId == 0x1C34) {
@@ -152,5 +176,9 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
             adapter?.notifyDataSetChanged()
             mainActivity.logInfo("Device removed: ${item.name}")
         }
+    }
+
+    companion object {
+        private const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
     }
 }
