@@ -20,7 +20,7 @@ import android.os.Looper
  * @property TAG (kotlin.String..kotlin.String?)
  * @property commLayer BluetoothLayer
  * @property ccidHandler CcidHandler
- * @property mHandler Handler
+ * @property handler Handler
  * @property vendorName Manufacturer name of the device
  * @property productName Product name of the device
  * @property serialNumber Serial number of the device, expressed in hexadecimal
@@ -45,7 +45,7 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler()
-    internal var mHandler  =  Handler(Looper.getMainLooper())
+    internal var handler  =  Handler(Looper.getMainLooper())
 
     var vendorName: String = ""
         internal set

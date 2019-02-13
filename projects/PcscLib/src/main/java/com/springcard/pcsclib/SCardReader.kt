@@ -74,7 +74,7 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
      */
     fun cardConnect() {
         if(cardPowered && cardPresent) {
-            parent.mHandler.post{ parent.callbacks.onCardConnected(channel) }
+            parent.handler.post{ parent.callbacks.onCardConnected(channel) }
         }
         else {
             parent.process(ActionEvent.ActionWriting(parent.ccidHandler.scardConnect(index)))
