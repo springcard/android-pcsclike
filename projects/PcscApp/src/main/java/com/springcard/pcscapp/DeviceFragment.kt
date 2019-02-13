@@ -47,12 +47,12 @@ abstract class DeviceFragment : Fragment() {
         override fun onConnect(device: SCardReaderList) {
             mainActivity.logInfo("onConnect")
             device.create(
-                CcidSecureParameters(
+                /*CcidSecureParameters(
                     CcidSecureParameters.AuthenticationMode.Aes128,
                     CcidSecureParameters.AuthenticationKeyIndex.User,
                     mutableListOf<Byte>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                     CcidSecureParameters.CommunicationMode.MacAndCipher
-                )
+                )*/
             )
         }
 
