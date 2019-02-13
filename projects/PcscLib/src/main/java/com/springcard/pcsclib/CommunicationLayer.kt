@@ -34,7 +34,7 @@ internal sealed class ActionEvent {
     class EventCharacteristicWrite(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventCharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventOnUsbInterrupt(val data: ByteArray) : ActionEvent()
-    class EventOnUsbDtataIn(val data: ByteArray) : ActionEvent()
+    class EventOnUsbDataIn(val data: ByteArray) : ActionEvent()
     class ActionWriting(val command: ByteArray) : ActionEvent()
     class ActionAuthenticate : ActionEvent()
     class ActionDisconnect : ActionEvent()
@@ -48,6 +48,10 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
     private val TAG = this::class.java.simpleName
     protected var currentState = State.Disconnected
     protected lateinit var context: Context
+
+
+    protected var indexSlots: Int = 0
+    protected var listReadersToConnect = mutableListOf<SCardReader>()
 
     abstract fun process(event: ActionEvent)
 
@@ -92,11 +96,11 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             return
         }
 
-        /* Is slot count matching nb of readers in SCardDevice obj */
+        /* Is slot count matching nb of readers in scardReaderList obj */
         if(slotCount.toInt() != scardReaderList.readers.size) {
             postReaderListError(
                 SCardError.ErrorCodes.PROTOCOL_ERROR,
-                "Error, slotCount in frame ($slotCount) does not match slotCount in SCardDevice (${scardReaderList.readers.size})")
+                "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})")
             return
         }
 
@@ -289,6 +293,101 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
     }
 
 
+    protected fun analyseResponse(data: ByteArray) {
+        /* Put data in ccid frame */
+        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(data)
+        val slot = scardReaderList.readers[ccidResponse.slotNumber.toInt()]
 
+        /* Update slot status (present, powered) */
+        interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)
+
+        /* Check slot error */
+        if(!interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)) {
+            Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
+            currentState = State.Idle
+            return
+        }
+
+
+        currentState = State.Idle
+        Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
+
+        when {
+            ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
+                CcidCommand.CommandCode.PC_To_RDR_Escape -> scardReaderList.handler.post {
+                    callbacks.onControlResponse(
+                        scardReaderList,
+                        ccidResponse.payload
+                    )
+                }
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+            }
+            ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value -> when (scardReaderList.ccidHandler.commandSend) {
+                CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
+                    if (ccidResponse.slotNumber > scardReaderList.readers.size) {
+                        postReaderListError(
+                            SCardError.ErrorCodes.PROTOCOL_ERROR,
+                            "Error, slot number specified (${ccidResponse.slotNumber}) greater than maximum slot (${scardReaderList.readers.size - 1}), maybe the packet is incorrect"
+                        )
+                    } else {
+
+                        currentState = State.Idle
+                        scardReaderList.handler.post {
+                            callbacks.onTransmitResponse(
+                                slot.channel,
+                                ccidResponse.payload
+                            )
+                        }
+                    }
+                }
+                CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
+                    // save ATR
+                    slot.channel.atr = ccidResponse.payload
+                    // set cardPowered flag
+                    slot.cardPowered = true
+                    // change state
+                    currentState = State.Idle
+                    // call callback
+                    scardReaderList.handler.post { callbacks.onCardConnected(slot.channel) }
+                }
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+            }
+            ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
+                CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
+                    // do nothing
+                    Log.d(TAG, "Reader Status --> Cool! ...but useless")
+                }
+                CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
+                    slot.cardPowered = false
+                    scardReaderList.handler.post {callbacks.onCardDisconnected(slot.channel)}
+                }
+                CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
+                    // TODO CRA scardReaderList.handler.post {callbacks?.onReaderStatus()}
+                    //  scardReaderList.handler.post {callbacks?.onCardConnected(channel)}
+                }
+                CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
+                    var channel = slot.channel
+                    slot.cardPowered = true
+                    scardReaderList.handler.post {callbacks.onCardConnected(channel)}
+                    // TODO onReaderOrCardError
+                }
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+            }
+            else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unknown CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+        }
+    }
+
+    protected fun processNextSlotConnection() {
+        /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+        if(listReadersToConnect.size > 0) {
+            currentState = State.ConnectingToCard
+            listReadersToConnect[0].cardConnect()
+        }
+        /* Otherwise go to idle state */
+        else {
+            currentState = State.Idle
+            scardReaderList.handler.post { callbacks.onReaderListCreated(scardReaderList) }
+        }
+    }
 
 }
