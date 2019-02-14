@@ -71,7 +71,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             Response.Listener<String> { response ->
                 // Display the first 500 characters of the response string.
                 val jsonArray = JSONArray(response.toString())
-                val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssX").create()
+                val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create()
 
                 if (jsonArray.length() > 0) {
                     logInfo("Nb of apdu examples in model = ${jsonArray.length()}" )

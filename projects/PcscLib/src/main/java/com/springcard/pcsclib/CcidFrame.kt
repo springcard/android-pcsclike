@@ -148,6 +148,9 @@ class CcidResponse(rawFrame: ByteArray) : CcidFrame() {
 
     init {
         raw = rawFrame.toMutableList()
+        if(raw.size == 0) {
+            raw = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        }
     }
 
     val slotStatus: Byte

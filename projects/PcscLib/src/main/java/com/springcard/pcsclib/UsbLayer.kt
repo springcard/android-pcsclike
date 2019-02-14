@@ -272,10 +272,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
     /* Utilities func */
 
-
-
-
-
     private fun connect(): Boolean {
 
         /* query for interface */
@@ -366,6 +362,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
 
     private fun disconnect() {
+        usbDeviceConnection.releaseInterface(usbDevice.getInterface(0))
+        usbDeviceConnection.close()
         stop()
     }
 
