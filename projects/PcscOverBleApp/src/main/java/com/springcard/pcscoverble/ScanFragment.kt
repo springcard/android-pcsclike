@@ -171,7 +171,7 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
 
 
     private fun scanLeDevice(enable: Boolean) {
-        var mHandler = Handler()
+        val mHandler = Handler(context!!.mainLooper)
         when (enable) {
             true -> {
                 /* filter for SpringCard service */
