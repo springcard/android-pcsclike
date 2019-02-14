@@ -90,7 +90,7 @@ abstract class CcidFrame {
         raw[4] = lengthArray[3]
     }
 
-    var slotNumber: Byte
+        var slotNumber: Byte
         get() {
             return raw[5]
         }
