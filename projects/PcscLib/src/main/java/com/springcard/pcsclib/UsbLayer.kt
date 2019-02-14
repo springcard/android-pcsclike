@@ -16,6 +16,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import android.hardware.usb.UsbRequest
 import android.os.Handler
 import android.os.HandlerThread
+import java.util.logging.Logger
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -83,8 +84,9 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 State.Disconnected -> handleStateDisconnected(event)
                 //State.Connecting -> handleStateConnecting(event)
                 State.Connected -> handleStateConnected(event)
-                /*State.DiscoveringGatt -> handleStateDiscovering(event)
                 State.ReadingInformation -> handleStateReadingInformation(event)
+                /*State.DiscoveringGatt -> handleStateDiscovering(event)
+
                 State.SubscribingNotifications -> handleStateSubscribingNotifications(event)*/
                 State.ReadingSlotsName -> handleStateReadingSlotsName(event)
                 /*State.Authenticate -> handleStateAuthenticate(event)*/
@@ -97,6 +99,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             }
         }
     }
+
 
     private fun handleStateDisconnected(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
@@ -127,13 +130,66 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionCreate -> {
-                currentState = State.ReadingSlotsName
-                /* Trigger 1st APDU to get slot name */
-                bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                currentState = State.ReadingInformation
+                /* Trigger 1st APDU to get slot status */
+                indexSlots = 0
+                bulkOutTransfer(scardReaderList.ccidHandler.scardStatus(indexSlots))
             }
             else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
+
+
+    private fun handleStateReadingInformation(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.EventOnUsbDataIn -> {
+
+                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.data)
+
+                when {
+                    ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
+                        CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
+
+                            /* Update slot concerned */
+                            interpretSlotsStatusInCcidHeader(
+                                ccidResponse.slotStatus,
+                                scardReaderList.readers[ccidResponse.slotNumber.toInt()]
+                            )
+                        }
+                        else -> {
+                            postReaderListError(
+                                SCardError.ErrorCodes.DIALOG_ERROR,
+                                "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}"
+                            )
+                        }
+                    }
+                    else -> {
+                        postReaderListError(
+                            SCardError.ErrorCodes.DIALOG_ERROR,
+                            "Unexpected CCID command : ${scardReaderList.ccidHandler.commandSend}"
+                        )
+                    }
+                }
+
+                indexSlots++
+                if(indexSlots < scardReaderList.slotCount) {
+                    /* Read next slot status */
+                    bulkOutTransfer(scardReaderList.ccidHandler.scardStatus(indexSlots))
+                }
+                else {
+                    /* Go to next step */
+                    indexSlots = 0
+                    currentState = State.ReadingSlotsName
+                    /* Trigger 1st APDU to get slot name */
+                    bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                }
+
+            }
+            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+        }
+    }
+
 
     private fun handleStateReadingSlotsName(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
@@ -156,8 +212,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Check if there is some card already presents on the slots */
                     listReadersToConnect.clear()
                     for (slot in scardReaderList.readers) {
-                        if (slot.cardPresent && !slot.cardPowered) {
-                            Log.d(TAG, "Slot: ${slot.name}, card present but not powered --> must connect to this card")
+                        if (slot.cardPresent /*&& !slot.cardPowered*/) {
+                            Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
                             listReadersToConnect.add(slot)
                         }
                     }
@@ -169,6 +225,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
+
 
     private fun handleStateConnectingToCard(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")

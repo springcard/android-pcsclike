@@ -347,21 +347,24 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     }
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
-                    // save ATR
+                    /* save ATR */
                     slot.channel.atr = ccidResponse.payload
-                    // set cardPowered flag
+                    /* set cardPowered flag */
                     slot.cardPowered = true
-                    // change state
+                    /* Change state */
                     currentState = State.Idle
-                    // call callback
+                    /* Call callback */
                     scardReaderList.handler.post { callbacks.onCardConnected(slot.channel) }
                 }
                 else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
                 CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
-                    // do nothing
+                    /* Do nothing */
                     Log.d(TAG, "Reader Status --> Cool! ...but useless")
+
+                    /* Update slot concerned */
+                    interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, scardReaderList.readers[ccidResponse.slotNumber.toInt()])
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
                     slot.cardPowered = false
@@ -372,7 +375,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     //  scardReaderList.handler.post {callbacks?.onCardConnected(channel)}
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
-                    var channel = slot.channel
+                    val channel = slot.channel
                     slot.cardPowered = true
                     scardReaderList.handler.post {callbacks.onCardConnected(channel)}
                     // TODO onReaderOrCardError
@@ -387,7 +390,10 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
         if(listReadersToConnect.size > 0) {
             currentState = State.ConnectingToCard
-            listReadersToConnect[0].cardConnect()
+            /* Call explicitly ccidHandler.scardConnect() instead of reader.scardConnect() */
+            /* Because if the card is present and powered (in USB) the command will not be send */
+            /* In USB the card is auto powered if present and it's not the case in BLE*/
+            process(ActionEvent.ActionWriting(scardReaderList.ccidHandler.scardConnect(listReadersToConnect[0].index)))
         }
         /* Otherwise go to idle state */
         else {
