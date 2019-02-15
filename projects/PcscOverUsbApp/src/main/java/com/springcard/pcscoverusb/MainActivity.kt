@@ -51,6 +51,4 @@ class MainActivity : MainActivity() {
 
         super.setAboutInfo(appInfo, libInfo)
     }
-
-
 }

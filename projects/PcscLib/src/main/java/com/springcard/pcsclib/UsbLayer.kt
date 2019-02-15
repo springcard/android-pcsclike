@@ -219,6 +219,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Check if there is some card already presents on the slots */
                     listReadersToConnect.clear()
                     for (slot in scardReaderList.readers) {
+                        /* We don't have to check cardPowered because in BLE it will  */
+                        /* not be powered whereas in USB it will be the case */
                         if (slot.cardPresent /*&& !slot.cardPowered*/) {
                             Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
                             listReadersToConnect.add(slot)

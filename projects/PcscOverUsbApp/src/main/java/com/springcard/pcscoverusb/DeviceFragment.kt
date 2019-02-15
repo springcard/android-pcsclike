@@ -22,7 +22,7 @@ class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
     override fun connectToDevice() {
 
         if(device is UsbDevice) {
-            deviceName = (device as UsbDevice).productName!!
+            deviceName = "${(device as UsbDevice).manufacturerName} ${(device as UsbDevice).productName} [${(device as UsbDevice).serialNumber}]"
             scardDevice = SCardReaderListUsb(device as UsbDevice, scardCallbacks)
             scardDevice.connect(mainActivity)
         }
@@ -57,7 +57,6 @@ class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
         val builder = AlertDialog.Builder(activity!!)
 
         builder.setTitle(deviceName)
-
 
         val deviceInfo = "Vendor: ${scardDevice.vendorName}\n" +
                 "Product: ${scardDevice.productName}\n" +
