@@ -35,20 +35,19 @@ class MainActivity : MainActivity() {
             com.springcard.pcscoverusb.BuildConfig.appDebug)
 
         val libInfo = LibraryInfo(
-            /*com.springcard.pcscusblib.BuildConfig.DEBUG,
-            com.springcard.pcscusblib.BuildConfig.APPLICATION_ID,
-            com.springcard.pcscusblib.BuildConfig.BUILD_TYPE,
-            com.springcard.pcscusblib.BuildConfig.FLAVOR,
-            com.springcard.pcscusblib.BuildConfig.VERSION_CODE,
-            com.springcard.pcscusblib.BuildConfig.VERSION_NAME,
-            com.springcard.pcscusblib.BuildConfig.libraryDebug,
-            com.springcard.pcscusblib.BuildConfig.libraryName,
-            com.springcard.pcscusblib.BuildConfig.librarySpecial,
-            com.springcard.pcscusblib.BuildConfig.libraryVersion,
-            com.springcard.pcscusblib.BuildConfig.libraryVersionBuild,
-            com.springcard.pcscusblib.BuildConfig.libraryVersionMajor,
-            com.springcard.pcscusblib.BuildConfig.libraryVersionMinor*/
-        true,"","","",55,"",true,"","","",0,0,0)
+            com.springcard.pcsclib.BuildConfig.DEBUG,
+            com.springcard.pcsclib.BuildConfig.APPLICATION_ID,
+            com.springcard.pcsclib.BuildConfig.BUILD_TYPE,
+            com.springcard.pcsclib.BuildConfig.FLAVOR,
+            com.springcard.pcsclib.BuildConfig.VERSION_CODE,
+            com.springcard.pcsclib.BuildConfig.VERSION_NAME,
+            com.springcard.pcsclib.BuildConfig.libraryDebug,
+            com.springcard.pcsclib.BuildConfig.libraryName,
+            com.springcard.pcsclib.BuildConfig.librarySpecial,
+            com.springcard.pcsclib.BuildConfig.libraryVersion,
+            com.springcard.pcsclib.BuildConfig.libraryVersionBuild,
+            com.springcard.pcsclib.BuildConfig.libraryVersionMajor,
+            com.springcard.pcsclib.BuildConfig.libraryVersionMinor)
 
         super.setAboutInfo(appInfo, libInfo)
     }

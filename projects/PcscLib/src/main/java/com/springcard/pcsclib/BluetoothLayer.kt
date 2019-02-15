@@ -305,13 +305,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     }
                     GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.softwareVersion = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.hardwareVersion = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> {
-                        val firmwareVerFull = event.characteristic.value.toString(charset("ASCII"))
-                        scardReaderList.firmwareVersion = firmwareVerFull
-                        scardReaderList.firmwareVersionMajor = firmwareVerFull.split("-")[0].split(".")[0].toInt()
-                        scardReaderList.firmwareVersionMinor = firmwareVerFull.split("-")[0].split(".")[1].toInt()
-                        scardReaderList.firmwareVersionBuild = firmwareVerFull.split("-")[1].toInt()
-                    }
+                    GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> getVersionFromRevString(event.characteristic.value.toString(charset("ASCII")))
                     GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.vendorName = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.pnpId = event.characteristic.value.toHexString()
                     GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {

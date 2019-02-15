@@ -402,4 +402,11 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
     }
 
+    protected fun getVersionFromRevString(revString: String) {
+        scardReaderList.firmwareVersion = revString
+        scardReaderList.firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
+        scardReaderList.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
+        scardReaderList.firmwareVersionBuild = revString.split("-")[1].toInt()
+    }
+
 }
