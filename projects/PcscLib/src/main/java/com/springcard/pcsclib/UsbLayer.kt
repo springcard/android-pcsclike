@@ -25,18 +25,11 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
     /* useful constants */
     private val BULK_TIMEOUT_MS: Int = 100
-    private val spVendorId = 7220
 
     /* communication constants */
     private val RDR_to_PC_NotifySlotChange = 0x50.toByte()
     private val RDR_To_PC_DataBlock = 0x80.toByte()
     private val RDR_To_PC_SlotStatus = 0x81.toByte()
-
-    /* current action type */
-    private val WAIT_NONE: Byte = 0
-    private val WAIT_ATR: Byte = 1
-    private val WAIT_APDU: Byte = 2
-
 
     /* USB Device Endpoints */
     private lateinit var bulkOut: UsbEndpoint
@@ -50,18 +43,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         context.getSystemService(Context.USB_SERVICE) as UsbManager
     }
 
-    /* tasking */
-    private lateinit var localThread: Thread
-    private var operationThread: Thread? = null
-
-    /* reader part */
-    private val awaitingOperation = ArrayBlockingQueue<Int>(5)
-    private val apduResult = ArrayBlockingQueue<CcidResponse>(5)
-
-    /* current operation */
-    private var currentOperation = WAIT_NONE
-    private val currentSlot = 0
-    val RAPDU_ERROR = byteArrayOf(0xFF.toByte(), 0xFF.toByte())
 
     private val mWaiterThread = WaiterThread()
     private val handlerThread by lazy {
@@ -71,7 +52,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         handlerThread.start()
         Handler(handlerThread.looper)
     }
-
 
     override fun process(event: ActionEvent) {
 
@@ -126,22 +106,35 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         }
     }
 
+
+
+
+    private var indexInfoCmd = 0
     private fun handleStateConnected(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionCreate -> {
                 currentState = State.ReadingInformation
-                /* Trigger 1st APDU to get slot status */
-                indexSlots = 0
-                bulkOutTransfer(scardReaderList.ccidHandler.scardStatus(indexSlots))
+
+                /* Get info directly from USB */
+                scardReaderList.vendorName = usbDevice.manufacturerName!!
+                scardReaderList.productName = usbDevice.productName!!
+                scardReaderList.serialNumber = usbDevice.serialNumber!!
+                scardReaderList.serialNumberRaw = usbDevice.serialNumber!!.hexStringToByteArray()
+
+                /* Trigger 1st APDU to get 1st info */
+                indexInfoCmd = 1 // 1st command
+                indexSlots = 0   // reset indexSlot cpt
+                bulkOutTransfer(getNextInfoCommand(indexInfoCmd))
             }
             else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
 
-
     private fun handleStateReadingInformation(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+
+
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
 
@@ -164,18 +157,33 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                             )
                         }
                     }
+                    ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
+                        CcidCommand.CommandCode.PC_To_RDR_Escape -> {
+                            if(indexInfoCmd == 2) {
+                                getVersionFromRevString(ccidResponse.payload.drop(1).toByteArray().toString(charset("ASCII")))
+                            }
+                            Log.d(TAG, " ${ccidResponse.payload.toHexString()}")
+                        }
+                        else -> {
+                            postReaderListError(
+                                SCardError.ErrorCodes.DIALOG_ERROR,
+                                "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}"
+                            )
+                        }
+                    }
                     else -> {
                         postReaderListError(
                             SCardError.ErrorCodes.DIALOG_ERROR,
-                            "Unexpected CCID command : ${scardReaderList.ccidHandler.commandSend}"
+                            "Unexpected CCID response (${ccidResponse.code})"
                         )
                     }
                 }
 
-                indexSlots++
-                if(indexSlots < scardReaderList.slotCount) {
-                    /* Read next slot status */
-                    bulkOutTransfer(scardReaderList.ccidHandler.scardStatus(indexSlots))
+                indexInfoCmd++
+                val command = getNextInfoCommand(indexInfoCmd)
+
+                if(command.isNotEmpty()) {
+                    bulkOutTransfer(command)
                 }
                 else {
                     /* Go to next step */
@@ -184,7 +192,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Trigger 1st APDU to get slot name */
                     bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                 }
-
             }
             else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
@@ -262,7 +269,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     listReadersToConnect.remove(slot)
 
                     processNextSlotConnection()
-
                     /* Do not go further */
                     return
                 }
@@ -271,17 +277,14 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
                 if (ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value) {
 
-                    // save ATR
+                    /* save ATR */
                     slot.channel.atr = ccidResponse.payload
-                    // set cardPowered flag
+                    /* set cardPowered flag */
                     slot.cardPowered = true
-
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
-
                     /* Change state if we are at the end of the list */
                     processNextSlotConnection()
-
                 }
 
             }
@@ -405,7 +408,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             return false
         }
 
-
         return  scardReaderList.slotCount != 0
     }
 
@@ -422,6 +424,28 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         usbDeviceConnection.releaseInterface(usbDevice.getInterface(0))
         usbDeviceConnection.close()
         stop()
+    }
+
+    private fun getNextInfoCommand(index: Int): ByteArray {
+        val res: ByteArray
+        when(index) {
+            1 -> {
+                /* Add get slot status for each slot */
+                res =  scardReaderList.ccidHandler.scardStatus(indexSlots)
+                indexSlots++
+                return res
+            }
+            2 -> {
+                /* Firmware revision string */
+                res =  scardReaderList.ccidHandler.scardControl("582006".hexStringToByteArray())
+
+            }
+            else -> {
+                Log.d(TAG, "End of the list -> create empty ByteArray")
+                res = ByteArray(0)
+            }
+        }
+        return res
     }
 
 
