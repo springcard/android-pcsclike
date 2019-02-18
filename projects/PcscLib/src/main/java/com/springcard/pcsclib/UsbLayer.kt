@@ -9,14 +9,13 @@ package com.springcard.pcsclib
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.usb.*
 import android.util.Log
 import java.nio.ByteBuffer
-import java.util.concurrent.ArrayBlockingQueue
 import android.hardware.usb.UsbRequest
 import android.os.Handler
 import android.os.HandlerThread
-import java.util.logging.Logger
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -301,6 +300,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnecting
                 disconnect()
+                context.unregisterReceiver(mUsbReceiver)
             }
             is ActionEvent.ActionWriting -> {
                 currentState = State.WaitingResponse
@@ -378,6 +378,9 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     this.interruptIn = epCheck
                 }
             }
+
+            context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
+
         }
 
         /* are those endpoints valid ? */
@@ -426,6 +429,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         usbDeviceConnection.releaseInterface(usbDevice.getInterface(0))
         usbDeviceConnection.close()
         stop()
+        scardReaderList.handler.post{ scardReaderList.callbacks.onReaderListClosed(scardReaderList) }
     }
 
     private fun getNextInfoCommand(index: Int): ByteArray {
@@ -472,7 +476,11 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             if (UsbManager.ACTION_USB_DEVICE_DETACHED == intent.action) {
                 val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
                 device?.apply {
-                    // call your method that cleans up and closes communication with the device
+
+                    if(device == usbDevice) {
+                        /* Method that cleans up and closes communication with the device */
+                        process(ActionEvent.ActionDisconnect())
+                    }
                 }
             }
         }

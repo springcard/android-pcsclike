@@ -44,9 +44,9 @@ abstract class DeviceFragment : Fragment() {
 
     // Various callback methods defined by the BLE API.
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
-        override fun onConnect(device: SCardReaderList) {
+        override fun onConnect(readerList: SCardReaderList) {
             mainActivity.logInfo("onConnect")
-            device.create(
+            readerList.create(
                 /*CcidSecureParameters(
                     CcidSecureParameters.AuthenticationMode.Aes128,
                     CcidSecureParameters.AuthenticationKeyIndex.User,
@@ -56,7 +56,7 @@ abstract class DeviceFragment : Fragment() {
             )
         }
 
-        override fun onReaderListCreated(device: SCardReaderList) {
+        override fun onReaderListCreated(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListCreated")
 
             val spinnerList =  mutableListOf<String>()
@@ -106,17 +106,18 @@ abstract class DeviceFragment : Fragment() {
             progressDialog.dismiss()
         }
 
-        override fun onReaderListClosed(device: SCardReaderList) {
+        override fun onReaderListClosed(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListClosed")
+            mainActivity.backToScanFragment()
         }
 
-        override fun onControlResponse(device: SCardReaderList, response: ByteArray) {
+        override fun onControlResponse(readerList: SCardReaderList, response: ByteArray) {
             mainActivity.logInfo("onControlResponse")
 
             handleRapdu(response)
         }
 
-        override fun onPowerInfo(device: SCardReaderList, powerState: Int, batteryLevel: Int) {
+        override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
             mainActivity.logInfo("onPowerInfo")
 
             /* Info dialog */
@@ -183,7 +184,7 @@ abstract class DeviceFragment : Fragment() {
 
         /* Errors callbacks */
 
-        override fun onReaderListError(device: SCardReaderList, error: SCardError) {
+        override fun onReaderListError(readerList: SCardReaderList, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
 
             val text = "Error: ${error.message} \n${error.detail}"
@@ -257,7 +258,6 @@ abstract class DeviceFragment : Fragment() {
             goToPreviousCommand()
         }
     }
-
 
 
     override fun onResume() {
@@ -417,7 +417,7 @@ abstract class DeviceFragment : Fragment() {
                 else {
                     if(mainActivity.enableTimeMeasurement) {
                         apduListStopTime = SystemClock.elapsedRealtime()
-                        var elapsedTime = apduListStopTime - apduListStartTime
+                        val elapsedTime = apduListStopTime - apduListStartTime
                         Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                     }
                 }
