@@ -32,12 +32,7 @@ android {
             outputFileName = "SpringCardPcscOverUsbAndroid_${getRevision()}_${formattedDate}_${buildType}.apk"
         }
     }
-    sourceSets {
-        main {
-            res.srcDirs += '../PcscApp/src/main/res/layout'
-            //java.srcDirs += '../PcscApp/src/main/java'
-        }
-    }
+    //https://youtrack.jetbrains.com/issue/KT-22430 could not import res from module
 }
 
 
