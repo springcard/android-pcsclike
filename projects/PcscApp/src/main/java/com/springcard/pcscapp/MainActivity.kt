@@ -6,6 +6,7 @@
 
 package com.springcard.pcscapp
 
+import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.SystemClock
@@ -38,12 +39,70 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     private lateinit var drawerToggle: ActionBarDrawerToggle
 
 
-    var enableLog = true
-    var stopOnError = false
-    var enableTimeMeasurement = false
+    private val options = "optionsPcscApp"
+    private val enableLogName = "enableLog"
+    private val stopOnErrorName = "stopOnError"
+    private val enableTimeMeasurementName = "enableTimeMeasurement"
+    private val useAuthentificationName = "useAuthentication"
+    private val authenticatorKeyName = "authenticationKey"
+    var enableLog: Boolean
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getBoolean(enableLogName, true)
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putBoolean(enableLogName, value)
+            editor.apply()
+        }
 
-    // Store the start time
-    var startTime = SystemClock.elapsedRealtime()
+    var stopOnError: Boolean
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getBoolean(stopOnErrorName, false)
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putBoolean(stopOnErrorName, value)
+            editor.apply()
+        }
+
+    var enableTimeMeasurement: Boolean
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getBoolean(enableTimeMeasurementName, false)
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putBoolean(enableTimeMeasurementName, value)
+            editor.apply()
+        }
+
+
+    var useAuthentification: Boolean
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getBoolean(useAuthentificationName, false)
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putBoolean(useAuthentificationName, value)
+            editor.apply()
+        }
+
+    var authenticationKey: String
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getString(authenticatorKeyName, "00000000000000000000000000000000")!!
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putString(authenticatorKeyName, value)
+            editor.apply()
+        }
+
+    /* Store the start time */
+    private var startTime = SystemClock.elapsedRealtime()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,17 +118,18 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         nav_view.setCheckedItem(R.id.nav_scan)
 
 
-        /* Get Apdu model List */
-        // Instantiate the RequestQueue.
+        /* Get APDU model List */
+
+        /* Instantiate the RequestQueue */
         val queue = Volley.newRequestQueue(this)
         val url = "http://models.springcard.com/api/models"
         var modelsApdus: MutableList<ApduModel>
 
-        // Request a string response from the provided URL.
+        /* Request a string response from the provided URL */
         val stringRequest = StringRequest(
             Request.Method.GET, url,
             Response.Listener<String> { response ->
-                // Display the first 500 characters of the response string.
+                /* Display the first 500 characters of the response string */
                 val jsonArray = JSONArray(response.toString())
                 val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create()
 
@@ -90,8 +150,8 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         // Add the request to the RequestQueue.
         queue.add(stringRequest)
 
-        logInfo("Lib rev = ${BuildConfig.VERSION_NAME}")
-       // logInfo("App rev = ${com.springcard.pcscoverble.BuildConfig.VERSION_NAME}")
+        logInfo("Lib rev = ${com.springcard.pcsclib.BuildConfig.VERSION_NAME}")
+        logInfo("App rev = ${com.springcard.pcscapp.BuildConfig.VERSION_NAME}")
     }
 
     fun setDrawerState(isEnabled: Boolean) {
@@ -182,7 +242,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             val timeInterval = SystemClock.elapsedRealtime() - startTime
             logFragment.appendToLog("${"%.3f".format(timeInterval.toFloat() / 1000F).padStart(8, '0')} - $message")
         }
-        // Always log in the console
+        /* Always log in the console */
         Log.d(TAG, message)
     }
 

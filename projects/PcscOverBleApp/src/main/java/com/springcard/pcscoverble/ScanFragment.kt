@@ -95,7 +95,7 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val PERMISSION_REQUEST_COARSE_LOCATION = 5
-            // Android M Permission check
+            /* Android M Permission check */
             if (mainActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 val builder = AlertDialog.Builder(mainActivity)
                 builder.setTitle("This app needs location access")
@@ -121,17 +121,16 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
             bluetoothManager.adapter
         }
         val REQUEST_ENABLE_BT = 6
-        // Ensures Bluetooth is available on the device and it is enabled. If not,
-        // displays a dialog requesting user permission to enable Bluetooth.
+        /* Ensures Bluetooth is available on the device and it is enabled. If not, */
+        /* displays a dialog requesting user permission to enable Bluetooth. */
         mBluetoothAdapter?.takeIf { it.isDisabled }?.apply {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            //Toast.makeText(applicationContext, R.string.ble_disabled, Toast.LENGTH_SHORT).show()
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
         }
 
         mBluetoothScanner = mBluetoothAdapter?.bluetoothLeScanner
 
-        // Inflate the layout for this fragment
+        /* Inflate the layout for this fragment */
         return inflater.inflate(R.layout.fragment_scan, container, false)
     }
 
@@ -174,9 +173,9 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
         val mHandler = Handler(context!!.mainLooper)
         when (enable) {
             true -> {
-                /* filter for SpringCard service */
+                /* Filter for SpringCard service */
                 val scanFilters = ArrayList<ScanFilter>()
-                //default setting.
+                /* Default setting */
                 val settings = ScanSettings.Builder().build()
                 try {
                     val scanFilterD600 = ScanFilter.Builder()
@@ -197,7 +196,6 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
                 mHandler.postDelayed({
                     mScanning = false
                     mBluetoothScanner?.stopScan(mLeScanCallback)
-                    //activity?.buttonScan?.text = getString(R.string.startScan)
                     progressBarScanning?.visibility = ProgressBar.GONE
                     mainActivity.logInfo("Scan stopped after ${SCAN_PERIOD/1000}s")
                 }, SCAN_PERIOD)
@@ -205,7 +203,6 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
                 if(!mScanning) {
                     mScanning = true
                     mBluetoothScanner?.startScan(scanFilters, settings, mLeScanCallback)
-                    //activity?.buttonScan?.text = getString(R.string.stopScan)
                     progressBarScanning?.visibility = ProgressBar.VISIBLE
                     deviceList.clear()
                     bleDeviceList.clear()
@@ -216,7 +213,6 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
             else -> {
                 mScanning = false
                 mBluetoothScanner?.stopScan(mLeScanCallback)
-                //activity?.buttonScan?.text = getString(R.string.startScan)
                 progressBarScanning?.visibility = ProgressBar.GONE
                 mainActivity.logInfo("Scan stopped")
             }
@@ -234,7 +230,7 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
         bleDeviceList.clear()
         adapter?.notifyDataSetChanged()
 
-        // Begin scan directly when arriving to this fragment
+        /* Begin scan directly when arriving to this fragment */
         scanLeDevice(true)
     }
 
@@ -244,7 +240,7 @@ class ScanFragment : com.springcard.pcscapp.ScanFragment() {
             result: ScanResult
         ) {
             val newItem: DeviceListElement = if (result.scanRecord!!.deviceName != null) {
-                DeviceListElement(result.scanRecord!!.deviceName, result.rssi.toString())
+                DeviceListElement(result.scanRecord!!.deviceName!!, result.rssi.toString())
             } else {
                 DeviceListElement(result.device.address, result.rssi.toString())
             }
