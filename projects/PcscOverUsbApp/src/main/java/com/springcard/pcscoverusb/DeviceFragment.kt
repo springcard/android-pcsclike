@@ -6,15 +6,11 @@
 
 package com.springcard.pcscoverusb
 
-import android.content.Context
 import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbManager
 import android.support.v7.app.AlertDialog
-import android.util.Log
 import android.view.MenuItem
 import com.springcard.pcscapp.R
-import com.springcard.pcsclib.*
+import com.springcard.pcsclike.*
 
 
 class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {

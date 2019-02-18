@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclib
+package com.springcard.pcsclike
 
 /**
  * Represents a channel

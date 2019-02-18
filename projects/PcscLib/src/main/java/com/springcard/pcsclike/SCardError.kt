@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclib
+package com.springcard.pcsclike
 
 /**
  * Class used by the errors callbacks when an error occurred

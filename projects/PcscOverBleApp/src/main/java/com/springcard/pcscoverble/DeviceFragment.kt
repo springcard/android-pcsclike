@@ -8,7 +8,7 @@ package com.springcard.pcscoverble
 
 
 import android.bluetooth.BluetoothDevice
-import com.springcard.pcsclib.*
+import com.springcard.pcsclike.*
 
 
 class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {

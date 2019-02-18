@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclib
+package com.springcard.pcsclike
 
 import android.util.Log
 import javax.crypto.Cipher
@@ -18,9 +18,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
     private val TAG = this::class.java.simpleName
 
-    var debugSecureConnection: Boolean = true
-
-    private var secureCommMode = CcidSecureParameters.CommunicationMode.Plain
+    var debugSecureConnection: Boolean = false
 
     private val  protocolCode: Byte = 0x00
 
