@@ -7,6 +7,7 @@
 package com.springcard.pcscapp
 
 import android.os.Bundle
+import android.support.design.widget.TextInputLayout
 import android.support.v4.app.Fragment
 import android.text.Editable
 import android.text.TextWatcher
@@ -84,6 +85,9 @@ class OptionsFragment : Fragment(), TextWatcher {
 
             editTextAuthenticationKey.isEnabled = false
             editTextAuthenticationKey.visibility = Switch.INVISIBLE
+
+            keyWrapper.isEnabled = false
+            keyWrapper.visibility = TextInputLayout.INVISIBLE
         }
     }
 

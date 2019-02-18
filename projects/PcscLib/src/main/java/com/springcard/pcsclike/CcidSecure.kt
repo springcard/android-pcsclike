@@ -18,7 +18,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
     private val TAG = this::class.java.simpleName
 
-    var debugSecureConnection: Boolean = false
+    private var debugSecureConnection: Boolean = false
 
     private val  protocolCode: Byte = 0x00
 
