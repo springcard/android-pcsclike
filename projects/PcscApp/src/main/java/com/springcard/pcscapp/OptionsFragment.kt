@@ -26,7 +26,7 @@ class OptionsFragment : Fragment() {
         mainActivity = activity as MainActivity
         mainActivity.setActionBarTitle("Options")
 
-        // Inflate the layout for this fragment
+        /* Inflate the layout for this fragment */
         return inflater.inflate(R.layout.fragment_options, container, false)
     }
 
@@ -53,5 +53,6 @@ class OptionsFragment : Fragment() {
             mainActivity.enableTimeMeasurement = isChecked
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
+        
     }
 }
