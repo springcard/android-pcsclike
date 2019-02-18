@@ -6,6 +6,7 @@
 
 package com.springcard.pcscapp
 
+import android.annotation.SuppressLint
 import android.app.ProgressDialog
 import android.os.Bundle
 import android.os.SystemClock
@@ -14,7 +15,7 @@ import android.support.v4.view.GravityCompat
 import android.support.v7.app.AlertDialog
 import android.view.*
 import android.widget.*
-import com.springcard.pcsclib.*
+import com.springcard.pcsclike.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*
@@ -44,16 +45,43 @@ abstract class DeviceFragment : Fragment() {
 
     // Various callback methods defined by the BLE API.
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
+        @SuppressLint("ShowToast")
         override fun onConnect(readerList: SCardReaderList) {
             mainActivity.logInfo("onConnect")
-            readerList.create(
-                /*CcidSecureParameters(
-                    CcidSecureParameters.AuthenticationMode.Aes128,
-                    CcidSecureParameters.AuthenticationKeyIndex.User,
-                    mutableListOf<Byte>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                    CcidSecureParameters.CommunicationMode.MacAndCipher
-                )*/
-            )
+
+            if(mainActivity.supportCrypto && mainActivity.useAuthentication) {
+                mainActivity.logInfo("Create readerList with authentication")
+
+                val key: MutableList<Byte>
+                if(mainActivity.authenticationKey.isHex()) {
+                    key = mainActivity.authenticationKey.hexStringToByteArray().toMutableList()
+                }
+                else {
+                    progressDialog.dismiss()
+                    mainActivity.backToScanFragment()
+                    return
+                }
+
+                if(key.size != 16) {
+                    Toast.makeText(mainActivity.applicationContext, "Wrong key size, must be 16 bytes long", Toast.LENGTH_LONG)
+                    progressDialog.dismiss()
+                    mainActivity.backToScanFragment()
+                    return
+                }
+
+                readerList.create(
+                    CcidSecureParameters(
+                        CcidSecureParameters.AuthenticationMode.Aes128,
+                        CcidSecureParameters.AuthenticationKeyIndex.User,
+                        key,
+                        CcidSecureParameters.CommunicationMode.MacAndCipher
+                    )
+                )
+            }
+            else {
+                readerList.create()
+            }
+
         }
 
         override fun onReaderListCreated(readerList: SCardReaderList) {

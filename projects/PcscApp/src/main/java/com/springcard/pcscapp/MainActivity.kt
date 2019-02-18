@@ -6,7 +6,6 @@
 
 package com.springcard.pcscapp
 
-import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.SystemClock
@@ -23,7 +22,6 @@ import com.android.volley.toolbox.Volley
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import com.springcard.pcsclib.BuildConfig
 import org.json.JSONArray
 
 
@@ -78,8 +76,9 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             editor.apply()
         }
 
+    abstract var supportCrypto: Boolean
 
-    var useAuthentification: Boolean
+    var useAuthentication: Boolean
         get() {
             val sp = getSharedPreferences(options, 0)
             return sp.getBoolean(useAuthentificationName, false)
@@ -150,7 +149,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         // Add the request to the RequestQueue.
         queue.add(stringRequest)
 
-        logInfo("Lib rev = ${com.springcard.pcsclib.BuildConfig.VERSION_NAME}")
+        logInfo("Lib rev = ${com.springcard.pcsclike.BuildConfig.VERSION_NAME}")
         logInfo("App rev = ${com.springcard.pcscapp.BuildConfig.VERSION_NAME}")
     }
 

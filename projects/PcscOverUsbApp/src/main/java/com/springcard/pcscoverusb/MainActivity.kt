@@ -16,6 +16,7 @@ class MainActivity : MainActivity() {
 
     override val deviceFragment = DeviceFragment()
     override val scanFragment= ScanFragment()
+    override var supportCrypto = false // USB does not support authentication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,19 +36,19 @@ class MainActivity : MainActivity() {
             com.springcard.pcscoverusb.BuildConfig.appDebug)
 
         val libInfo = LibraryInfo(
-            com.springcard.pcsclib.BuildConfig.DEBUG,
-            com.springcard.pcsclib.BuildConfig.APPLICATION_ID,
-            com.springcard.pcsclib.BuildConfig.BUILD_TYPE,
-            com.springcard.pcsclib.BuildConfig.FLAVOR,
-            com.springcard.pcsclib.BuildConfig.VERSION_CODE,
-            com.springcard.pcsclib.BuildConfig.VERSION_NAME,
-            com.springcard.pcsclib.BuildConfig.libraryDebug,
-            com.springcard.pcsclib.BuildConfig.libraryName,
-            com.springcard.pcsclib.BuildConfig.librarySpecial,
-            com.springcard.pcsclib.BuildConfig.libraryVersion,
-            com.springcard.pcsclib.BuildConfig.libraryVersionBuild,
-            com.springcard.pcsclib.BuildConfig.libraryVersionMajor,
-            com.springcard.pcsclib.BuildConfig.libraryVersionMinor)
+            com.springcard.pcsclike.BuildConfig.DEBUG,
+            com.springcard.pcsclike.BuildConfig.APPLICATION_ID,
+            com.springcard.pcsclike.BuildConfig.BUILD_TYPE,
+            com.springcard.pcsclike.BuildConfig.FLAVOR,
+            com.springcard.pcsclike.BuildConfig.VERSION_CODE,
+            com.springcard.pcsclike.BuildConfig.VERSION_NAME,
+            com.springcard.pcsclike.BuildConfig.libraryDebug,
+            com.springcard.pcsclike.BuildConfig.libraryName,
+            com.springcard.pcsclike.BuildConfig.librarySpecial,
+            com.springcard.pcsclike.BuildConfig.libraryVersion,
+            com.springcard.pcsclike.BuildConfig.libraryVersionBuild,
+            com.springcard.pcsclike.BuildConfig.libraryVersionMajor,
+            com.springcard.pcsclike.BuildConfig.libraryVersionMinor)
 
         super.setAboutInfo(appInfo, libInfo)
     }

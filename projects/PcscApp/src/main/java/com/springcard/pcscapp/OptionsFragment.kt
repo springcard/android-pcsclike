@@ -8,11 +8,16 @@ package com.springcard.pcscapp
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.*
+import android.widget.Switch
+import android.widget.TextView
+import com.springcard.pcsclike.toHexString
 import kotlinx.android.synthetic.main.fragment_options.*
 
 
-class OptionsFragment : Fragment() {
+class OptionsFragment : Fragment(), TextWatcher {
 
     private lateinit var  mainActivity: MainActivity
 
@@ -53,6 +58,45 @@ class OptionsFragment : Fragment() {
             mainActivity.enableTimeMeasurement = isChecked
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
-        
+
+        if(mainActivity.supportCrypto) {
+
+            /* Initial state */
+            editTextAuthenticationKey.isEnabled = mainActivity.useAuthentication
+            editTextAuthenticationKey.setText(mainActivity.authenticationKey, TextView.BufferType.EDITABLE)
+            if(editTextAuthenticationKey.text.length != 32) {
+                editTextAuthenticationKey.error = "The key must be 16 bytes long"
+            }
+            editTextAuthenticationKey.addTextChangedListener(this)
+
+            switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
+                mainActivity.useAuthentication = isChecked
+                mainActivity.logInfo("Enable authentication = $isChecked")
+
+                /* Enable or not key text box */
+                editTextAuthenticationKey.isEnabled = isChecked
+            }
+
+        }
+        else {
+            switchUseAuthentication.isEnabled = false
+            switchUseAuthentication.visibility = Switch.INVISIBLE
+
+            editTextAuthenticationKey.isEnabled = false
+            editTextAuthenticationKey.visibility = Switch.INVISIBLE
+        }
+    }
+
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+    }
+
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    }
+
+    override fun afterTextChanged(s: Editable?) {
+        if(editTextAuthenticationKey.text.length != 32) {
+            editTextAuthenticationKey.error = "The key must be 16 bytes long"
+        }
+        mainActivity.authenticationKey = editTextAuthenticationKey.text.toString()
     }
 }
