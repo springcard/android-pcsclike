@@ -70,6 +70,8 @@ class OptionsFragment : Fragment(), TextWatcher {
             }
             editTextAuthenticationKey.addTextChangedListener(this)
 
+            switchUseAuthentication.isChecked = mainActivity.useAuthentication
+
             switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
                 mainActivity.useAuthentication = isChecked
                 mainActivity.logInfo("Enable authentication = $isChecked")
