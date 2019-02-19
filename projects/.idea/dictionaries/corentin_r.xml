@@ -8,8 +8,11 @@
       <w>ccid</w>
       <w>cmac</w>
       <w>gson</w>
+      <w>pcscoverble</w>
+      <w>pcscoverusb</w>
       <w>recv</w>
       <w>scard</w>
+      <w>springcard</w>
     </words>
   </dictionary>
 </component>

@@ -255,7 +255,7 @@ abstract class DeviceFragment : Fragment() {
         // handle item selection
         when (item.itemId) {
             R.id.action_info -> {
-                scardDevice.getPowerInfo()
+                (scardDevice as SCardReaderListBle).getPowerInfo()
                 return true
             }
             else -> return super.onOptionsItemSelected(item)

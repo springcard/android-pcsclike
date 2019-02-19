@@ -179,13 +179,4 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
         ccidHandler = CcidHandler(secureConnexionParameters)
         process(ActionEvent.ActionCreate())
     }
-
-
-    /**
-     * Get battery level and power state from the device.
-     * callback: [SCardReaderListCallback.onPowerInfo]
-     */
-    fun getPowerInfo() {
-        process(ActionEvent.ActionReadPowerInfo())
-    }
 }
