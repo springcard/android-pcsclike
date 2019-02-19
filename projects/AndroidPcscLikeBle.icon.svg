@@ -37,7 +37,7 @@
    id="namedview42"
    showgrid="false"
    inkscape:zoom="0.184375"
-   inkscape:cx="-349.83051"
+   inkscape:cx="-1339.661"
    inkscape:cy="640"
    inkscape:window-x="-8"
    inkscape:window-y="-8"
@@ -57,43 +57,7 @@
    d="M651.051,340.714c194.851,0,315.862-30.287,315.862-78.966   c0-2.998-0.752-5.765-1.976-8.289c-18.007-61.164-229.398-69.454-296.315-70.524c-5.841-0.038-11.565-0.153-17.571-0.153   c-6.007,0-11.731,0.116-17.613,0.153c-66.925,1.07-278.306,9.322-296.313,70.524c-1.184,2.523-1.938,5.291-1.938,8.289   C335.188,310.428,456.201,340.714,651.051,340.714L651.051,340.714z M651.051,340.714"
    id="path4" />
 </g>
-<g
-   id="Layer_4"
-   transform="matrix(1.5612193,0,0,1.5615239,-298.39976,-370.28092)"
-   style="fill:#d80a1d;fill-opacity:1">
-	<linearGradient
-   id="SVGID_1_"
-   gradientUnits="userSpaceOnUse"
-   x1="-0.49950001"
-   y1="1280.5"
-   x2="1279.5005"
-   y2="0.5">
-		<stop
-   offset="0"
-   style="stop-color:#990714"
-   id="stop7" />
-		<stop
-   offset="0.2607"
-   style="stop-color:#B12B37"
-   id="stop9" />
-		<stop
-   offset="0.7629"
-   style="stop-color:#DB6C75"
-   id="stop11" />
-		<stop
-   offset="1"
-   style="stop-color:#EC858E"
-   id="stop13" />
-	</linearGradient>
-	<rect
-   x="-0.5"
-   y="0.5"
-   stroke-miterlimit="10"
-   width="1280"
-   height="1280"
-   id="rect16"
-   style="fill:#d80a1d;stroke:#e35360;stroke-miterlimit:10;fill-opacity:1" />
-</g>
+
 <g
    id="Layer_5">
 	<g
