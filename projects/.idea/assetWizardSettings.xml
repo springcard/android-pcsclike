@@ -51,6 +51,7 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
+                                                <entry key="scalingPercent" value="71" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -60,7 +61,12 @@
                                   </option>
                                   <option name="values">
                                     <map>
+                                      <entry key="backgroundColor" value="d80a1d" />
+                                      <entry key="backgroundImage" value="D:\dev\springcard.pcsc.android\projects\AndroidPcscLikeBackground.svg" />
+                                      <entry key="backgroundLayerName" value="ic_launcher_background_app" />
                                       <entry key="foregroundImage" value="D:\dev\springcard.pcsc.android\projects\AndroidPcscLikeUsb.icon.svg" />
+                                      <entry key="foregroundLayerName" value="ic_launcher_foreground_app" />
+                                      <entry key="outputName" value="ic_launcher_app" />
                                     </map>
                                   </option>
                                 </PersistentState>
