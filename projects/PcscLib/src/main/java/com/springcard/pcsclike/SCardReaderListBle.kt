@@ -17,4 +17,12 @@ class SCardReaderListBle(layerDevice: BluetoothDevice, callbacks: SCardReaderLis
             process(ActionEvent.ActionConnect(ctx))
         }
     }
+
+    /**
+     * Get battery level and power state from the device.
+     * callback: [SCardReaderListCallback.onPowerInfo]
+     */
+    fun getPowerInfo() {
+        process(ActionEvent.ActionReadPowerInfo())
+    }
 }
