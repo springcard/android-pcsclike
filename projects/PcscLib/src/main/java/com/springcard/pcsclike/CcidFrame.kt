@@ -13,7 +13,7 @@ import kotlin.experimental.and
 import kotlin.experimental.inv
 import kotlin.experimental.or
 
-abstract class CcidFrame {
+internal abstract class CcidFrame {
 
     private val TAG: String
         get() = this::class.java.simpleName
@@ -114,7 +114,7 @@ abstract class CcidFrame {
 
 }
 
-class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArray) : CcidFrame() {
+internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArray) : CcidFrame() {
 
     enum class CommandCode(var value: Byte) {
         PC_To_RDR_IccPowerOn(0x62.toByte()),
@@ -138,7 +138,7 @@ class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArra
 }
 
 
-class CcidResponse(rawFrame: ByteArray) : CcidFrame() {
+internal class CcidResponse(rawFrame: ByteArray) : CcidFrame() {
 
     enum class ResponseCode(var value: Byte) {
         RDR_To_PC_DataBlock(0x80.toByte()),

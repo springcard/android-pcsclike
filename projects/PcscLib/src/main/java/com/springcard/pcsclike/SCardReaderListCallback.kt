@@ -70,7 +70,9 @@ abstract class SCardReaderListCallback {
      * @param powerState 0 : unknown, 1 : external power supply, 2 : on battery
      * @param batteryLevel 0-100%
      */
-    abstract fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int)
+    open fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
+
+    }
 
     /* Error callbacks */
 
