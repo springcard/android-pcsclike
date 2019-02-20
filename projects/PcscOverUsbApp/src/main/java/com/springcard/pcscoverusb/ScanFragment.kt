@@ -15,7 +15,7 @@ import android.os.Bundle
 import java.util.ArrayList
 import android.view.*
 import android.widget.AdapterView
-import com.springcard.pcscapp.*
+import com.springcard.pcsclike_sample.*
 import kotlinx.android.synthetic.main.fragment_scan.*
 import android.content.Intent
 import android.content.BroadcastReceiver
@@ -25,7 +25,7 @@ import android.widget.Toast
 
 
 @Suppress("IMPLICIT_CAST_TO_ANY")
-class ScanFragment : com.springcard.pcscapp.ScanFragment() {
+class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
     private var deviceList = ArrayList<DeviceListElement>()
     private var adapter: DeviceListAdapter? = null

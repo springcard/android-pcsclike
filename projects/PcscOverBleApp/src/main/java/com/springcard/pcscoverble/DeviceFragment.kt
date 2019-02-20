@@ -12,7 +12,7 @@ import android.widget.Toast
 import com.springcard.pcsclike.*
 
 
-class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
+class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
 
     override fun connectToDevice() {
 

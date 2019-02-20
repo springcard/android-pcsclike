@@ -4,7 +4,6 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscapp
+package com.springcard.pcsclike_sample
 
-data class DeviceListElement (val name: String = "", val info: String)
-
+data class ApduModel(val id: Int, val title: String, val apdu: String, val mode: Int, val created: String, val modified: String)

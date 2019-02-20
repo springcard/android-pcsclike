@@ -1,4 +1,4 @@
-package com.springcard.pcscapp;
+package com.springcard.pcsclike_sample;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.springcard.pcscapp.test", appContext.getPackageName());
+        assertEquals("com.springcard.pcsclike_sample.test", appContext.getPackageName());
     }
 }

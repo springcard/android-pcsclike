@@ -8,7 +8,7 @@ package com.springcard.pcscoverusb
 
 
 import android.os.Bundle
-import com.springcard.pcscapp.MainActivity
+import com.springcard.pcsclike_sample.MainActivity
 
 
 class MainActivity : MainActivity() {

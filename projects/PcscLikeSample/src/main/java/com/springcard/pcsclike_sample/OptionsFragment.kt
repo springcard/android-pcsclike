@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscapp
+package com.springcard.pcsclike_sample
 
 import android.os.Bundle
 import android.support.design.widget.TextInputLayout
@@ -14,7 +14,6 @@ import android.text.TextWatcher
 import android.view.*
 import android.widget.Switch
 import android.widget.TextView
-import com.springcard.pcsclike.toHexString
 import kotlinx.android.synthetic.main.fragment_options.*
 
 
