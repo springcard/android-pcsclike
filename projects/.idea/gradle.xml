@@ -11,7 +11,7 @@
             <option value="$PROJECT_DIR$/PcscLike" />
             <option value="$PROJECT_DIR$/PcscLikeSample" />
             <option value="$PROJECT_DIR$/PcscLikeSampleBle" />
-            <option value="$PROJECT_DIR$/PcscOverUsbApp" />
+            <option value="$PROJECT_DIR$/PcscLikeSampleUsb" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

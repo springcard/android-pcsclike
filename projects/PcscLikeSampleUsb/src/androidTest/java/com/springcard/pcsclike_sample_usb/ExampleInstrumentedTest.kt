@@ -1,4 +1,4 @@
-package com.springcard.pcscoverusb
+package com.springcard.pcsclike_sample_usb
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getTargetContext()
-        assertEquals("com.springcard.pcscoverusb", appContext.packageName)
+        assertEquals("com.springcard.pcsclike_sample_usb", appContext.packageName)
     }
 }

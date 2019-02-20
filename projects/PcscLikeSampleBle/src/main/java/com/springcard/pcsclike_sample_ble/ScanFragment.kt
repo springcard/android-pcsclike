@@ -46,7 +46,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         setHasOptionsMenu(true)
         mainActivity = activity as MainActivity
-        mainActivity.setActionBarTitle("Scan")
+        mainActivity.setActionBarTitle(resources.getString(R.string.device_list))
 
 
         /* Check if device  support BLE */
