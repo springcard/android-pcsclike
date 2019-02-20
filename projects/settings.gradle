@@ -1,1 +1,1 @@
-include ':PcscOverBleApp', ':PcscOverUsbApp', ':PcscApp', ':PcscLib'
+include ':PcscOverBleApp', ':PcscOverUsbApp', ':PcscApp', ':PcscLike'
