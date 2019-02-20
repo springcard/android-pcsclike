@@ -15,10 +15,10 @@ import android.os.Looper
  *
  * This class representing a SpringCard device (with possibly more than one slot)
  *
- * @property layerDevice BluetoothDevice
+ * @property layerDevice Physical Device
  * @property callbacks SCardReaderListCallback
  * @property TAG (kotlin.String..kotlin.String?)
- * @property commLayer BluetoothLayer
+ * @property commLayer Communication Layer
  * @property ccidHandler CcidHandler
  * @property handler Handler
  * @property vendorName Manufacturer name of the device
@@ -38,7 +38,7 @@ import android.os.Looper
  * @constructor Instantiate an new SpringCard PC/SC device
  *
  */
-abstract class SCardReaderList(protected val layerDevice: Any, internal val callbacks: SCardReaderListCallback) {
+abstract class SCardReaderList internal constructor(protected val layerDevice: Any, internal val callbacks: SCardReaderListCallback) {
 
 
     private val TAG = this::class.java.simpleName
@@ -144,14 +144,6 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
         }
 
     /**
-     * Connect to the BLE device passed to the constructor
-     * callback when succeed : [SCardReaderListCallback.onConnect]
-     *
-     * @param ctx Application's context use to instantiate the [BluetoothGatt] object
-     */
-    abstract fun connect(ctx : Context)
-
-    /**
      * Disconnect from the BLE device
      * callback when succeed : [SCardReaderListCallback.onReaderListClosed]
      */
@@ -159,24 +151,4 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
         process(ActionEvent.ActionDisconnect())
     }
 
-
-    /**
-     * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
-     * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
-     */
-    fun create() {
-        process(ActionEvent.ActionCreate())
-    }
-
-
-    /**
-     * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
-     * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
-     * It also creates a secure communication channel based on info given in parameter
-     * @param secureConnexionParameters CcidSecureParameters
-     */
-    fun create(secureConnexionParameters: CcidSecureParameters) {
-        ccidHandler = CcidHandler(secureConnexionParameters)
-        process(ActionEvent.ActionCreate())
-    }
 }

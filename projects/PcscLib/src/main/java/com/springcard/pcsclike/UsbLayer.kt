@@ -62,7 +62,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             when (currentState) {
                 State.Disconnected -> handleStateDisconnected(event)
                 //State.Connecting -> handleStateConnecting(event)
-                State.Connected -> handleStateConnected(event)
                 State.ReadingInformation -> handleStateReadingInformation(event)
                 /*State.DiscoveringGatt -> handleStateDiscovering(event)
 
@@ -79,19 +78,30 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         }
     }
 
-
+    private var indexInfoCmd = 0
     private fun handleStateDisconnected(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.ActionConnect -> {
+            is ActionEvent.ActionCreate -> {
                 currentState = State.Connecting
 
-                /* save context if we need to try to reconnect */
+                /* Save context if we need to try to reconnect */
                 context = event.ctx
 
                 if (connect()) {
-                    currentState = State.Connected
-                    scardReaderList.handler.post { callbacks.onConnect(scardReaderList) }
+                    currentState = State.ReadingInformation
+
+                    /* Get info directly from USB */
+                    scardReaderList.vendorName = usbDevice.manufacturerName!!
+                    scardReaderList.productName = usbDevice.productName!!
+                    scardReaderList.serialNumber = usbDevice.serialNumber!!
+                    scardReaderList.serialNumberRaw = usbDevice.serialNumber!!.hexStringToByteArray()
+
+                    /* Trigger 1st APDU to get 1st info */
+                    indexInfoCmd = 1 // 1st command
+                    indexSlots = 0   // reset indexSlot cpt
+                    bulkOutTransfer(getNextInfoCommand(indexInfoCmd))
+
                 } else {
                     currentState = State.Disconnected
                     postReaderListError(
@@ -105,30 +115,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         }
     }
 
-
-
-
-    private var indexInfoCmd = 0
-    private fun handleStateConnected(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionCreate -> {
-                currentState = State.ReadingInformation
-
-                /* Get info directly from USB */
-                scardReaderList.vendorName = usbDevice.manufacturerName!!
-                scardReaderList.productName = usbDevice.productName!!
-                scardReaderList.serialNumber = usbDevice.serialNumber!!
-                scardReaderList.serialNumberRaw = usbDevice.serialNumber!!.hexStringToByteArray()
-
-                /* Trigger 1st APDU to get 1st info */
-                indexInfoCmd = 1 // 1st command
-                indexSlots = 0   // reset indexSlot cpt
-                bulkOutTransfer(getNextInfoCommand(indexInfoCmd))
-            }
-            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
-        }
-    }
 
     private fun handleStateReadingInformation(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")

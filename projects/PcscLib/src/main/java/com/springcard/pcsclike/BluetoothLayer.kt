@@ -98,13 +98,8 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
     /* Utilities methods */
 
-    private fun connect(ctx: Context) {
-        mBluetoothGatt = bluetoothDevice.connectGatt(ctx, false, mGattCallback)
-    }
-
-     private fun create() {
-         mBluetoothGatt.discoverServices()
-         Log.i(TAG, "Attempting to start service discovery")
+     private fun create(ctx: Context) {
+         mBluetoothGatt = bluetoothDevice.connectGatt(ctx, false, mGattCallback)
     }
 
 
@@ -167,7 +162,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         when (currentState) {
             State.Disconnected -> handleStateDisconnected(event)
             State.Connecting -> handleStateConnecting(event)
-            State.Connected -> handleStateConnected(event)
             State.DiscoveringGatt -> handleStateDiscovering(event)
             State.ReadingInformation -> handleStateReadingInformation(event)
             State.SubscribingNotifications -> handleStateSubscribingNotifications(event)
@@ -185,10 +179,10 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
     private fun handleStateDisconnected(event: ActionEvent) {
         when (event) {
-            is ActionEvent.ActionConnect -> {
+            is ActionEvent.ActionCreate-> {
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
                 currentState = State.Connecting
-                connect(event.ctx)
+                create(event.ctx)
                 /* save context if we need to try to reconnect */
                 context = event.ctx
             }
@@ -200,27 +194,18 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         when (event) {
             is ActionEvent.EventConnected -> {
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-                currentState = State.Connected
-                scardReaderList.handler.post {callbacks.onConnect(scardReaderList)}
+                currentState = State.DiscoveringGatt
+
+                mBluetoothGatt.discoverServices()
+                Log.i(TAG, "Attempting to start service discovery")
             }
             is ActionEvent.EventDisconnected -> {
                 // Retry connecting
                 currentState = State.Disconnected
-                process(ActionEvent.ActionConnect(context))
+                process(ActionEvent.ActionCreate(context))
                 //TODO add cpt
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
-        }
-    }
-
-    private fun handleStateConnected(event: ActionEvent) {
-        when (event) {
-            is ActionEvent.ActionCreate -> {
-                Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-                currentState = State.DiscoveringGatt
-                create()
-            }
-            else ->  Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
 

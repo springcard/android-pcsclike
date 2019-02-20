@@ -6,7 +6,6 @@
 
 package com.springcard.pcscapp
 
-import android.annotation.SuppressLint
 import android.app.ProgressDialog
 import android.os.Bundle
 import android.os.SystemClock
@@ -28,7 +27,7 @@ abstract class DeviceFragment : Fragment() {
     protected lateinit var scardDevice: SCardReaderList
     protected lateinit var deviceName: String
     protected lateinit var device : Any
-    private lateinit var progressDialog: ProgressDialog
+    protected lateinit var progressDialog: ProgressDialog
     private lateinit var currentChannel: SCardChannel
     private var currentSlot: SCardReader? = null
 
@@ -39,55 +38,15 @@ abstract class DeviceFragment : Fragment() {
     private var modelsApdus = mutableListOf<ApduModel>()
     var connectToNewDevice = true
 
-
     protected lateinit var  mainActivity: MainActivity
 
-
-    // Various callback methods defined by the BLE API.
+    /* Various callback methods defined by the ScardReaderLis */
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
-        @SuppressLint("ShowToast")
-        override fun onConnect(readerList: SCardReaderList) {
-            mainActivity.logInfo("onConnect")
-
-            if(mainActivity.supportCrypto && mainActivity.useAuthentication) {
-                mainActivity.logInfo("Create readerList with authentication")
-
-                val key: MutableList<Byte>
-                if(mainActivity.authenticationKey.isHex()) {
-                    key = mainActivity.authenticationKey.hexStringToByteArray().toMutableList()
-                }
-                else {
-                    progressDialog.dismiss()
-                    mainActivity.backToScanFragment()
-                    return
-                }
-
-                if(key.size != 16) {
-                    Toast.makeText(mainActivity.applicationContext, "Wrong key size, must be 16 bytes long", Toast.LENGTH_LONG)
-                    progressDialog.dismiss()
-                    mainActivity.backToScanFragment()
-                    return
-                }
-
-                readerList.create(
-                    CcidSecureParameters(
-                        CcidSecureParameters.AuthenticationMode.Aes128,
-                        CcidSecureParameters.AuthenticationKeyIndex.User,
-                        key,
-                        CcidSecureParameters.CommunicationMode.MacAndCipher
-                    )
-                )
-            }
-            else {
-                readerList.create()
-            }
-
-        }
-
         override fun onReaderListCreated(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListCreated")
 
             val spinnerList =  mutableListOf<String>()
+            scardDevice = readerList
 
             for(i in 0 until scardDevice.slotCount) {
                 spinnerList.add("$i - ${scardDevice.slots[i]}")
@@ -99,14 +58,6 @@ abstract class DeviceFragment : Fragment() {
             )
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerSlots.adapter = adapter
-
-            /* APDU examples */
-            // 6500000000012E000000  	PC_To_RDR_GetSlotStatus
-            // 62000000000130000000     PC_To_RDR_IccPowerOn
-            // 6F0500000001000000008060000000 get sam version
-            // 6F040000000001000000FFCA0000
-            // FFFD0080F8 Echo 240 bytes
-            // capduTextBox.text.append("FFCA0000\n")
 
             val dataAdapter = ArrayAdapter<String>(
                 activity?.applicationContext!!,
@@ -305,13 +256,11 @@ abstract class DeviceFragment : Fragment() {
 
             //-------------------------------------------------------------------
 
-
             connectToDevice()
             mainActivity.setActionBarTitle(deviceName)
 
             // No auto-correct
             //capduTextBox.inputType = InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-
 
             transmitButton.setOnClickListener {
 

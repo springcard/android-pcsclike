@@ -12,12 +12,6 @@ package com.springcard.pcsclike
 abstract class SCardReaderListCallback {
 
     /**
-     * When the BLE connexion is established, this callback is called
-     * @param readerList SCardReaderList
-     */
-    abstract fun onConnect(readerList: SCardReaderList)
-
-    /**
      * When the [SCardReaderList.create] methods finished its job, this method is called
      * @param readerList the readerList instantiated
      */
