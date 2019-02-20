@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscapp
+package com.springcard.pcsclike_sample
 
 import android.graphics.Typeface
 import android.os.Bundle

@@ -8,8 +8,8 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/PcscApp" />
             <option value="$PROJECT_DIR$/PcscLike" />
+            <option value="$PROJECT_DIR$/PcscLikeSample" />
             <option value="$PROJECT_DIR$/PcscOverBleApp" />
             <option value="$PROJECT_DIR$/PcscOverUsbApp" />
           </set>

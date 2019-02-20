@@ -26,9 +26,9 @@ import kotlinx.android.synthetic.main.fragment_scan.*
 import java.util.ArrayList
 import android.view.*
 import android.widget.ProgressBar
-import com.springcard.pcscapp.*
+import com.springcard.pcsclike_sample.*
 
-class ScanFragment : com.springcard.pcscapp.ScanFragment() {
+class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
     private var deviceList = ArrayList<DeviceListElement>()
     private var adapter: DeviceListAdapter? = null

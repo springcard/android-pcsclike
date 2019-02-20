@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscapp
+package com.springcard.pcsclike_sample
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -150,7 +150,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         queue.add(stringRequest)
 
         logInfo("Lib rev = ${com.springcard.pcsclike.BuildConfig.VERSION_NAME}")
-        logInfo("App rev = ${com.springcard.pcscapp.BuildConfig.VERSION_NAME}")
+        logInfo("App rev = ${com.springcard.pcsclike_sample.BuildConfig.VERSION_NAME}")
     }
 
     fun setDrawerState(isEnabled: Boolean) {

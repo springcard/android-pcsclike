@@ -4,13 +4,11 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscapp
+package com.springcard.pcsclike_sample
 
 
 import android.content.pm.PackageManager
-import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.view.*
 
 
 abstract class ScanFragment : Fragment() {

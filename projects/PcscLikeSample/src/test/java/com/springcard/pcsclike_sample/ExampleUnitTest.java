@@ -1,4 +1,4 @@
-package com.springcard.pcscapp;
+package com.springcard.pcsclike_sample;
 
 import org.junit.Test;
 

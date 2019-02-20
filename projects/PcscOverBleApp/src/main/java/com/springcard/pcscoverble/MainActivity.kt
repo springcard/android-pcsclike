@@ -7,8 +7,8 @@
 package com.springcard.pcscoverble
 
 import android.os.Bundle
-import com.springcard.pcscapp.DeviceFragment
-import com.springcard.pcscapp.MainActivity
+import com.springcard.pcsclike_sample.DeviceFragment
+import com.springcard.pcsclike_sample.MainActivity
 
 class MainActivity : MainActivity() {
 
