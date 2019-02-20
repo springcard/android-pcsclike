@@ -273,7 +273,7 @@ abstract class DeviceFragment : Fragment() {
             // do something here, such as start an Intent to the parent activity.
 
             progressDialog.dismiss()
-            scardDevice.disconnect()
+            scardDevice.close()
             mainActivity.backToScanFragment()
             mainActivity.drawer_layout.closeDrawer(GravityCompat.START)
         }

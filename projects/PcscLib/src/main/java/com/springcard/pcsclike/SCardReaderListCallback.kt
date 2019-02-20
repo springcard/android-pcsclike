@@ -24,7 +24,7 @@ abstract class SCardReaderListCallback {
     abstract fun onReaderListCreated(readerList: SCardReaderList)
 
     /**
-     * When a disconnection from the current connected readerList is asked or when the readerList itself disconnect
+     * When a disconnection from the current connected readerList is asked or when the readerList itself close
      * @param readerList SCardReaderList
      */
     abstract fun onReaderListClosed(readerList: SCardReaderList)
