@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverble
+package com.springcard.pcsclike_sample_ble
 
 
 import android.bluetooth.BluetoothDevice

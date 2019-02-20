@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverble
+package com.springcard.pcsclike_sample_ble
 
 import android.os.Bundle
 import com.springcard.pcsclike_sample.DeviceFragment
@@ -12,8 +12,8 @@ import com.springcard.pcsclike_sample.MainActivity
 
 class MainActivity : MainActivity() {
 
-    override val deviceFragment: DeviceFragment = com.springcard.pcscoverble.DeviceFragment()
-    override val scanFragment: ScanFragment = com.springcard.pcscoverble.ScanFragment()
+    override val deviceFragment: DeviceFragment = com.springcard.pcsclike_sample_ble.DeviceFragment()
+    override val scanFragment: ScanFragment = com.springcard.pcsclike_sample_ble.ScanFragment()
     override var supportCrypto = true // BLE support AES authentication
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,13 +25,13 @@ class MainActivity : MainActivity() {
     private fun setAboutInfo() {
 
         val appInfo = ApplicationInfo(
-            com.springcard.pcscoverble.BuildConfig.DEBUG,
-            com.springcard.pcscoverble.BuildConfig.APPLICATION_ID,
-            com.springcard.pcscoverble.BuildConfig.BUILD_TYPE,
-            com.springcard.pcscoverble.BuildConfig.FLAVOR,
-            com.springcard.pcscoverble.BuildConfig.VERSION_CODE,
-            com.springcard.pcscoverble.BuildConfig.VERSION_NAME,
-            com.springcard.pcscoverble.BuildConfig.appDebug)
+            com.springcard.pcsclike_sample_ble.BuildConfig.DEBUG,
+            com.springcard.pcsclike_sample_ble.BuildConfig.APPLICATION_ID,
+            com.springcard.pcsclike_sample_ble.BuildConfig.BUILD_TYPE,
+            com.springcard.pcsclike_sample_ble.BuildConfig.FLAVOR,
+            com.springcard.pcsclike_sample_ble.BuildConfig.VERSION_CODE,
+            com.springcard.pcsclike_sample_ble.BuildConfig.VERSION_NAME,
+            com.springcard.pcsclike_sample_ble.BuildConfig.appDebug)
 
         val libInfo = LibraryInfo(
             com.springcard.pcsclike.BuildConfig.DEBUG,

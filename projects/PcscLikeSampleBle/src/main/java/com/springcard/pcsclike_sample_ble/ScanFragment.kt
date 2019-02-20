@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverble
+package com.springcard.pcsclike_sample_ble
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -165,7 +165,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     override fun onCreateOptionsMenu(
         menu: Menu, inflater: MenuInflater
     ) {
-        inflater.inflate(com.springcard.pcscoverble.R.menu.scan_app_bar, menu)
+        inflater.inflate(com.springcard.pcsclike_sample_ble.R.menu.scan_app_bar, menu)
     }
 
 
