@@ -61,12 +61,10 @@ abstract class SCardReaderListCallback {
     /**
      * Response to [SCardReaderList.getPowerInfo]
      * @param readerList SCardReaderList
-     * @param powerState 0 : unknown, 1 : external power supply, 2 : on battery
+     * @param powerState 0 : unknown, 1 : USB/5V power supply, 2 : on battery
      * @param batteryLevel 0-100%
      */
-    open fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
-
-    }
+    abstract fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int)
 
     /* Error callbacks */
 

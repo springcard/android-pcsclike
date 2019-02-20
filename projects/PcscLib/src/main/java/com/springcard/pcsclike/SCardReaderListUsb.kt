@@ -6,7 +6,6 @@
 
 package com.springcard.pcsclike
 
-import android.bluetooth.BluetoothDevice
 import android.hardware.usb.UsbDevice
 import android.content.Context
 

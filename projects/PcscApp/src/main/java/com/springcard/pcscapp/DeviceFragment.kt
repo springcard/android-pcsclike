@@ -206,7 +206,7 @@ abstract class DeviceFragment : Fragment() {
         // handle item selection
         when (item.itemId) {
             R.id.action_info -> {
-                (scardDevice as SCardReaderListBle).getPowerInfo()
+                scardDevice.getPowerInfo()
                 return true
             }
             else -> return super.onOptionsItemSelected(item)
@@ -486,5 +486,32 @@ abstract class DeviceFragment : Fragment() {
         else{
            mainActivity.logInfo("Impossible value: card not present but powered!")
         }
+    }
+
+    private fun showDeviceInfo() {
+        /* Info dialog */
+        val builder = AlertDialog.Builder(activity!!)
+
+        builder.setTitle(deviceName)
+
+        val deviceInfo = "Vendor: ${scardDevice.vendorName}\n" +
+                "Product: ${scardDevice.productName}\n" +
+                "Serial Number: ${scardDevice.serialNumber}\n" +
+                "FW Version: ${scardDevice.firmwareVersion}\n" +
+                "FW Version Major: ${scardDevice.firmwareVersionMajor}\n" +
+                "FW Version Minor: ${scardDevice.firmwareVersionMinor}\n" +
+                "FW Version Build: ${scardDevice.firmwareVersionBuild}"
+
+        // Do something when user press the positive button
+        builder.setMessage(deviceInfo)
+
+        // Set a positive button and its click listener on alert dialog
+        builder.setPositiveButton("OK") { _, _ ->
+            // Do something when user press the positive button
+        }
+
+        // Finally, make the alert dialog using builder
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 }
