@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverusb
+package com.springcard.pcsclike_sample_usb
 
 import android.hardware.usb.UsbDevice
 import com.springcard.pcsclike.*

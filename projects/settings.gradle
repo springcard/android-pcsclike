@@ -1,1 +1,1 @@
-include ':PcscLikeSampleBle', ':PcscOverUsbApp', ':PcscLikeSample', ':PcscLike'
+include ':PcscLikeSampleBle', ':PcscLikeSampleUsb', ':PcscLikeSample', ':PcscLike'

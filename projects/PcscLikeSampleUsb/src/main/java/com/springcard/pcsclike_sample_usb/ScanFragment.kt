@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverusb
+package com.springcard.pcsclike_sample_usb
 
 import android.app.PendingIntent
 import android.content.Context
@@ -46,7 +46,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         setHasOptionsMenu(true)
         mainActivity = activity as MainActivity
-        mainActivity.setActionBarTitle("Devices")
+        mainActivity.setActionBarTitle(resources.getString(R.string.device_list))
 
         /* Check if device  support BLE */
         mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_USB_HOST) }?.also {

@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">PCSC over BLE</string>
+    <string name="app_name">PC/SC BLE</string>
     <string name="device_list">Scan</string>
 </resources>

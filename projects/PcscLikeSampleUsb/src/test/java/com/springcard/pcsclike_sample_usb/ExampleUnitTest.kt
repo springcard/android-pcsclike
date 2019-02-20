@@ -1,4 +1,4 @@
-package com.springcard.pcscoverusb
+package com.springcard.pcsclike_sample_usb
 
 import org.junit.Test
 

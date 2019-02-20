@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcscoverusb
+package com.springcard.pcsclike_sample_usb
 
 
 import android.os.Bundle
@@ -27,13 +27,13 @@ class MainActivity : MainActivity() {
     private fun setAboutInfo() {
 
         val appInfo = ApplicationInfo(
-            com.springcard.pcscoverusb.BuildConfig.DEBUG,
-            com.springcard.pcscoverusb.BuildConfig.APPLICATION_ID,
-            com.springcard.pcscoverusb.BuildConfig.BUILD_TYPE,
-            com.springcard.pcscoverusb.BuildConfig.FLAVOR,
-            com.springcard.pcscoverusb.BuildConfig.VERSION_CODE,
-            com.springcard.pcscoverusb.BuildConfig.VERSION_NAME,
-            com.springcard.pcscoverusb.BuildConfig.appDebug)
+            com.springcard.pcsclike_sample_usb.BuildConfig.DEBUG,
+            com.springcard.pcsclike_sample_usb.BuildConfig.APPLICATION_ID,
+            com.springcard.pcsclike_sample_usb.BuildConfig.BUILD_TYPE,
+            com.springcard.pcsclike_sample_usb.BuildConfig.FLAVOR,
+            com.springcard.pcsclike_sample_usb.BuildConfig.VERSION_CODE,
+            com.springcard.pcsclike_sample_usb.BuildConfig.VERSION_NAME,
+            com.springcard.pcsclike_sample_usb.BuildConfig.appDebug)
 
         val libInfo = LibraryInfo(
             com.springcard.pcsclike.BuildConfig.DEBUG,
