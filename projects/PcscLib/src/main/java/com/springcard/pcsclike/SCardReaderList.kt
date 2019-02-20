@@ -98,7 +98,7 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
     {
         if(slotIndex >= readers.size)
         {
-            /* error is not fatal --> do not disconnect product */
+            /* error is not fatal --> do not close product */
             commLayer.postReaderListError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: slotIndex $slotIndex is greater than number of slot ${readers.size}", false)
             return null
         }
@@ -124,7 +124,7 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
                 return reader
             }
         }
-        /* Error is not fatal --> do not disconnect product */
+        /* Error is not fatal --> do not close product */
         commLayer.postReaderListError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: No slot with name $slotName found", false)
         return null
     }
@@ -155,7 +155,7 @@ abstract class SCardReaderList(protected val layerDevice: Any, internal val call
      * Disconnect from the BLE device
      * callback when succeed : [SCardReaderListCallback.onReaderListClosed]
      */
-    fun disconnect() {
+    fun close() {
         process(ActionEvent.ActionDisconnect())
     }
 

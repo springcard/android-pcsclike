@@ -70,7 +70,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
         }
 
-        /* irrecoverable error --> disconnect */
+        /* irrecoverable error --> close */
         if(isFatal) {
             process(ActionEvent.ActionDisconnect())
         }
