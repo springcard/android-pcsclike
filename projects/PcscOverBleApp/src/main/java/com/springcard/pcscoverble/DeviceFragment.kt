@@ -8,6 +8,7 @@ package com.springcard.pcscoverble
 
 
 import android.bluetooth.BluetoothDevice
+import android.widget.Toast
 import com.springcard.pcsclike.*
 
 
@@ -17,8 +18,42 @@ class DeviceFragment : com.springcard.pcscapp.DeviceFragment() {
 
         if(device is BluetoothDevice) {
             deviceName = (device as BluetoothDevice).name
-            scardDevice = SCardReaderListBle(device as BluetoothDevice, scardCallbacks)
-            scardDevice.connect(mainActivity)
+
+            if(mainActivity.supportCrypto && mainActivity.useAuthentication) {
+                mainActivity.logInfo("Create readerList with authentication")
+
+                val key: MutableList<Byte>
+                if(mainActivity.authenticationKey.isHex()) {
+                    key = mainActivity.authenticationKey.hexStringToByteArray().toMutableList()
+                }
+                else {
+                    progressDialog.dismiss()
+                    mainActivity.backToScanFragment()
+                    return
+                }
+
+                if(key.size != 16) {
+                    Toast.makeText(mainActivity.applicationContext, "Wrong key size, must be 16 bytes long", Toast.LENGTH_LONG)
+                    progressDialog.dismiss()
+                    mainActivity.backToScanFragment()
+                    return
+                }
+
+                SCardReaderListBle.create(
+                    mainActivity.applicationContext,
+                    device as BluetoothDevice,
+                    scardCallbacks,
+                    CcidSecureParameters(
+                        CcidSecureParameters.AuthenticationMode.Aes128,
+                        CcidSecureParameters.AuthenticationKeyIndex.User,
+                        key,
+                        CcidSecureParameters.CommunicationMode.MacAndCipher
+                    )
+                )
+            }
+            else {
+                SCardReaderListBle.create(mainActivity.applicationContext, device as BluetoothDevice, scardCallbacks)
+            }
         }
         else {
             mainActivity.logInfo("Device is not a BLE device")

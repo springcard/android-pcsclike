@@ -17,6 +17,7 @@ package com.springcard.pcsclike
 class SCardChannel internal  constructor(val parent: SCardReader) {
 
     var atr: ByteArray = ByteArray(0)
+        internal set
 
     /**
      * Transmit a C-APDU to the card, receive the R-APDU in response (in the callback)

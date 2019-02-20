@@ -15,7 +15,6 @@ import android.util.Log
 internal enum class State{
     Disconnected,
     Connecting,
-    Connected,
     DiscoveringGatt,
     ReadingInformation,
     SubscribingNotifications,
@@ -31,9 +30,8 @@ internal enum class State{
 
 
 internal sealed class ActionEvent {
-    class ActionConnect(val ctx: Context) : ActionEvent()
     class EventConnected : ActionEvent()
-    class ActionCreate : ActionEvent()
+    class ActionCreate(val ctx: Context) : ActionEvent()
     class EventServicesDiscovered(val status: Int) : ActionEvent()
     class EventDescriptorWrite(val descriptor: BluetoothGattDescriptor, val status: Int) : ActionEvent()
     class EventCharacteristicChanged(val characteristic: BluetoothGattCharacteristic) : ActionEvent()
