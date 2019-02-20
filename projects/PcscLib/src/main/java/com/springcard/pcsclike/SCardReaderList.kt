@@ -151,4 +151,12 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
         process(ActionEvent.ActionDisconnect())
     }
 
+
+    /**
+     * Get battery level and power state from the device.
+     * callback: [SCardReaderListCallback.onPowerInfo]
+     */
+    fun getPowerInfo() {
+        process(ActionEvent.ActionReadPowerInfo())
+    }
 }

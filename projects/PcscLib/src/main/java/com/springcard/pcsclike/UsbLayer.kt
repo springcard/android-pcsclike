@@ -70,7 +70,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 /*State.Authenticate -> handleStateAuthenticate(event)*/
                 State.ConnectingToCard -> handleStateConnectingToCard(event)
                 State.Idle ->  handleStateIdle(event)
-                //State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
+                State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
                 State.WaitingResponse -> handleStateWaitingResponse(event)
                 // State.Disconnecting ->  handleStateDisconnecting(event)*/
                 else -> Log.w(TAG, "Unhandled State : $currentState")
@@ -299,6 +299,10 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
             }
+            is ActionEvent.ActionReadPowerInfo -> {
+                currentState = State.ReadingPowerInfo
+                process(event)
+            }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
@@ -317,6 +321,23 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             else -> Log.w(TAG ,"Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
+
+    private fun handleStateReadingPowerInfo(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.ActionReadPowerInfo -> {
+                currentState = State.Idle
+                /* TODO: create an entry poin in FW to get this info */
+                scardReaderList.handler.post{ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) }
+            }
+            is ActionEvent.EventOnUsbInterrupt -> {
+                /* Update readers status */
+                interpretSlotsStatus(event.data)
+            }
+            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+        }
+    }
+
 
     /* Utilities func */
 
