@@ -11,7 +11,8 @@ android {
         minSdkVersion 21
         targetSdkVersion 28
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
-        versionName getRevision()
+        def date = new Date()
+        versionName = 'v'+date.format('yy.MM')
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
