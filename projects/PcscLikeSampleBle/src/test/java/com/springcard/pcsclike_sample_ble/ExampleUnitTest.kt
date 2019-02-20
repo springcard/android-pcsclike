@@ -1,4 +1,4 @@
-package com.springcard.pcscoverble
+package com.springcard.pcsclike_sample_ble
 
 import org.junit.Test
 

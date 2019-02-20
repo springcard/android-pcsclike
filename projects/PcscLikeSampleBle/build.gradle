@@ -7,7 +7,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.springcard.pcscoverble"
+        applicationId "com.springcard.pcsclike_sample_ble"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
