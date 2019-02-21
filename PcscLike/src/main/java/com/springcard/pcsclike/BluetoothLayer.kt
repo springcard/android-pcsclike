@@ -8,11 +8,14 @@ package com.springcard.pcsclike
 
 import android.bluetooth.*
 import android.content.Context
+import android.os.Build
+import android.support.annotation.RequiresApi
 import android.util.Log
 import java.util.*
 import kotlin.experimental.and
 
 
+@RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
 
     private val TAG = this::class.java.simpleName
@@ -95,6 +98,12 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         }
     }
 
+    init {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            // Fail fast in case somebody ignored the @RequiresApi annotation
+            throw UnsupportedOperationException("BLE not available on Android SDK < ${Build.VERSION_CODES.JELLY_BEAN_MR2}")
+        }
+    }
 
     /* Utilities methods */
 

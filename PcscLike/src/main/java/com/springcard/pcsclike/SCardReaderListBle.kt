@@ -8,8 +8,11 @@ package com.springcard.pcsclike
 
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.os.Build
+import android.support.annotation.RequiresApi
 
 
+@RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, callbacks: SCardReaderListCallback): SCardReaderList(layerDevice as Any, callbacks) {
 
     private fun create(ctx : Context) {
