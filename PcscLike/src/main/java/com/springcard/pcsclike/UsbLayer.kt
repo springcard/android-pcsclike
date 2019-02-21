@@ -92,10 +92,10 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     currentState = State.ReadingInformation
 
                     /* Get info directly from USB */
-                    scardReaderList.vendorName = usbDevice.manufacturerName!!
-                    scardReaderList.productName = usbDevice.productName!!
-                    scardReaderList.serialNumber = usbDevice.serialNumber!!
-                    scardReaderList.serialNumberRaw = usbDevice.serialNumber!!.hexStringToByteArray()
+                    scardReaderList.vendorName = usbDevice.manufacturerName ?: ""
+                    scardReaderList.productName = usbDevice.productName ?: ""
+                    scardReaderList.serialNumber = usbDevice.serialNumber ?: ""
+                    scardReaderList.serialNumberRaw = (usbDevice.serialNumber ?: "").hexStringToByteArray()
 
                     /* Trigger 1st APDU to get 1st info */
                     indexInfoCmd = 1 // 1st command
@@ -395,29 +395,25 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
         /* find number of slot present in this reader */
         var curPos = 0
-        try {
-            val descriptor = usbDeviceConnection.rawDescriptors!!
+        val descriptor = usbDeviceConnection.rawDescriptors ?: return false
 
-            /* get number of slots present in this reader */
-            while (curPos < descriptor.size) {
-                /* read descriptor length */
-                val dlen = descriptor[curPos].toInt()
-                /* read descriptor type */
-                val dtype = descriptor[curPos + 1].toInt()
-                /* CCID type ? */
-                if (dlen == 0x36 && dtype == 0x21) {
-                    val slotCount = descriptor[curPos + 4] + 1
-                    Log.d(TAG, "Descriptor found, slotCount = $slotCount")
-                    /* Add n new readers */
-                    for (i in 0 until slotCount) {
-                        scardReaderList.readers.add(SCardReader(scardReaderList))
-                    }
-                    break
+        /* get number of slots present in this reader */
+        while (curPos < descriptor.size) {
+            /* read descriptor length */
+            val dlen = descriptor[curPos].toInt()
+            /* read descriptor type */
+            val dtype = descriptor[curPos + 1].toInt()
+            /* CCID type ? */
+            if (dlen == 0x36 && dtype == 0x21) {
+                val slotCount = descriptor[curPos + 4] + 1
+                Log.d(TAG, "Descriptor found, slotCount = $slotCount")
+                /* Add n new readers */
+                for (i in 0 until slotCount) {
+                    scardReaderList.readers.add(SCardReader(scardReaderList))
                 }
-                curPos += dlen
+                break
             }
-        } catch (e: NullPointerException) {
-            return false
+            curPos += dlen
         }
 
         return  scardReaderList.slotCount != 0
