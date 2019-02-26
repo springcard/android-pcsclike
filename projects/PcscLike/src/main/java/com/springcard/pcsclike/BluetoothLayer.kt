@@ -560,10 +560,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     private fun handleStateIdle(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.ActionDisconnect -> {
-                currentState = State.Disconnecting
-                disconnect()
-            }
             is ActionEvent.ActionWriting -> {
                 currentState = State.WritingCommand
                 Log.d(TAG, "Writing ${event.command.toHexString()}")
@@ -578,20 +574,11 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 /* Trigger 1st write operation */
                 ccidWriteCharSequenced()
             }
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value)
-                }
-                else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
-                }
-            }
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
                 process(event)
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -641,16 +628,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 val chr = characteristicsToReadPower[indexCharToReadPower]
                 mBluetoothGatt.readCharacteristic(chr)
             }
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value)
-                }
-                else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
-                }
-            }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -672,16 +650,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     Log.w(TAG,"Received written indication on an unexpected characteristic  ${event.characteristic.uuid}")
                 }
             }
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value)
-                }
-                else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
-                }
-            }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -708,15 +677,11 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
                     }
                 }
-                else if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value)
-                }
                 else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
+                    handleCommonActionEvents(event)
                 }
             }
-            else -> Log.w(TAG ,"Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -751,6 +716,42 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         if (!mBluetoothGatt.writeDescriptor(descriptor)) {
             postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED,"Failed to write in descriptor, to enable notification on characteristic ${chr.uuid}")
             return
+        }
+    }
+
+    private fun handleCommonActionEvents(event: ActionEvent) {
+        when (event) {
+            is ActionEvent.ActionDisconnect -> {
+                currentState = State.Disconnecting
+                disconnect()
+            }
+            is ActionEvent.EventDisconnected -> {
+                Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+                currentState = State.Disconnected
+                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+
+                // Reset all lists
+                characteristicsCanIndicate.clear()
+                indexCharToBeSubscribed = 0
+
+                characteristicsToRead.clear()
+                indexCharToBeRead = 0
+
+                scardReaderList.readers.clear()
+                indexSlots = 0
+
+                mBluetoothGatt.close()
+            }
+            is ActionEvent.EventCharacteristicChanged -> {
+                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
+                    /* Update readers status */
+                    interpretSlotsStatus(event.characteristic.value)
+                }
+                else {
+                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
+                }
+            }
+            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
 }
