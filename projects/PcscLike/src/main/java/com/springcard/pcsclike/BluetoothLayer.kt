@@ -7,10 +7,16 @@
 package com.springcard.pcsclike
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothGatt.CONNECTION_PRIORITY_HIGH
 import android.content.Context
+import android.os.Build
+import android.support.annotation.RequiresApi
 import android.util.Log
 import java.util.*
 import kotlin.experimental.and
+import android.bluetooth.BluetoothDevice
+
+
 
 
 internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -39,13 +45,17 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     /* Various callback methods defined by the BLE API */
     private val mGattCallback: BluetoothGattCallback by lazy {
         object : BluetoothGattCallback() {
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onConnectionStateChange(
                 gatt: BluetoothGatt,
                 status: Int,
                 newState: Int
             ) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    process(ActionEvent.EventConnected())
+
+                    mBluetoothGatt.requestMtu(250)
+
+                   // process(ActionEvent.EventConnected())
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     process(ActionEvent.EventDisconnected())
                 }
@@ -91,6 +101,13 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 status: Int
             ) {
                 process(ActionEvent.EventDescriptorWrite(descriptor, status))
+            }
+
+            override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+                Log.d(TAG, "MTU size = $mtu")
+                mBluetoothGatt.requestConnectionPriority(CONNECTION_PRIORITY_HIGH)
+                process(ActionEvent.EventConnected())
+                super.onMtuChanged(gatt, mtu, status)
             }
         }
     }
