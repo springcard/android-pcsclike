@@ -53,9 +53,9 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
             ) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
 
-                    mBluetoothGatt.requestMtu(250)
+                    //mBluetoothGatt.requestMtu(250)
 
-                   // process(ActionEvent.EventConnected())
+                    process(ActionEvent.EventConnected())
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     process(ActionEvent.EventDisconnected())
                 }
