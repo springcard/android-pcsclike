@@ -12,7 +12,6 @@ import android.content.Context
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.util.Log
-import java.util.*
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
 
@@ -51,6 +50,10 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
             mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)!!,
             mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)!!
         )
+    }
+
+    private val charCcidPcToRdr by lazy {
+       mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR)
     }
 
     /* Various callback methods defined by the BLE API */
@@ -141,17 +144,15 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     private var dataToWriteCursorEnd = 0
 
     private fun ccidWriteCharSequenced() {
-        val characteristicCAPDU = mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR)
-
         /* Temporary workaround: we can not send to much data in one write */
         /* (we can write more than MTU but less than ~512 bytes) */
         val maxSize = 512
         if(dataToWriteCursorBegin < dataToWrite.size) {
             dataToWriteCursorEnd =  minOf(dataToWriteCursorBegin+maxSize, dataToWrite.size)
-            characteristicCAPDU?.value = dataToWrite.toByteArray().sliceArray(dataToWriteCursorBegin until dataToWriteCursorEnd)
+            charCcidPcToRdr?.value = dataToWrite.toByteArray().sliceArray(dataToWriteCursorBegin until dataToWriteCursorEnd)
             /* If the data length is greater than MTU, Android will automatically send multiple packets */
             /* There is no need to split the data ourself  */
-            mBluetoothGatt.writeCharacteristic(characteristicCAPDU)
+            mBluetoothGatt.writeCharacteristic(charCcidPcToRdr)
             Log.d(TAG, "Writing ${dataToWriteCursorEnd - dataToWriteCursorBegin} bytes")
             dataToWriteCursorBegin = dataToWriteCursorEnd
         }
@@ -163,10 +164,9 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
     /* Warning only use this method if you are sure to have less than 512 byte  */
     /* or if you want to use a specific characteristic */
-    private fun writeChar(charUuid: UUID, data: ByteArray) {
-        val characteristicCAPDU = mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(charUuid)
-        characteristicCAPDU?.value = data
-        mBluetoothGatt.writeCharacteristic(characteristicCAPDU)
+    private fun ccidWriteChar(data: ByteArray) {
+        charCcidPcToRdr?.value = data
+        mBluetoothGatt.writeCharacteristic(charCcidPcToRdr)
     }
 
 
@@ -353,7 +353,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                         Log.d(TAG, "Device already known: go to ReadingSlotsName")
                         currentState = State.ReadingSlotsName
                         /* Trigger 1st APDU to get slot name */
-                        writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                        ccidWriteChar(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                     }
                 }
             }
@@ -377,7 +377,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     /* Get next slot name */
                     indexSlots++
                     if (indexSlots < scardReaderList.readers.size) {
-                        writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
+                        ccidWriteChar(scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
                     }
                     else {
                         Log.d(TAG, "Reading readers name finished")
@@ -414,7 +414,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     private fun handleStateAuthenticate(event: ActionEvent) {
         when (event) {
             is ActionEvent.ActionAuthenticate -> {
-                writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
+                ccidWriteChar(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
                 authenticateStep = 1
             }
             is ActionEvent.EventCharacteristicChanged -> {
@@ -426,8 +426,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     if(authenticateStep == 1) {
 
                         scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)
-                        writeChar(
-                            GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR,
+                        ccidWriteChar(
                             scardReaderList.ccidHandler.scardControl(
                                 scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
                             )
