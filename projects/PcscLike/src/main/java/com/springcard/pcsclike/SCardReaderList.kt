@@ -63,6 +63,12 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
         internal set
     var firmwareVersionBuild = 0
         internal set
+
+    var isConnected = false
+        internal set
+    var isAlreadyKnown = false
+        internal set
+
     internal var hardwareVersion: String = ""
     internal var softwareVersion: String = ""
     internal var pnpId: String = ""
@@ -72,6 +78,10 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
     internal fun process(event: ActionEvent) {
         commLayer.process(event)
     }
+
+
+    abstract fun create(ctx : Context)
+
 
     /**
      * The control function gives you direct control on the reader (even when there’s no card in it).
