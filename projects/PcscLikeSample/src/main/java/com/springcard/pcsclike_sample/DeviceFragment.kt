@@ -7,6 +7,7 @@
 package com.springcard.pcsclike_sample
 
 import android.app.ProgressDialog
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.os.SystemClock
 import android.support.v4.app.Fragment
@@ -44,6 +45,12 @@ abstract class DeviceFragment : Fragment() {
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
         override fun onReaderListCreated(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListCreated")
+
+            if(mainActivity.enableTimeMeasurement) {
+                apduListStopTime = SystemClock.elapsedRealtime()
+                val elapsedTime = apduListStopTime - apduListStartTime
+                Toast.makeText(activity, "Device instantiated in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
+            }
 
             val spinnerList =  mutableListOf<String>()
             scardDevice = readerList
@@ -257,6 +264,11 @@ abstract class DeviceFragment : Fragment() {
             //-------------------------------------------------------------------
 
             connectToDevice()
+
+            if (mainActivity.enableTimeMeasurement) {
+                apduListStartTime = SystemClock.elapsedRealtime()
+            }
+
             mainActivity.setActionBarTitle(deviceName)
 
             // No auto-correct

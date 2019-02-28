@@ -25,22 +25,33 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
     private lateinit var mBluetoothGatt: BluetoothGatt
 
-    private val charUuidToRead = mutableListOf<UUID>(
-        GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR,
-        GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR,
-        GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR,
-        GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR,
-        GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR,
-        GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR,
-        GattAttributesSpringCore.UUID_PNP_ID_CHAR)
 
-    private val charUuidToReadPower = mutableListOf<UUID>(
-        GattAttributesSpringCore.UUID_BATTERY_POWER_STATE_CHAR,
-        GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR)
+    private val characteristicsToReadPower by lazy {
+        mutableListOf<BluetoothGattCharacteristic>(
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_BATTERY_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_BATTERY_POWER_STATE_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_BATTERY_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR)!!
+        )
+    }
 
-    private var characteristicsToRead : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
-    private var characteristicsCanIndicate : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
-    private var characteristicsToReadPower : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
+    private val characteristicsToRead by lazy {
+        mutableListOf<BluetoothGattCharacteristic>(
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_DEVICE_INFORMATION_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_PNP_ID_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)!!
+        )
+    }
+
+    private val characteristicsCanIndicate  by lazy {
+        mutableListOf<BluetoothGattCharacteristic>(
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)!!,
+            mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)!!
+        )
+    }
 
     /* Various callback methods defined by the BLE API */
     private val mGattCallback: BluetoothGattCallback by lazy {
@@ -54,6 +65,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                     //mBluetoothGatt.requestMtu(250)
+                    mBluetoothGatt.requestConnectionPriority(CONNECTION_PRIORITY_HIGH)
 
                     process(ActionEvent.EventConnected())
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -105,7 +117,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
 
             override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
                 Log.d(TAG, "MTU size = $mtu")
-                mBluetoothGatt.requestConnectionPriority(CONNECTION_PRIORITY_HIGH)
                 process(ActionEvent.EventConnected())
                 super.onMtuChanged(gatt, mtu, status)
             }
@@ -119,19 +130,10 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
          mBluetoothGatt = bluetoothDevice.connectGatt(ctx, false, mGattCallback)
     }
 
-
     private fun disconnect(): Boolean {
-
         Log.d(TAG, "Disconnect")
-
         mBluetoothGatt.disconnect()
         return true
-    }
-
-
-
-    private fun getCharacteristic(charUuid: UUID) : BluetoothGattCharacteristic? {
-        return  mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(charUuid)
     }
 
     private var dataToWrite = mutableListOf<Byte>()
@@ -139,7 +141,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     private var dataToWriteCursorEnd = 0
 
     private fun ccidWriteCharSequenced() {
-        val characteristicCAPDU = getCharacteristic(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR)
+        val characteristicCAPDU = mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR)
 
         /* Temporary workaround: we can not send to much data in one write */
         /* (we can write more than MTU but less than ~512 bytes) */
@@ -162,7 +164,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
     /* Warning only use this method if you are sure to have less than 512 byte  */
     /* or if you want to use a specific characteristic */
     private fun writeChar(charUuid: UUID, data: ByteArray) {
-        val characteristicCAPDU = getCharacteristic(charUuid)
+        val characteristicCAPDU = mBluetoothGatt.getService(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_SERVICE)?.getCharacteristic(charUuid)
         characteristicCAPDU?.value = data
         mBluetoothGatt.writeCharacteristic(characteristicCAPDU)
     }
@@ -213,6 +215,8 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
                 currentState = State.DiscoveringGatt
 
+                scardReaderList.isConnected = true
+
                 mBluetoothGatt.discoverServices()
                 Log.i(TAG, "Attempting to start service discovery")
             }
@@ -232,55 +236,30 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
 
                 if (event.status == BluetoothGatt.GATT_SUCCESS) {
-                    currentState = State.ReadingInformation
 
                     val services =  mBluetoothGatt.services
                     Log.d(TAG, services.toString())
 
-                    for (srv in services!!) {
-                        Log.d(TAG, "Service = " + srv.uuid.toString())
-
-                        /* Detect if CCID service is bonded or not */
-                        if(srv.uuid == GattAttributesSpringCore.UUID_SPRINGCARD_CCID_PLAIN_SERVICE) {
-                            GattAttributesSpringCore.isCcidServiceBonded = false
-                            /* Add plain CCID status char*/
-                            charUuidToRead.add(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)
-                        }
-                        else if(srv.uuid == GattAttributesSpringCore.UUID_SPRINGCARD_CCID_BONDED_SERVICE){
-                            GattAttributesSpringCore.isCcidServiceBonded = true
-                            /* Add bonded CCID status char*/
-                            charUuidToRead.add(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)
-                        }
-
-
-                        for (chr in srv.characteristics) {
-                            Log.d(TAG, "Characteristic = ${chr.uuid}")
-                            val property = chr.properties
-
-                            /* If characteristic can notify/indicate */
-                            if (property and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) {
-                                Log.d(TAG, "Could be notified")
-                                characteristicsCanIndicate.add(chr)
-                            }
-
-                            /* If characteristic must be read to find information */
-                            if (charUuidToRead.contains(chr.uuid)) {
-                                Log.d(TAG, "Could be read")
-                                characteristicsToRead.add(chr)
-                            }
-
-
-                            if(charUuidToReadPower.contains(chr.uuid)) {
-                                Log.d(TAG, "Found characteristic power")
-                                characteristicsToReadPower.add(chr)
-                            }
-                        }
+                    if(scardReaderList.isAlreadyKnown) {
+                        Log.d(TAG, "Device already known: go to SubscribingNotifications")
+                        currentState = State.SubscribingNotifications
+                        /* Trigger 1st subscribing */
+                        val chr = characteristicsCanIndicate[0]
+                        enableNotifications(chr)
                     }
-
-                    // trigger 1st read
-                    val chr = characteristicsToRead[0]
-                    mBluetoothGatt.readCharacteristic(chr)
-
+                    else {
+                        Log.d(TAG, "Device unknown: go to ReadingInformation")
+                        currentState = State.ReadingInformation
+                        /*for (srv in services!!) {
+                            Log.d(TAG, "Service = " + srv.uuid.toString())
+                            for (chr in srv.characteristics) {
+                                Log.d(TAG, "Characteristic = ${chr.uuid}")
+                            }
+                        }*/
+                        /* trigger 1st read */
+                        val chr = characteristicsToRead[0]
+                        mBluetoothGatt.readCharacteristic(chr)
+                    }
                 } else {
                     Log.w(TAG, "onServicesDiscovered received: ${event.status}")
                 }
@@ -366,9 +345,16 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 else {
                     Log.d(TAG, "Subscribing finished")
 
-                    currentState = State.ReadingSlotsName
-                    // Trigger 1st APDU to get slot name
-                    writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                    if(scardReaderList.isAlreadyKnown) {
+                        Log.d(TAG, "Device already known: go to processNextSlotConnection")
+                        processNextSlotConnection()
+                    }
+                    else {
+                        Log.d(TAG, "Device already known: go to ReadingSlotsName")
+                        currentState = State.ReadingSlotsName
+                        /* Trigger 1st APDU to get slot name */
+                        writeChar(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR, scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                    }
                 }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
@@ -689,6 +675,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         when (event) {
             is ActionEvent.EventDisconnected -> {
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+                scardReaderList.isConnected = false
                 currentState = State.Disconnected
                 scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
 
@@ -699,7 +686,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 characteristicsToRead.clear()
                 indexCharToBeRead = 0
 
-                scardReaderList.readers.clear()
+                //scardReaderList.readers.clear()
                 indexSlots = 0
 
                 mBluetoothGatt.close()
@@ -728,6 +715,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
             is ActionEvent.EventDisconnected -> {
                 Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
                 currentState = State.Disconnected
+                scardReaderList.isConnected = false
                 scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
 
                 // Reset all lists
@@ -737,7 +725,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 characteristicsToRead.clear()
                 indexCharToBeRead = 0
 
-                scardReaderList.readers.clear()
+                //scardReaderList.readers.clear()
                 indexSlots = 0
 
                 mBluetoothGatt.close()

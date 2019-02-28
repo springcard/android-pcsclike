@@ -6,13 +6,14 @@
 
 package com.springcard.pcsclike
 
+import android.bluetooth.BluetoothDevice
 import android.hardware.usb.UsbDevice
 import android.content.Context
 
 class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks: SCardReaderListCallback): SCardReaderList(layerDevice as Any, callbacks) {
 
 
-    private fun create(ctx : Context) {
+    override fun create(ctx : Context) {
         if(layerDevice is UsbDevice) {
             commLayer = UsbLayer(layerDevice, callbacks, this)
             process(ActionEvent.ActionCreate(ctx))
@@ -29,8 +30,33 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
          * @param callbacks list of callbacks
          */
         fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback) {
-            val scardReaderList = SCardReaderListUsb(device as UsbDevice, callbacks)
-            scardReaderList.create(ctx)
+
+            val readerList = SCardReaderListUsb.checkIfDeviceKnown(device, callbacks)
+            readerList.create(ctx)
         }
+
+
+        private fun checkIfDeviceKnown(device: Any, callbacks: SCardReaderListCallback): SCardReaderList {
+            lateinit var scardReaderList: SCardReaderListUsb
+
+            /* Warning, IDs are not persistent across USB disconnects */
+            val address = (device as UsbDevice).deviceId.toString()
+
+            if(knownSCardReaderList.containsKey(address)) {
+                if (knownSCardReaderList[address]!!.isConnected) {
+                    throw IllegalArgumentException("SCardReaderList with address $address already exist")
+                } else {
+                    knownSCardReaderList[address]?.isAlreadyKnown = true
+                    scardReaderList = knownSCardReaderList[address] as SCardReaderListUsb
+                }
+            }
+            else {
+                scardReaderList = SCardReaderListUsb(device, callbacks)
+                knownSCardReaderList[address] = scardReaderList
+            }
+            return scardReaderList
+        }
+
+        private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
     }
 }
