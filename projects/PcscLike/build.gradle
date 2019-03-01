@@ -6,7 +6,7 @@ apply plugin: 'org.jetbrains.dokka-android'
 android {
     compileSdkVersion 28
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 14
         targetSdkVersion 28
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
         versionName getRevision()
