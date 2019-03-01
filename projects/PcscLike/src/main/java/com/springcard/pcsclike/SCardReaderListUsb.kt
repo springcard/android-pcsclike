@@ -20,6 +20,11 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
         }
     }
 
+
+    override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
+        throw NotImplementedError("Cannot create SCardReaderListUsb with secure parameters for the moment")
+    }
+
     companion object {
         /**
          * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)

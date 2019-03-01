@@ -42,7 +42,9 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     private val stopOnErrorName = "stopOnError"
     private val enableTimeMeasurementName = "enableTimeMeasurement"
     private val useAuthentificationName = "useAuthentication"
-    private val authenticatorKeyName = "authenticationKey"
+    private val authenticationKeyName = "authenticationKey"
+    private val authenticationKeyIndexName= "authenticationKeyIndex"
+
     var enableLog: Boolean
         get() {
             val sp = getSharedPreferences(options, 0)
@@ -92,11 +94,22 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     var authenticationKey: String
         get() {
             val sp = getSharedPreferences(options, 0)
-            return sp.getString(authenticatorKeyName, "00000000000000000000000000000000")!!
+            return sp.getString(authenticationKeyName, "00000000000000000000000000000000")!!
         }
         set(value) {
             val editor =  getSharedPreferences(options, 0).edit()
-            editor.putString(authenticatorKeyName, value)
+            editor.putString(authenticationKeyName, value)
+            editor.apply()
+        }
+
+    var authenticationKeyIndex: Int
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getInt(authenticationKeyIndexName, 0)
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putInt(authenticationKeyIndexName, value)
             editor.apply()
         }
 

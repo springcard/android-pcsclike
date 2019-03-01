@@ -351,8 +351,16 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     Log.d(TAG, "Subscribing finished")
 
                     if(scardReaderList.isAlreadyKnown) {
-                        Log.d(TAG, "Device already known: go to processNextSlotConnection")
-                        processNextSlotConnection()
+                        Log.d(TAG, "Device already known: go to processNextSlotConnection or authenticate")
+                        /* Go to authenticate state if necessary */
+                        if(scardReaderList.ccidHandler.isSecure) {
+                            currentState = State.Authenticate
+                            process(ActionEvent.ActionAuthenticate())
+                        }
+                        else {
+                            /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                            processNextSlotConnection()
+                        }
                     }
                     else {
                         Log.d(TAG, "Device already known: go to ReadingSlotsName")

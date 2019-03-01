@@ -12,14 +12,15 @@ import android.support.v4.app.Fragment
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.*
-import android.widget.Switch
-import android.widget.TextView
+import android.widget.*
+import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.fragment_options.*
 
 
 class OptionsFragment : Fragment(), TextWatcher {
 
     private lateinit var  mainActivity: MainActivity
+    private val indexkey = listOf("User", "Admin")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -59,6 +60,16 @@ class OptionsFragment : Fragment(), TextWatcher {
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
 
+        val dataAdapter = ArrayAdapter<String>(
+            activity?.applicationContext!!,
+            android.R.layout.simple_spinner_item, indexkey
+        )
+        // Drop down layout style - list view
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerKeyIndex.adapter = dataAdapter
+
+        spinnerKeyIndex.setSelection(mainActivity.authenticationKeyIndex)
+
         if(mainActivity.supportCrypto) {
 
             /* Initial state */
@@ -71,12 +82,26 @@ class OptionsFragment : Fragment(), TextWatcher {
 
             switchUseAuthentication.isChecked = mainActivity.useAuthentication
 
+            spinnerKeyIndex.isEnabled = mainActivity.useAuthentication
+
+            /* On key index changed*/
+            spinnerKeyIndex.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                }
+
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    mainActivity.authenticationKeyIndex = position
+                }
+            }
+
+            /* On key value changed */
             switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
                 mainActivity.useAuthentication = isChecked
                 mainActivity.logInfo("Enable authentication = $isChecked")
 
                 /* Enable or not key text box */
                 editTextAuthenticationKey.isEnabled = isChecked
+                spinnerKeyIndex.isEnabled = isChecked
             }
 
         }
@@ -89,6 +114,9 @@ class OptionsFragment : Fragment(), TextWatcher {
 
             keyWrapper.isEnabled = false
             keyWrapper.visibility = TextInputLayout.INVISIBLE
+
+            spinnerKeyIndex.isEnabled = false
+            spinnerKeyIndex.visibility = Spinner.INVISIBLE
         }
     }
 

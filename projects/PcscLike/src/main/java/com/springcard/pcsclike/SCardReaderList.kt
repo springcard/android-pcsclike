@@ -81,6 +81,7 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
 
 
     abstract fun create(ctx : Context)
+    abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
 
 
     /**

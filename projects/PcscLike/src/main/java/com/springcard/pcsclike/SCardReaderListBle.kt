@@ -9,6 +9,7 @@ package com.springcard.pcsclike
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
+import java.util.*
 import android.support.annotation.RequiresApi
 
 
@@ -23,7 +24,7 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
     }
 
 
-    private fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
+    override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         if(layerDevice is BluetoothDevice) {
             commLayer = BluetoothLayer(layerDevice, callbacks, this)
             ccidHandler = CcidHandler(secureConnexionParameters)
@@ -43,7 +44,6 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
          * @param callbacks list of callbacks
          */
         fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback) {
-
             val readerList = checkIfDeviceKnown(device, callbacks)
             readerList.create(ctx)
         }
@@ -59,15 +59,8 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
          * @param secureConnexionParameters CcidSecureParameters
          */
         fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback, secureConnexionParameters: CcidSecureParameters) {
-            val scardReaderList = SCardReaderListBle(device as BluetoothDevice, callbacks)
-
-            if(knownSCardReaderList[device.address]!!.isConnected) {
-                throw IllegalArgumentException("SCardReaderList with address ${device.address} already exist")
-            }
-            else {
-                knownSCardReaderList[device.address] = scardReaderList
-            }
-            scardReaderList.create(ctx, secureConnexionParameters)
+            val readerList = checkIfDeviceKnown(device, callbacks)
+            readerList.create(ctx, secureConnexionParameters)
         }
 
 

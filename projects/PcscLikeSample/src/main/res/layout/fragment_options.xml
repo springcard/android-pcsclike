@@ -3,7 +3,7 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         tools:context=".OptionsFragment">
 
@@ -14,14 +14,15 @@
             app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="24dp"
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="24dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="24dp"
-            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintVertical_bias="0.497">
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintVertical_bias="0.497"
+            android:gravity="left">
 
-        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content"
+        <TableRow android:layout_width="match_parent" android:layout_height="match_parent"
                   app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="10dp"
-                  android:gravity="center_horizontal">
+                  android:orientation="horizontal" android:gravity="center_horizontal">
             <Switch
                     android:text="@string/enable_logs"
-                    android:layout_width="match_parent"
+                    android:layout_width="219dp"
                     android:layout_height="match_parent"
                     android:id="@+id/switchLog"
                     tools:layout_editor_absoluteY="126dp" tools:layout_editor_absoluteX="134dp"
@@ -33,7 +34,7 @@
             <Switch
                     android:text="@string/stop_on_error"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:id="@+id/switchStopOnError"
                     tools:layout_editor_absoluteY="126dp" tools:layout_editor_absoluteX="134dp"/>
         </TableRow>
@@ -42,22 +43,43 @@
                   android:gravity="center_horizontal">
             <Switch
                     android:text="@string/time_measurement"
-                    android:layout_width="308dp"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:id="@+id/switchEnableTimeMeasurment"
                     tools:layout_editor_absoluteY="126dp" tools:layout_editor_absoluteX="134dp"/>
         </TableRow>
         <TableRow android:layout_width="match_parent" android:layout_height="match_parent"
                   app:layout_constraintTop_toTopOf="parent"
-                  android:gravity="center_horizontal">
+                  android:gravity="center_horizontal" android:layout_marginBottom="10dp">
             <Switch
                     android:text="Use authentication"
-                    android:layout_width="207dp"
-                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:id="@+id/switchUseAuthentication"
                     tools:layout_editor_absoluteY="126dp" tools:layout_editor_absoluteX="134dp"/>
         </TableRow>
         <TableRow android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:id="@+id/tableRow" android:gravity="center_horizontal" android:visibility="visible"
+                  android:layout_marginBottom="10dp">
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="280dp"
+                    android:layout_height="match_parent">
+                <TextView
+                        android:text="Key index"
+                        android:layout_width="167dp"
+                        android:layout_height="wrap_content" android:id="@+id/textView3"
+                        android:width="10dp"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"/>
+                <Spinner
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/spinnerKeyIndex"
+                        tools:layout_conversion_absoluteHeight="24dp" tools:layout_editor_absoluteY="162dp"
+                        tools:layout_editor_absoluteX="261dp" tools:layout_conversion_absoluteWidth="110dp"
+                />
+            </LinearLayout>
+        </TableRow>
+        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content"
                   app:layout_constraintTop_toTopOf="parent"
                   android:gravity="center_horizontal">
             <android.support.design.widget.TextInputLayout
@@ -66,8 +88,8 @@
                     android:layout_height="wrap_content"
                     app:counterMaxLength="32">
                 <EditText
-                        android:layout_width="315dp"
-                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:digits="0123456789ABCDEF"
                         android:inputType="textCapCharacters"
                         android:ems="10"

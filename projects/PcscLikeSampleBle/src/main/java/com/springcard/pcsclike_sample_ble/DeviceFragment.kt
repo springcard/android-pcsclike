@@ -39,13 +39,24 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
                     return
                 }
 
+                val index: CcidSecureParameters.AuthenticationKeyIndex = when {
+                    mainActivity.authenticationKeyIndex == 0 -> CcidSecureParameters.AuthenticationKeyIndex.User
+                    mainActivity.authenticationKeyIndex == 1 -> CcidSecureParameters.AuthenticationKeyIndex.Admin
+                    else -> {
+                        Toast.makeText(mainActivity.applicationContext, "Wrong key index ${mainActivity.authenticationKeyIndex}", Toast.LENGTH_LONG)
+                        progressDialog.dismiss()
+                        mainActivity.backToScanFragment()
+                        return
+                    }
+                }
+
                 SCardReaderListBle.create(
                     mainActivity.applicationContext,
                     device as BluetoothDevice,
                     scardCallbacks,
                     CcidSecureParameters(
                         CcidSecureParameters.AuthenticationMode.Aes128,
-                        CcidSecureParameters.AuthenticationKeyIndex.User,
+                        index,
                         key,
                         CcidSecureParameters.CommunicationMode.MacAndCipher
                     )
