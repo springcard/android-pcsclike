@@ -12,11 +12,8 @@ import android.content.Context
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.util.Log
-import java.util.*
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
-
-
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -548,8 +545,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
         }
     }
 
-
-
     private fun handleStateIdle(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
@@ -646,7 +641,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
             else -> handleCommonActionEvents(event)
         }
     }
-
 
     private fun handleStateWaitingResponse(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
