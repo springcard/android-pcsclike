@@ -93,17 +93,31 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onReaderListClosed(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListClosed")
+
+            if(readerList != scardDevice) {
+                mainActivity.logInfo("Error: wrong SCardReaderList")
+                return
+            }
             mainActivity.backToScanFragment()
         }
 
         override fun onControlResponse(readerList: SCardReaderList, response: ByteArray) {
             mainActivity.logInfo("onControlResponse")
-
+            
+            if(readerList != scardDevice) {
+                mainActivity.logInfo("Error: wrong SCardReaderList")
+                return
+            }
             handleRapdu(response)
         }
 
         override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
             mainActivity.logInfo("onPowerInfo")
+
+            if(readerList != scardDevice) {
+                mainActivity.logInfo("Error: wrong SCardReaderList")
+                return
+            }
 
             /* Info dialog */
             val builder = AlertDialog.Builder(activity!!)
@@ -140,6 +154,12 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
             mainActivity.logInfo("onReaderStatus")
+
+            if(slot != currentSlot) {
+                mainActivity.logInfo("Error: wrong slot")
+                return
+            }
+
             /* Is update concerning selected slot */
             if(spinnerSlots?.selectedItemPosition == slot.index) {
                 updateCardStatus(slot, cardPresent, cardPowered)
@@ -156,6 +176,12 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onCardDisconnected(channel: SCardChannel) {
             mainActivity.logInfo("onCardDisconnected")
+
+            if(channel != currentChannel) {
+                mainActivity.logInfo("Error: wrong channel")
+                return
+            }
+
             currentChannel = channel
             textState.text = getString(R.string.disconnected)
             textAtr.text = getString(R.string.atr)
@@ -163,7 +189,12 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
             mainActivity.logInfo("onTransmitResponse")
-            // TODO CRA check channel is current channel
+
+            if(channel != currentChannel) {
+                mainActivity.logInfo("Error: wrong channel")
+                return
+            }
+
             handleRapdu(response)
         }
 
@@ -171,6 +202,11 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onReaderListError(readerList: SCardReaderList, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
+
+            if(readerList != scardDevice) {
+                mainActivity.logInfo("Error: wrong SCardReaderList")
+                return
+            }
 
             val text = "Error: ${error.message} \n${error.detail}"
             Toast.makeText(activity, text, Toast.LENGTH_LONG).show()
@@ -183,6 +219,12 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
             mainActivity.logInfo("onReaderOrCardError")
+
+            if(!(readerOrCard == currentChannel || readerOrCard == currentSlot)) {
+                mainActivity.logInfo("Error: wrong channel or slot")
+                return
+            }
+
             rapduTextBox.text.clear()
             rapduTextBox.text.append(getString(R.string.cardMute))
         }
