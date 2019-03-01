@@ -14,8 +14,10 @@ import android.hardware.usb.*
 import android.util.Log
 import java.nio.ByteBuffer
 import android.hardware.usb.UsbRequest
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.hardware.usb.UsbConstants
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -90,12 +92,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
                 if (connect()) {
                     currentState = State.ReadingInformation
-
-                    /* Get info directly from USB */
-                    scardReaderList.vendorName = usbDevice.manufacturerName!!
-                    scardReaderList.productName = usbDevice.productName!!
-                    scardReaderList.serialNumber = usbDevice.serialNumber!!
-                    scardReaderList.serialNumberRaw = usbDevice.serialNumber!!.hexStringToByteArray()
 
                     /* Trigger 1st APDU to get 1st info */
                     indexInfoCmd = 1 // 1st command
@@ -395,35 +391,64 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
         /* find number of slot present in this reader */
         var curPos = 0
-        try {
-            val descriptor = usbDeviceConnection.rawDescriptors!!
+        val descriptor = usbDeviceConnection.rawDescriptors ?: return false
 
-            /* get number of slots present in this reader */
-            while (curPos < descriptor.size) {
-                /* read descriptor length */
-                val dlen = descriptor[curPos].toInt()
-                /* read descriptor type */
-                val dtype = descriptor[curPos + 1].toInt()
-                /* CCID type ? */
-                if (dlen == 0x36 && dtype == 0x21) {
-                    val slotCount = descriptor[curPos + 4] + 1
-                    Log.d(TAG, "Descriptor found, slotCount = $slotCount")
-                    /* Add n new readers */
-                    for (i in 0 until slotCount) {
-                        scardReaderList.readers.add(SCardReader(scardReaderList))
-                    }
-                    break
+        /* get number of slots present in this reader */
+        while (curPos < descriptor.size) {
+            /* read descriptor length */
+            val dlen = descriptor[curPos].toInt()
+            /* read descriptor type */
+            val dtype = descriptor[curPos + 1].toInt()
+            /* CCID type ? */
+            if (dlen == 0x36 && dtype == 0x21) {
+                val slotCount = descriptor[curPos + 4] + 1
+                Log.d(TAG, "Descriptor found, slotCount = $slotCount")
+                /* Add n new readers */
+                for (i in 0 until slotCount) {
+                    scardReaderList.readers.add(SCardReader(scardReaderList))
                 }
-                curPos += dlen
+                break
             }
-        } catch (e: NullPointerException) {
-            return false
+            curPos += dlen
         }
+
+        /* Get info directly from USB */
+        val manufacturerName: String
+        val productName: String
+        val serialNumber: String
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            manufacturerName = usbDevice.manufacturerName ?: ""
+            productName = usbDevice.productName ?: ""
+            serialNumber = usbDevice.serialNumber ?: ""
+        } else {
+            val buffer = ByteArray(255)
+            manufacturerName = usbDeviceConnection.getString(descriptor, 14 /* iManufacturer */, buffer)
+            productName = usbDeviceConnection.getString(descriptor, 15 /* iProduct */, buffer)
+            serialNumber = usbDeviceConnection.getString(descriptor, 16 /* iSerialNumber */, buffer)
+        }
+        scardReaderList.vendorName = manufacturerName
+        scardReaderList.productName = productName
+        scardReaderList.serialNumber = serialNumber
+        scardReaderList.serialNumberRaw = serialNumber.hexStringToByteArray()
 
         return  scardReaderList.slotCount != 0
     }
 
+    private fun UsbDeviceConnection.getString(rawDescriptor: ByteArray, index: Int, buffer: ByteArray): String {
+        val len = controlTransfer(
+            UsbConstants.USB_DIR_IN or UsbConstants.USB_TYPE_STANDARD,
+            0x06 /* GET_DESCRIPTOR */,
+            (0x03 /* DESCRIPTOR_STRING */ shl 8) or rawDescriptor[index].toInt(),
+            0, buffer, buffer.size,
+            0
+        )
+        if (len < 0) {
+            // Read failure
+            return ""
+        }
 
+        return String(buffer, 2, len - 2, Charsets.UTF_16LE)
+    }
 
     private fun stop() {
         synchronized(mWaiterThread) {
