@@ -240,6 +240,13 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     val services =  mBluetoothGatt.services
                     Log.d(TAG, services.toString())
 
+                    for (srv in services!!) {
+                        Log.d(TAG, "Service = " + srv.uuid.toString())
+                        for (chr in srv.characteristics) {
+                            Log.d(TAG, "    Characteristic = ${chr.uuid}")
+                        }
+                    }
+
                     if(scardReaderList.isAlreadyKnown) {
                         Log.d(TAG, "Device already known: go to SubscribingNotifications")
                         currentState = State.SubscribingNotifications
@@ -250,12 +257,6 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                     else {
                         Log.d(TAG, "Device unknown: go to ReadingInformation")
                         currentState = State.ReadingInformation
-                        /*for (srv in services!!) {
-                            Log.d(TAG, "Service = " + srv.uuid.toString())
-                            for (chr in srv.characteristics) {
-                                Log.d(TAG, "Characteristic = ${chr.uuid}")
-                            }
-                        }*/
                         /* trigger 1st read */
                         val chr = characteristicsToRead[0]
                         mBluetoothGatt.readCharacteristic(chr)
@@ -679,13 +680,8 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
 
                 // Reset all lists
-                characteristicsCanIndicate.clear()
                 indexCharToBeSubscribed = 0
-
-                characteristicsToRead.clear()
                 indexCharToBeRead = 0
-
-                //scardReaderList.readers.clear()
                 indexSlots = 0
 
                 mBluetoothGatt.close()
@@ -718,13 +714,8 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                 scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
 
                 // Reset all lists
-                characteristicsCanIndicate.clear()
                 indexCharToBeSubscribed = 0
-
-                characteristicsToRead.clear()
                 indexCharToBeRead = 0
-
-                //scardReaderList.readers.clear()
                 indexSlots = 0
 
                 mBluetoothGatt.close()

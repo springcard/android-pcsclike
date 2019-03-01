@@ -4,6 +4,13 @@
     <item
             android:id="@+id/action_info"
             android:title="@string/info"
-            app:showAsAction="ifRoom" android:icon="@android:drawable/ic_menu_info_details"/>
+            app:showAsAction="never"
+            android:icon="@android:drawable/ic_menu_info_details"/>
+
+    <item
+            android:id="@+id/action_shutdown"
+            android:title="@string/shutdown"
+            app:showAsAction="never"
+            android:icon="@android:drawable/ic_lock_power_off"/>
 
 </menu>

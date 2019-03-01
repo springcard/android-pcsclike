@@ -8,6 +8,8 @@ package com.springcard.pcsclike_sample_usb
 
 import android.hardware.usb.UsbDevice
 import com.springcard.pcsclike.*
+import android.view.Menu
+import android.view.MenuInflater
 
 
 class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
@@ -31,6 +33,15 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
         else {
             mainActivity.logInfo("Device is not a USB device")
         }
+    }
+
+    override fun onCreateOptionsMenu(
+        menu: Menu, inflater: MenuInflater
+    ) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        /* Hide shutdown button when we are on USB */
+        menu.findItem(com.springcard.pcsclike_sample.R.id.action_shutdown).isVisible = false
     }
 
 }

@@ -10,7 +10,7 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="scan_button">scan_button</string>
-    <string name="info">info</string>
+    <string name="info">Info</string>
     <string name="logo">Logo</string>
     <string name="application_information">Application Information</string>
     <string name="linkSpringcard">www.springcard.com</string>
@@ -30,6 +30,7 @@
     <string name="loading">Loading…</string>
     <string name="absent">Absent</string>
     <string name="present">Present</string>
+    <string name="shutdown">Shutdown</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>
