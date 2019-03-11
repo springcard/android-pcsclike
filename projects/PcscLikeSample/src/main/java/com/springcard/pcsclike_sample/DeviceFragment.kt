@@ -275,9 +275,7 @@ abstract class DeviceFragment : Fragment() {
         toolbar.setNavigationOnClickListener {
             // do something here, such as start an Intent to the parent activity.
 
-            progressDialog.dismiss()
-            scardDevice.close()
-            mainActivity.backToScanFragment()
+            quitAndDisconnect()
             mainActivity.drawer_layout.closeDrawer(GravityCompat.START)
         }
 
@@ -415,7 +413,6 @@ abstract class DeviceFragment : Fragment() {
 
     abstract fun init(_device: Any)
 
-    // TODO  override fun onBackPressed()
 
     private var apduListStartTime: Long = 0
     private var apduListStopTime: Long = 0
@@ -543,5 +540,11 @@ abstract class DeviceFragment : Fragment() {
         else{
            mainActivity.logInfo("Impossible value: card not present but powered!")
         }
+    }
+
+    public fun quitAndDisconnect() {
+        progressDialog.dismiss()
+        scardDevice.close()
+        mainActivity.backToScanFragment()
     }
 }
