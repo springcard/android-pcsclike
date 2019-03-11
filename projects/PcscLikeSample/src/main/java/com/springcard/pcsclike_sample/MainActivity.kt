@@ -192,10 +192,16 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     }
 
     override fun onBackPressed() {
-        if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
-            drawer_layout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
+
+        if(deviceFragment.isResumed) {
+            deviceFragment.quitAndDisconnect()
+        }
+        else {
+            if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
+                drawer_layout.closeDrawer(GravityCompat.START)
+            } else {
+                super.onBackPressed()
+            }
         }
     }
 
