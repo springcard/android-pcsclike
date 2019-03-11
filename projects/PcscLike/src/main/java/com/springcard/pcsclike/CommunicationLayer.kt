@@ -81,7 +81,9 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
     }
 
-    protected fun interpretSlotsStatus(data: ByteArray) {
+    protected fun interpretSlotsStatus(data: ByteArray, isReaderCreated: Boolean = true) {
+
+        /* If reader is being created, do not post callbacks neither return to Idle state */
 
         if(data.isEmpty()) {
             postReaderListError(
@@ -102,9 +104,15 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
         /* Is slot count matching nb of readers in scardReaderList obj */
         if(slotCount.toInt() != scardReaderList.readers.size) {
-            postReaderListError(
-                SCardError.ErrorCodes.PROTOCOL_ERROR,
-                "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})")
+            if(isReaderCreated) {
+                postReaderListError(
+                    SCardError.ErrorCodes.PROTOCOL_ERROR,
+                    "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+                )
+            }
+            else {
+                Log.e(TAG, "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})")
+            }
             return
         }
 
@@ -126,7 +134,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     }
 
                     /* If the card on the slot we used is gone */
-                    if(scardReaderList.ccidHandler.currentReaderIndex == slotNumber) {
+                    if(scardReaderList.ccidHandler.currentReaderIndex == slotNumber && isReaderCreated) {
                         if(!scardReaderList.readers[slotNumber].cardPresent || !scardReaderList.readers[slotNumber].cardPowered) {
                             currentState = State.Idle
                         }
@@ -141,14 +149,17 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                             Log.w(TAG, "Impossible value : $slotStatus")
                         }
                     }
-                    val cardChanged = (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
-                    if(cardChanged) {
-                        scardReaderList.handler.post {
-                            callbacks.onReaderStatus(
-                                scardReaderList.readers[slotNumber],
-                                scardReaderList.readers[slotNumber].cardPresent,
-                                scardReaderList.readers[slotNumber].cardPowered
-                            )
+                    if(isReaderCreated) {
+                        val cardChanged =
+                            (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
+                        if (cardChanged) {
+                            scardReaderList.handler.post {
+                                callbacks.onReaderStatus(
+                                    scardReaderList.readers[slotNumber],
+                                    scardReaderList.readers[slotNumber].cardPresent,
+                                    scardReaderList.readers[slotNumber].cardPowered
+                                )
+                            }
                         }
                     }
                 }
