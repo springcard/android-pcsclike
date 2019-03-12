@@ -31,6 +31,7 @@
     <string name="absent">Absent</string>
     <string name="present">Present</string>
     <string name="shutdown">Shutdown</string>
+    <string name="send_mail">Send mail</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>
