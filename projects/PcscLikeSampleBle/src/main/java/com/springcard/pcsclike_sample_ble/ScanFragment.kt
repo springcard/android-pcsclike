@@ -51,7 +51,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         /* Check if device  support BLE */
         mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) }?.also {
-           /* Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
+            /* Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
             finish()*/
         }
 
@@ -97,17 +97,10 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             val PERMISSION_REQUEST_COARSE_LOCATION = 5
             /* Android M Permission check */
             if (mainActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                val builder = AlertDialog.Builder(mainActivity)
-                builder.setTitle("This app needs location access")
-                builder.setMessage("Please grant location access so this app can detect beacons.")
-                builder.setPositiveButton(android.R.string.ok, null)
-                builder.setOnDismissListener {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
-                        PERMISSION_REQUEST_COARSE_LOCATION
-                    )
-                }
-                builder.show()
+                requestPermissions(
+                    arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
+                    PERMISSION_REQUEST_COARSE_LOCATION
+                )
             }
         }
 
@@ -143,7 +136,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         adapter = DeviceListAdapter(this.context!!, deviceList)
         device_list_view.adapter = adapter
 
-        /* Click on item of ListView */
+/* Click on item of ListView */
         device_list_view.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             mainActivity.logInfo("Device ${bleDeviceList[position].name} selected")
             mainActivity.goToDeviceFragment(bleDeviceList[position])
@@ -179,11 +172,13 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                 val settings = ScanSettings.Builder().build()
                 try {
                     val scanFilterD600 = ScanFilter.Builder()
-                        .setServiceUuid(ParcelUuid(GattAttributesD600.UUID_SPRINGCARD_RFID_SCAN_PCSC_LIKE_SERVICE)).build()
+                        .setServiceUuid(ParcelUuid(GattAttributesD600.UUID_SPRINGCARD_RFID_SCAN_PCSC_LIKE_SERVICE))
+                        .build()
                     val scanFilterSpringCorePlain = ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_PLAIN_SERVICE)).build()
                     val scanFilterSpringCoreBonded = ScanFilter.Builder()
-                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_BONDED_SERVICE)).build()
+                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_BONDED_SERVICE))
+                        .build()
                     scanFilters.add(scanFilterD600)
                     scanFilters.add(scanFilterSpringCorePlain)
                     scanFilters.add(scanFilterSpringCoreBonded)
@@ -197,10 +192,10 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                     mScanning = false
                     mBluetoothScanner?.stopScan(mLeScanCallback)
                     progressBarScanning?.visibility = ProgressBar.GONE
-                    mainActivity.logInfo("Scan stopped after ${SCAN_PERIOD/1000}s")
+                    mainActivity.logInfo("Scan stopped after ${SCAN_PERIOD / 1000}s")
                 }, SCAN_PERIOD)
 
-                if(!mScanning) {
+                if (!mScanning) {
                     mScanning = true
                     mBluetoothScanner?.startScan(scanFilters, settings, mLeScanCallback)
                     progressBarScanning?.visibility = ProgressBar.VISIBLE
@@ -259,7 +254,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     private fun deviceListContains(device: DeviceListElement): Boolean {
-
         // Loop over argument list.
         for (item in deviceList) {
             if (device.name == item.name)

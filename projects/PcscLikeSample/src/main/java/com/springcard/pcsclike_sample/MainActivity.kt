@@ -192,7 +192,6 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     }
 
     override fun onBackPressed() {
-
         if(deviceFragment.isResumed) {
             deviceFragment.quitAndDisconnect()
         }

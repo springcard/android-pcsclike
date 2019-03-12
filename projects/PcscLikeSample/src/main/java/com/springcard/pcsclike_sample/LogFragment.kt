@@ -6,6 +6,7 @@
 
 package com.springcard.pcsclike_sample
 
+import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -14,23 +15,34 @@ import android.view.*
 import android.widget.TableRow
 import android.widget.TextView
 import kotlinx.android.synthetic.main.fragment_log.*
+import android.content.Intent
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class LogFragment : Fragment() {
 
     private var logString = mutableListOf<String>()
+    private val mainActivity  by lazy {
+        activity as MainActivity
+    }
 
     fun appendToLog(message: String) {
         logString.add(message)
+    }
+
+    override fun onCreateOptionsMenu(
+        menu: Menu, inflater: MenuInflater
+    ) {
+        inflater.inflate(R.menu.log_app_bar, menu)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        setHasOptionsMenu(false)
+        setHasOptionsMenu(true)
 
-        val mainActivity = activity as MainActivity
         mainActivity.setActionBarTitle("Log")
 
         // Inflate the layout for this fragment
@@ -57,5 +69,31 @@ class LogFragment : Fragment() {
 
         // add row to table
         logTable.addView(row)
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // handle item selection
+        when (item.itemId) {
+            R.id.send_button -> {
+
+                val now = Date()
+                val simpleDate = SimpleDateFormat("dd/MM/yyyy HH:mm")
+                val date = simpleDate.format(now)
+                sendMail("${getString(R.string.app_name)} Log - $date", logString.joinToString("\n"))
+
+                return true
+            }
+            else -> return super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun sendMail(subject: String, content: String) {
+        val intent = Intent(Intent.ACTION_SEND)
+        intent.type = "text/plain"// "vnd.android.cursor.dir/email"
+        intent.putExtra(Intent.EXTRA_EMAIL,  arrayOf("support@springcard.com"))
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject)
+        intent.putExtra(Intent.EXTRA_TEXT, content)
+        startActivity(Intent.createChooser(intent, "Send Email"))
     }
 }
