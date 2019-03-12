@@ -130,10 +130,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 */
     }
 
-    override fun onPause() {
-        super.onPause()
-      //  scanLeDevice(false)
-    }
 
     override fun onResume() {
         super.onResume()
