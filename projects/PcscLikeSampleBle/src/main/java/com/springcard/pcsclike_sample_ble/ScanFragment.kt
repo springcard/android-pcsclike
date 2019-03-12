@@ -163,7 +163,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
 
     private fun scanLeDevice(enable: Boolean) {
-        val mHandler = Handler(context!!.mainLooper)
         when (enable) {
             true -> {
                 /* Filter for SpringCard service */
@@ -186,22 +185,15 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                     Log.e(TAG, e.message)
                 }
 
-
-                // Stops scanning after a pre-defined scan period.
-                mHandler.postDelayed({
-                    mScanning = false
-                    mBluetoothScanner?.stopScan(mLeScanCallback)
-                    progressBarScanning?.visibility = ProgressBar.GONE
-                    mainActivity.logInfo("Scan stopped after ${SCAN_PERIOD / 1000}s")
-                }, SCAN_PERIOD)
+                /* Reset devices list anyway */
+                deviceList.clear()
+                bleDeviceList.clear()
+                adapter?.notifyDataSetChanged()
 
                 if (!mScanning) {
                     mScanning = true
                     mBluetoothScanner?.startScan(scanFilters, settings, mLeScanCallback)
                     progressBarScanning?.visibility = ProgressBar.VISIBLE
-                    deviceList.clear()
-                    bleDeviceList.clear()
-                    adapter?.notifyDataSetChanged()
                     mainActivity.logInfo("Scan started")
                 }
             }
