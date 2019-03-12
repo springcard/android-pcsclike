@@ -29,9 +29,8 @@ import android.os.Looper
  * @property firmwareVersionMajor The MM part of libraryVersion
  * @property firmwareVersionMinor The mm part of libraryVersion
  * @property firmwareVersionBuild The build number (bb part of libraryVersion)
- * @property hardwareVersion String
- * @property softwareVersion String
- * @property pnpId String
+ * @property isConnected True the device is connected to the phone
+ * @property isAlreadyKnown True if the device as previously been connected (and the library as not been unloaded or SCardReaderList.clearCache has not been called)
  * @property readers List of SCardReader
  * @property slots  Name of every slot
  * @property slotCount Number of slots
