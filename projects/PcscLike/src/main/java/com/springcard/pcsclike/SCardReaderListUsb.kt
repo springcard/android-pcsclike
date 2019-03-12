@@ -63,5 +63,12 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
         }
 
         private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
+
+        /**
+         * Clear list of devices known
+         */
+        fun clearCache() {
+            knownSCardReaderList.clear()
+        }
     }
 }

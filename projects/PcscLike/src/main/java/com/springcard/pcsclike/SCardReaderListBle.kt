@@ -84,6 +84,13 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
         }
 
         private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
+
+        /**
+         * Clear list of devices known
+         */
+        fun clearCache() {
+            knownSCardReaderList.clear()
+        }
     }
 
 }
