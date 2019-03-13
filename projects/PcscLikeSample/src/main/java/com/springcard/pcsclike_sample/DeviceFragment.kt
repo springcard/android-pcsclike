@@ -74,6 +74,8 @@ abstract class DeviceFragment : Fragment() {
             spinnerTransmitControl.adapter = dataAdapter
 
             textState.text = getString(R.string.absent)
+            connectCardButton.isEnabled = false
+            disconnectCardButton.isEnabled = false
 
             currentSlot = scardDevice.getReader(spinnerSlots.selectedItemPosition)
 
@@ -171,6 +173,9 @@ abstract class DeviceFragment : Fragment() {
             currentChannel = channel
             textState.text = getString(R.string.connected)
             textAtr.text = channel.atr.toHexString()
+
+            connectCardButton.isEnabled = false
+            disconnectCardButton.isEnabled = true
         }
 
 
@@ -185,6 +190,9 @@ abstract class DeviceFragment : Fragment() {
             currentChannel = channel
             textState.text = getString(R.string.disconnected)
             textAtr.text = getString(R.string.atr)
+
+            connectCardButton.isEnabled = true
+            disconnectCardButton.isEnabled = false
         }
 
         override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
@@ -328,6 +336,8 @@ abstract class DeviceFragment : Fragment() {
                 }
                 else {
 
+                    transmitButton.isEnabled = false
+
                     /* save command */
                     /* TODO CRA */
                     // addExecutedApdu(capduTextBox.text.toString())
@@ -451,6 +461,7 @@ abstract class DeviceFragment : Fragment() {
                         val elapsedTime = apduListStopTime - apduListStartTime
                         Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                     }
+                    transmitButton.isEnabled = true
                 }
             }
         }
@@ -527,22 +538,28 @@ abstract class DeviceFragment : Fragment() {
             slot.cardConnect()
             textAtr?.text = getString(R.string.atr)
             textState?.text = getString(R.string.present)
+            connectCardButton.isEnabled = true
+            disconnectCardButton.isEnabled = false
         }
         else if(cardPresent && cardPowered) {
             textAtr.text = currentSlot?.channel!!.atr.toHexString()
             textState?.text = getString(R.string.connected)
             currentChannel = slot.channel
+            connectCardButton.isEnabled = false
+            disconnectCardButton.isEnabled = true
         }
         else if(!cardPresent && !cardPowered) {
             textAtr?.text = getString(R.string.atr)
             textState?.text = getString(R.string.absent)
+            connectCardButton.isEnabled = false
+            disconnectCardButton.isEnabled = false
         }
         else{
            mainActivity.logInfo("Impossible value: card not present but powered!")
         }
     }
 
-    public fun quitAndDisconnect() {
+    fun quitAndDisconnect() {
         progressDialog.dismiss()
         scardDevice.close()
         mainActivity.backToScanFragment()
