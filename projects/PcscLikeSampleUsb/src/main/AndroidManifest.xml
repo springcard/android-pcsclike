@@ -12,7 +12,8 @@
             android:theme="@style/AppTheme">
         <activity
                 android:name="com.springcard.pcsclike_sample_usb.MainActivity"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme.NoActionBar"
+                android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <!--<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
