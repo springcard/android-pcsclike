@@ -45,14 +45,14 @@
                     android:text="@string/time_measurement"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:id="@+id/switchEnableTimeMeasurment"
+                    android:id="@+id/switchEnableTimeMeasurement"
                     tools:layout_editor_absoluteY="126dp" tools:layout_editor_absoluteX="134dp"/>
         </TableRow>
         <TableRow android:layout_width="match_parent" android:layout_height="match_parent"
                   app:layout_constraintTop_toTopOf="parent"
                   android:gravity="center_horizontal" android:layout_marginBottom="10dp">
             <Switch
-                    android:text="Use authentication"
+                    android:text="@string/use_authentication"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:id="@+id/switchUseAuthentication"
@@ -66,11 +66,12 @@
                     android:layout_width="280dp"
                     android:layout_height="match_parent">
                 <TextView
-                        android:text="Key index"
+                        android:text="@string/key_index"
                         android:layout_width="167dp"
-                        android:layout_height="wrap_content" android:id="@+id/textView3"
+                        android:layout_height="wrap_content" android:id="@+id/textViewKeyIndex"
                         android:width="10dp"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"/>
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                        android:enabled="false"/>
                 <Spinner
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" android:id="@+id/spinnerKeyIndex"
@@ -95,7 +96,7 @@
                         android:ems="10"
                         android:maxLength="32"
                         android:id="@+id/editTextAuthenticationKey" android:textSize="14sp"
-                        android:hint="Authentication key"/>
+                        android:hint="@string/authentication_key"/>
             </android.support.design.widget.TextInputLayout>
         </TableRow>
     </TableLayout>

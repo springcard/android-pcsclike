@@ -13,7 +13,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.*
 import android.widget.*
-import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.fragment_options.*
 
 
@@ -43,7 +42,7 @@ class OptionsFragment : Fragment(), TextWatcher {
 
         switchLog.isChecked = mainActivity.enableLog
         switchStopOnError.isChecked = mainActivity.stopOnError
-        switchEnableTimeMeasurment.isChecked = mainActivity.enableTimeMeasurement
+        switchEnableTimeMeasurement.isChecked = mainActivity.enableTimeMeasurement
 
         switchLog.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.enableLog = isChecked
@@ -55,7 +54,7 @@ class OptionsFragment : Fragment(), TextWatcher {
             mainActivity.logInfo("Stop on error = $isChecked")
         }
 
-        switchEnableTimeMeasurment.setOnCheckedChangeListener { _, isChecked ->
+        switchEnableTimeMeasurement.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.enableTimeMeasurement = isChecked
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
@@ -83,6 +82,7 @@ class OptionsFragment : Fragment(), TextWatcher {
             switchUseAuthentication.isChecked = mainActivity.useAuthentication
 
             spinnerKeyIndex.isEnabled = mainActivity.useAuthentication
+            textViewKeyIndex.isEnabled = mainActivity.useAuthentication
 
             /* On key index changed*/
             spinnerKeyIndex.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
@@ -102,6 +102,7 @@ class OptionsFragment : Fragment(), TextWatcher {
                 /* Enable or not key text box */
                 editTextAuthenticationKey.isEnabled = isChecked
                 spinnerKeyIndex.isEnabled = isChecked
+                textViewKeyIndex.isEnabled = isChecked
             }
 
         }
@@ -117,6 +118,9 @@ class OptionsFragment : Fragment(), TextWatcher {
 
             spinnerKeyIndex.isEnabled = false
             spinnerKeyIndex.visibility = Spinner.INVISIBLE
+
+            textViewKeyIndex.isEnabled = false
+            textViewKeyIndex.visibility = TextView.INVISIBLE
         }
     }
 

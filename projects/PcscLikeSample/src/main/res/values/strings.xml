@@ -32,6 +32,9 @@
     <string name="present">Present</string>
     <string name="shutdown">Shutdown</string>
     <string name="send_mail">Send mail</string>
+    <string name="use_authentication">Use authentication</string>
+    <string name="key_index">Key index</string>
+    <string name="authentication_key">Authentication key</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>
