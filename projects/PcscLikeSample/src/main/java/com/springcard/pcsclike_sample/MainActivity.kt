@@ -44,6 +44,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     private val useAuthentificationName = "useAuthentication"
     private val authenticationKeyName = "authenticationKey"
     private val authenticationKeyIndexName= "authenticationKeyIndex"
+    private val apduModelsName= "apduModels"
 
     var enableLog: Boolean
         get() {
@@ -113,6 +114,17 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             editor.apply()
         }
 
+    var modelsApdusJson: String
+        get() {
+            val sp = getSharedPreferences(options, 0)
+            return sp.getString(apduModelsName, "[{\"id\":0,\"title\":\"Card\\u0027s ATR\",\"mode\":0,\"apdu\":\"ff:ca:fa:00\",\"created\":\"2017-03-28T09:31:40+00:00\",\"modified\":\"2017-03-28T09:31:40+00:00\",\"group_id\":null,\"group\":\"\"}]")!!
+        }
+        set(value) {
+            val editor =  getSharedPreferences(options, 0).edit()
+            editor.putString(apduModelsName, value)
+            editor.apply()
+        }
+
     /* Store the start time */
     private var startTime = SystemClock.elapsedRealtime()
 
@@ -134,29 +146,19 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
 
         /* Instantiate the RequestQueue */
         val queue = Volley.newRequestQueue(this)
-        val url = "http://models.springcard.com/api/models"
-        var modelsApdus: MutableList<ApduModel>
+        val url = "https://models.springcard.com/api/models"
 
         /* Request a string response from the provided URL */
         val stringRequest = StringRequest(
             Request.Method.GET, url,
             Response.Listener<String> { response ->
-                /* Display the first 500 characters of the response string */
-                val jsonArray = JSONArray(response.toString())
-                val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create()
-
-                if (jsonArray.length() > 0) {
-                    logInfo("Nb of apdu examples in model = ${jsonArray.length()}" )
-                    modelsApdus = gson.fromJson(jsonArray.toString(), Array<ApduModel>::class.java).toMutableList()
-                    deviceFragment.setApduModels(modelsApdus)
-                }
-
-
+                /* Store the JSON response string */
+                modelsApdusJson = response.toString()
+                loadJsonApduModel(modelsApdusJson)
             },
             Response.ErrorListener {
-                /* Disable spinner */
-                // TODO
-                //spinnerModels.isEnabled = false
+                /* If request failed used JSON previously stored in config */
+                loadJsonApduModel(modelsApdusJson)
             })
 
         // Add the request to the RequestQueue.
@@ -164,6 +166,20 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
 
         logInfo("Lib rev = ${com.springcard.pcsclike.BuildConfig.VERSION_NAME}")
         logInfo("App rev = ${com.springcard.pcsclike_sample.BuildConfig.VERSION_NAME}")
+    }
+
+    private fun loadJsonApduModel(json: String) {
+        val modelsApdus: MutableList<ApduModel>
+        val jsonArray = JSONArray(json)
+        val gson =  GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create()
+
+        if (jsonArray.length() > 0) {
+            logInfo("Nb of apdu examples in model = ${jsonArray.length()}" )
+            modelsApdus = gson.fromJson(jsonArray.toString(), Array<ApduModel>::class.java).toMutableList()
+            /* Sort by id and not by title alphabetically */
+            modelsApdus.sortBy { it.id }
+            deviceFragment.setApduModels(modelsApdus)
+        }
     }
 
     fun setDrawerState(isEnabled: Boolean) {
@@ -205,8 +221,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        // Handle navigation view item clicks here.
-
+        /* Handle navigation view item clicks here */
         val transaction = supportFragmentManager.beginTransaction()
         when (item.itemId) {
             R.id.nav_scan -> {
