@@ -17,6 +17,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelUuid
+import android.support.annotation.RequiresApi
 import android.util.Log
 import android.widget.AdapterView
 import com.springcard.pcsclike.*
@@ -134,7 +135,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         adapter = DeviceListAdapter(this.context!!, deviceList)
         device_list_view.adapter = adapter
 
-/* Click on item of ListView */
+        /* Click on item of ListView */
         device_list_view.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             mainActivity.logInfo("Device ${bleDeviceList[position].name} selected")
             mainActivity.goToDeviceFragment(bleDeviceList[position])
@@ -163,12 +164,16 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     private fun scanLeDevice(enable: Boolean) {
         when (enable) {
             true -> {
-                /* Filter for SpringCard service */
-                val scanFilters = ArrayList<ScanFilter>()
-                /* Default setting */
+                /* Scan settings */
                 val settings = ScanSettings.Builder()
                 settings.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                //  settings.setCallbackType(ScanSettings.CALLBACK_TYPE_MATCH_LOST)
+                //}
                 val settingsBuilt = settings.build()
+
+                /* Filter for SpringCard service */
+                val scanFilters = ArrayList<ScanFilter>()
                 try {
                     val scanFilterD600 = ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(GattAttributesD600.UUID_SPRINGCARD_RFID_SCAN_PCSC_LIKE_SERVICE))
@@ -222,21 +227,25 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     private val mLeScanCallback = object : ScanCallback() {
-        override fun onScanResult(
-            callbackType: Int,
-            result: ScanResult
-        ) {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+
             val newItem: DeviceListElement = if (result.scanRecord!!.deviceName != null) {
                 DeviceListElement(result.scanRecord!!.deviceName!!, result.rssi.toString())
             } else {
                 DeviceListElement(result.device.address, result.rssi.toString())
             }
 
-            if (!deviceListContains(newItem)) {
-                deviceList.add(newItem)
-                bleDeviceList.add(result.device)
-                adapter?.notifyDataSetChanged()
-                mainActivity.logInfo("New device found: ${newItem.name}")
+            if(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
+                if (!deviceListContains(newItem)) {
+                    deviceList.add(newItem)
+                    bleDeviceList.add(result.device)
+                    adapter?.notifyDataSetChanged()
+                    mainActivity.logInfo("New device found: ${newItem.name}")
+                }
+            }
+            else if(callbackType == ScanSettings.CALLBACK_TYPE_MATCH_LOST) {
+                removeFromDeviceList(newItem)
+                bleDeviceList.remove(result.device)
             }
         }
 
@@ -246,7 +255,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     private fun deviceListContains(device: DeviceListElement): Boolean {
-        // Loop over argument list.
         for (item in deviceList) {
             if (device.name == item.name)
                 return true
@@ -254,8 +262,18 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         return false
     }
 
-    companion object {
-        private const val SCAN_PERIOD: Long = 10000
-    }
+    private fun removeFromDeviceList(device: DeviceListElement) {
+        var itemToRemove: DeviceListElement? = null
+        for (item in deviceList) {
+            if (device.name == item.name) {
+                itemToRemove = item
+            }
+        }
 
+        if(itemToRemove != null) {
+            deviceList.remove(itemToRemove)
+
+            adapter?.notifyDataSetChanged()
+        }
+    }
 }

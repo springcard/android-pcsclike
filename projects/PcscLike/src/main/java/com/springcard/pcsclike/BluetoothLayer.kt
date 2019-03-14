@@ -333,7 +333,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                         /* Check if there is some card already presents on the slots */
                         listReadersToConnect.clear()
                         for (slot in scardReaderList.readers) {
-                            if(slot.cardPresent && !slot.cardPowered) {
+                            if(slot.cardPresent) {
                                 Log.d(TAG, "Slot: ${slot.name}, card present but not powered --> must connect to this card")
                                 listReadersToConnect.add(slot)
                             }
@@ -392,7 +392,7 @@ internal class BluetoothLayer(private var bluetoothDevice: BluetoothDevice, priv
                         }
                     }
                     else {
-                        Log.d(TAG, "Device already known: go to ReadingSlotsName")
+                        Log.d(TAG, "Device unknown: go to ReadingSlotsName")
                         currentState = State.ReadingSlotsName
                         /* Trigger 1st APDU to get slot name */
                         ccidWriteChar(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
