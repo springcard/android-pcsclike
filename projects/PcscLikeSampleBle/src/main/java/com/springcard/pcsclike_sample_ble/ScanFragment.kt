@@ -16,9 +16,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.ParcelUuid
-import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.widget.AdapterView
 import com.springcard.pcsclike.*
@@ -168,7 +166,9 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                 /* Filter for SpringCard service */
                 val scanFilters = ArrayList<ScanFilter>()
                 /* Default setting */
-                val settings = ScanSettings.Builder().build()
+                val settings = ScanSettings.Builder()
+                settings.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                val settingsBuilt = settings.build()
                 try {
                     val scanFilterD600 = ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(GattAttributesD600.UUID_SPRINGCARD_RFID_SCAN_PCSC_LIKE_SERVICE))
@@ -192,7 +192,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
                 if (!mScanning) {
                     mScanning = true
-                    mBluetoothScanner?.startScan(scanFilters, settings, mLeScanCallback)
+                    mBluetoothScanner?.startScan(scanFilters, settingsBuilt, mLeScanCallback)
                     progressBarScanning?.visibility = ProgressBar.VISIBLE
                     mainActivity.logInfo("Scan started")
                 }
