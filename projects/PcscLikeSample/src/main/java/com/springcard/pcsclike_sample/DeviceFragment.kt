@@ -365,12 +365,17 @@ abstract class DeviceFragment : Fragment() {
                     cptApdu = 0
                     rapduTextBox.text.clear()
 
-                    if (mainActivity.enableTimeMeasurement) {
-                        apduListStartTime = SystemClock.elapsedRealtime()
+                    if(cApdu.size == 0) {
+                        rapduTextBox.text.append(getString(R.string.no_capdu))
                     }
+                    else {
 
-                    /* Trigger 1st APDU */
-                    sendApdu()
+                        if (mainActivity.enableTimeMeasurement) {
+                            apduListStartTime = SystemClock.elapsedRealtime()
+                        }
+                        /* Trigger 1st APDU */
+                        sendApdu()
+                    }
                 }
             }
 
