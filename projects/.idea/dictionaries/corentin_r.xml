@@ -8,6 +8,7 @@
       <w>ccid</w>
       <w>cmac</w>
       <w>gson</w>
+      <w>pcsc</w>
       <w>pcscoverble</w>
       <w>pcscoverusb</w>
       <w>recv</w>

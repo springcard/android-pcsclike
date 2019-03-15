@@ -3,6 +3,7 @@ package com.springcard.pcsclike
 import android.bluetooth.*
 import android.content.Context
 import android.os.Build
+import android.os.Handler
 import android.support.annotation.RequiresApi
 import android.util.Log
 
@@ -11,6 +12,15 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
+    private var timeoutDuration: Long = 720
+    private var bleSupervisionTimeoutCallback: Runnable = Runnable {
+        Log.i(TAG, "Timeout BLE $timeoutDuration")
+        highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
+    }
+    private var bleSupervisionTimeout: Handler = android.os.Handler()
+
+
+
 
     /* Various callback methods defined by the BLE API */
     private val mGattCallback: BluetoothGattCallback by lazy {
@@ -20,6 +30,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 status: Int,
                 newState: Int
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                     //mBluetoothGatt.requestMtu(250)
@@ -37,6 +48,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 gatt: BluetoothGatt,
                 status: Int
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 highLayer.process(ActionEvent.EventServicesDiscovered(status))
             }
 
@@ -46,6 +58,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 characteristic: BluetoothGattCharacteristic,
                 status: Int
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 Log.d(TAG, "Read ${characteristic.value.toHexString()} on characteristic ${characteristic.uuid}")
                 highLayer.process(ActionEvent.EventCharacteristicRead(characteristic, status))
             }
@@ -55,6 +68,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 characteristic: BluetoothGattCharacteristic,
                 status: Int
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 highLayer.process(ActionEvent.EventCharacteristicWrite(characteristic, status))
             }
 
@@ -63,6 +77,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 Log.d(TAG, "Characteristic ${characteristic.uuid} changed, value : ${characteristic.value.toHexString()}")
                 highLayer.process(ActionEvent.EventCharacteristicChanged(characteristic))
             }
@@ -72,10 +87,12 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 descriptor: BluetoothGattDescriptor,
                 status: Int
             ) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 highLayer.process(ActionEvent.EventDescriptorWrite(descriptor, status))
             }
 
             override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+                cancelTimer(object{}.javaClass.enclosingMethod.name)
                 Log.d(TAG, "MTU size = $mtu")
                 highLayer.process(ActionEvent.EventConnected())
                 super.onMtuChanged(gatt, mtu, status)
@@ -88,20 +105,24 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     fun connect(ctx: Context) {
         Log.d(TAG, "Connect")
         mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(ctx, false, mGattCallback)
+        beginTimer(object{}.javaClass.enclosingMethod.name, 5000)
     }
 
     fun disconnect() {
         Log.d(TAG, "Disconnect")
         mBluetoothGatt.disconnect()
+        beginTimer(object{}.javaClass.enclosingMethod.name)
     }
 
     fun close() {
         Log.d(TAG, "Close")
         mBluetoothGatt.close()
+        /* No timer needed */
     }
 
     fun discoverGatt() {
         mBluetoothGatt.discoverServices()
+        beginTimer(object{}.javaClass.enclosingMethod.name)
     }
 
     fun getServices(): List<BluetoothGattService> {
@@ -110,6 +131,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     fun readCharacteristic(chr: BluetoothGattCharacteristic) {
         mBluetoothGatt.readCharacteristic(chr)
+        beginTimer(object{}.javaClass.enclosingMethod.name)
     }
 
 
@@ -139,6 +161,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             mBluetoothGatt.writeCharacteristic(highLayer.charCcidPcToRdr)
             Log.d(TAG, "Writing ${dataToWriteCursorEnd - dataToWriteCursorBegin} bytes")
             dataToWriteCursorBegin = dataToWriteCursorEnd
+            beginTimer(object{}.javaClass.enclosingMethod.name)
             false
         } else {
             true
@@ -151,6 +174,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
         Log.d(TAG, "Writing ${data.toHexString()}")
         highLayer.charCcidPcToRdr.value = data
         mBluetoothGatt.writeCharacteristic(highLayer.charCcidPcToRdr)
+        beginTimer(object{}.javaClass.enclosingMethod.name)
     }
 
     fun enableNotifications(chr : BluetoothGattCharacteristic) {
@@ -161,9 +185,20 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             highLayer.postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED,"Failed to write in descriptor, to enable notification on characteristic ${chr.uuid}")
             return
         }
+
     }
 
 
+    /* Timeout utilities */
 
+    private fun beginTimer(callingMethod: String = "", duration: Long = timeoutDuration) {
+        Log.i(TAG, "Begin BLE timer ($callingMethod)")
+        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
+    }
+
+    private fun cancelTimer(callingMethod: String = "") {
+        Log.i(TAG, "Stop BLE timer ($callingMethod)")
+        bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
+    }
 
 }
