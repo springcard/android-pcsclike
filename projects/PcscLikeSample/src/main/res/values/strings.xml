@@ -35,6 +35,7 @@
     <string name="use_authentication">Use authentication</string>
     <string name="key_index">Key index</string>
     <string name="authentication_key">Authentication key</string>
+    <string name="no_capdu">no C-APDU</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>
