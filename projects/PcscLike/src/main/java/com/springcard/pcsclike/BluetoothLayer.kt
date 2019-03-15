@@ -293,8 +293,8 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
                 {
                     /* Response */
-                    //val ccidResponse =
-                    val slotName = event.characteristic.value.slice(11 until event.characteristic.value.size).toByteArray().toString(charset("ASCII"))
+                    val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.characteristic.value)
+                    val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
                     Log.d(TAG, "Slot $indexSlots name : $slotName")
                     scardReaderList.readers[indexSlots].name = slotName
                     scardReaderList.readers[indexSlots].index = indexSlots

@@ -17,12 +17,11 @@ import android.support.design.widget.NavigationView
 import android.support.v4.widget.DrawerLayout
 import com.android.volley.Request
 import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import org.json.JSONArray
+import com.android.volley.toolbox.*
 
 
 abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -145,8 +144,11 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         /* Get APDU model List */
 
         /* Instantiate the RequestQueue */
-        val queue = Volley.newRequestQueue(this)
+        val requestQueue = Volley.newRequestQueue(this)
         val url = "https://models.springcard.com/api/models"
+
+        /* Use JSON previously stored in config */
+        loadJsonApduModel(modelsApdusJson)
 
         /* Request a string response from the provided URL */
         val stringRequest = StringRequest(
@@ -157,12 +159,12 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
                 loadJsonApduModel(modelsApdusJson)
             },
             Response.ErrorListener {
-                /* If request failed used JSON previously stored in config */
-                loadJsonApduModel(modelsApdusJson)
+                /* Do nothing, we already used the JSON previously stored in config */
             })
 
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest)
+        /* Add the request to the RequestQueue */
+        requestQueue.add(stringRequest)
+
 
         logInfo("Lib rev = ${com.springcard.pcsclike.BuildConfig.VERSION_NAME}")
         logInfo("App rev = ${com.springcard.pcsclike_sample.BuildConfig.VERSION_NAME}")

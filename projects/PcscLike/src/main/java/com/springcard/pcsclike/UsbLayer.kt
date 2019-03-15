@@ -184,7 +184,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
                 /* Response */
-                val slotName = event.data.slice(11 until event.data.size).toByteArray().toString(charset("ASCII"))
+                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.data)
+                val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
                 Log.d(TAG, "Slot $indexSlots name : $slotName")
                 scardReaderList.readers[indexSlots].name = slotName
                 scardReaderList.readers[indexSlots].index = indexSlots
