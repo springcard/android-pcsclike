@@ -97,11 +97,11 @@ internal class CcidHandler() {
 
         currentReaderIndex = response.slotNumber.toInt()
 
-        /* TODO CRA if(sequenceNumber.toByte() != response.sequenceNumber) {
-        val msg = "Sequence number in frame (${response.sequenceNumber}) does not match sequence number in cache ($sequenceNumber)"
-        Log.e(TAG, msg)
-        throw Exception(msg)
-        }*/
+        if(sequenceNumber.toByte() != response.sequenceNumber) {
+            val msg = "Sequence number in frame (${response.sequenceNumber}) does not match sequence number in cache ($sequenceNumber)"
+            Log.e(TAG, msg)
+            throw Exception(msg)
+        }
 
         sequenceNumber++
         if(sequenceNumber > 255)
