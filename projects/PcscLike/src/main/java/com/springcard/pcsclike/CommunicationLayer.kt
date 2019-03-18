@@ -62,15 +62,17 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
     /* Post error callbacks */
 
     internal fun postReaderListError(code : SCardError.ErrorCodes, detail: String, isFatal: Boolean = true) {
-        Log.e(TAG, "Error readerList: ${code.name}, $detail")
+        if(scardReaderList.isConnected) {
+            Log.e(TAG, "Error readerList: ${code.name}, $detail")
 
-        scardReaderList.handler.post {
-            callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
-        }
+            scardReaderList.handler.post {
+                callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
+            }
 
-        /* irrecoverable error --> close */
-        if(isFatal) {
-            process(ActionEvent.ActionDisconnect())
+            /* irrecoverable error --> close */
+            if (isFatal) {
+                process(ActionEvent.ActionDisconnect())
+            }
         }
     }
 
