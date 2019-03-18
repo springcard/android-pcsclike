@@ -336,6 +336,7 @@ abstract class DeviceFragment : Fragment() {
                     rapduTextBox.text.append(getString(R.string.no_card))
                 }
                 else {
+                    transmitButton.isEnabled = false
                     /* save command */
                     /* TODO CRA */
                     // addExecutedApdu(capduTextBox.text.toString())
@@ -365,6 +366,7 @@ abstract class DeviceFragment : Fragment() {
 
                     if(cApdu.size == 0) {
                         rapduTextBox.text.append(getString(R.string.no_capdu))
+                        transmitButton.isEnabled = true
                     }
                     else {
 
@@ -374,8 +376,6 @@ abstract class DeviceFragment : Fragment() {
                         /* Trigger 1st APDU */
                         sendApdu()
                     }
-
-                    transmitButton.isEnabled = false
                 }
             }
 
@@ -449,7 +449,7 @@ abstract class DeviceFragment : Fragment() {
         val responseString = response.toHexString()
         mainActivity.logInfo(">$responseString")
         rapduTextBox.text.append(responseString + "\n")
-        
+
         if(responseString.takeLast(4) != "9000" && mainActivity.stopOnError) {
             mainActivity.logInfo("Stop on error : ${responseString.takeLast(4)}")
         }
