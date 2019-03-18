@@ -40,7 +40,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
     /* USB access points */
     private lateinit var usbDeviceConnection: UsbDeviceConnection
 
-    val usbManager: UsbManager by lazy {
+    private val usbManager: UsbManager by lazy {
         context.getSystemService(Context.USB_SERVICE) as UsbManager
     }
 
@@ -55,9 +55,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
     }
 
     override fun process(event: ActionEvent) {
-
         scardReaderList.handler.post {
-
             Log.d(TAG, "Current state = ${currentState.name}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
 
@@ -65,16 +63,15 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 State.Disconnected -> handleStateDisconnected(event)
                 //State.Connecting -> handleStateConnecting(event)
                 State.ReadingInformation -> handleStateReadingInformation(event)
-                /*State.DiscoveringGatt -> handleStateDiscovering(event)
-
-                State.SubscribingNotifications -> handleStateSubscribingNotifications(event)*/
+                //State.DiscoveringGatt -> handleStateDiscovering(event)
+                //State.SubscribingNotifications -> handleStateSubscribingNotifications(event)
                 State.ReadingSlotsName -> handleStateReadingSlotsName(event)
-                /*State.Authenticate -> handleStateAuthenticate(event)*/
+                //State.Authenticate -> handleStateAuthenticate(event)
                 State.ConnectingToCard -> handleStateConnectingToCard(event)
                 State.Idle ->  handleStateIdle(event)
                 State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
                 State.WaitingResponse -> handleStateWaitingResponse(event)
-                // State.Disconnecting ->  handleStateDisconnecting(event)*/
+                //State.Disconnecting ->  handleStateDisconnecting(event)
                 else -> Log.w(TAG, "Unhandled State : $currentState")
             }
         }
@@ -114,8 +111,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
     private fun handleStateReadingInformation(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-
-
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
 
@@ -124,7 +119,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 when {
                     ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
                         CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
-
                             /* Update slot concerned */
                             interpretSlotsStatusInCcidHeader(
                                 ccidResponse.slotStatus,
@@ -174,7 +168,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                 }
             }
-            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -213,7 +207,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     processNextSlotConnection()
                 }
             }
-            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -272,7 +266,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 }
 
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -281,7 +275,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionDisconnect -> {
-                currentState = State.Disconnecting
+                currentState = State.Disconnected
                 disconnect()
                 context.unregisterReceiver(mUsbReceiver)
             }
@@ -300,7 +294,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 currentState = State.ReadingPowerInfo
                 process(event)
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -308,14 +302,9 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
-
                 analyseResponse(event.data)
             }
-            is ActionEvent.EventOnUsbInterrupt -> {
-                /* Update readers status */
-                interpretSlotsStatus(event.data)
-            }
-            else -> Log.w(TAG ,"Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -324,12 +313,68 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         when (event) {
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.Idle
-                /* TODO: create an entry poin in FW to get this info */
+                /* TODO: create an entry point in FW to get this info */
                 scardReaderList.handler.post{ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) }
+            }
+            else -> handleCommonActionEvents(event)
+        }
+    }
+
+    private fun handleCommonActionEvents(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.ActionDisconnect -> {
+                currentState = State.Disconnected
+                disconnect()
+            }
+            is ActionEvent.EventDisconnected -> {
+                currentState = State.Disconnected
+                scardReaderList.isConnected = false
+                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+
+                // Reset all lists
+                indexSlots = 0
+                disconnect()
             }
             is ActionEvent.EventOnUsbInterrupt -> {
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
+            }
+            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+        }
+    }
+
+    private fun handleCommonActionEventsCreating(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.ActionDisconnect -> {
+                currentState = State.Disconnected
+                disconnect()
+            }
+            is ActionEvent.EventDisconnected -> {
+                currentState = State.Disconnected
+                scardReaderList.isConnected = false
+                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+
+                // Reset all lists
+                indexSlots = 0
+                disconnect()
+            }
+            is ActionEvent.EventOnUsbInterrupt -> {
+
+                /* Update readers status */
+                interpretSlotsStatus(event.data, false)
+
+                for(slot in scardReaderList.readers) {
+                    if(!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                        Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                        listReadersToConnect.remove(slot)
+                    }
+                    else if(slot.cardPresent && !listReadersToConnect.contains(slot)) {
+                        Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                        listReadersToConnect.add(slot)
+                    }
+                }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
@@ -496,7 +541,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         process(ActionEvent.EventOnUsbInterrupt(data))
     }
 
-
     private fun onBulkIn(data: ByteArray) {
         process(ActionEvent.EventOnUsbDataIn(data))
     }
@@ -505,7 +549,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         usbDeviceConnection.bulkTransfer(bulkOut, data, data.size, BULK_TIMEOUT_MS)
     }
 
-    var mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    private var mUsbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
 
             if (UsbManager.ACTION_USB_DEVICE_DETACHED == intent.action) {
@@ -623,11 +667,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             inRequest.close()
 
             Log.d(TAG, "localThread exit ")
-
         }
-    }
-
-    override fun setTimeout(duration: Long) {
-        // TODO CRA
     }
 }
