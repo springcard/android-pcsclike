@@ -48,7 +48,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         mainActivity = activity as MainActivity
         mainActivity.setActionBarTitle(resources.getString(R.string.device_list))
 
-        /* Check if device  support BLE */
+        /* Check if device  support USB */
         mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_USB_HOST) }?.also {
            Toast.makeText(mainActivity, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
         }
