@@ -13,9 +13,6 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
     internal var timeoutDuration: Long = 720
-         set(value) {
-            field = value
-        }
     private var bleSupervisionTimeoutCallback: Runnable = Runnable {
         Log.i(TAG, "Timeout BLE $timeoutDuration")
         highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
