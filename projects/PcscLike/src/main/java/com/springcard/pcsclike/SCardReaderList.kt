@@ -82,6 +82,14 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
     abstract fun create(ctx : Context)
     abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
 
+    /**
+     * Set the communication supervision Timeout (720ms by default in BLE)
+     * @param duration timeout duration in ms
+     */
+    fun setTimeout(duration: Long) {
+        commLayer.setTimeout(duration)
+    }
+
 
     /**
      * The control function gives you direct control on the reader (even when there’s no card in it).

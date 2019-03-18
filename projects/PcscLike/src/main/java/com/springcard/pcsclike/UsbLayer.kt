@@ -626,4 +626,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
         }
     }
+
+    override fun setTimeout(duration: Long) {
+        // TODO CRA
+    }
 }
