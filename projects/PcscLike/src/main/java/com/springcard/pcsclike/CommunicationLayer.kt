@@ -419,7 +419,4 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         scardReaderList.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
         scardReaderList.firmwareVersionBuild = revString.split("-")[1].toInt()
     }
-
-    internal abstract fun setTimeout(duration: Long)
-
 }
