@@ -13,15 +13,13 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
-    internal var timeoutDuration: Long = 720
     private var bleSupervisionTimeoutCallback: Runnable = Runnable {
-        Log.i(TAG, "Timeout BLE $timeoutDuration")
+        Log.i(TAG, "Timeout BLE ${SCardReaderListBle.timeout}")
         highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
     }
     private val bleSupervisionTimeout: Handler by lazy {
         Handler(Looper.getMainLooper())
     }
-
 
     /* Various callback methods defined by the BLE API */
     private val mGattCallback: BluetoothGattCallback by lazy {
@@ -192,7 +190,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     /* Timeout utilities */
 
-    private fun beginTimer(callingMethod: String = "", duration: Long = timeoutDuration) {
+    private fun beginTimer(callingMethod: String = "", duration: Long = SCardReaderListBle.timeout) {
         Log.i(TAG, "Begin BLE timer ($callingMethod)")
         bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
     }
