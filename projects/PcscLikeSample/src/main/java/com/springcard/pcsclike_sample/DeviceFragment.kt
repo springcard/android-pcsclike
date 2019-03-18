@@ -235,6 +235,7 @@ abstract class DeviceFragment : Fragment() {
 
             rapduTextBox.text.clear()
             rapduTextBox.text.append(getString(R.string.cardMute))
+            transmitButton.isEnabled = true
         }
     }
 
@@ -332,12 +333,9 @@ abstract class DeviceFragment : Fragment() {
                 if((!currentSlot?.cardPresent!! || !currentSlot?.cardPowered!!) &&
                     spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
                     rapduTextBox.text.clear()
-                    rapduTextBox.text.append("no card")
+                    rapduTextBox.text.append(getString(R.string.no_card))
                 }
                 else {
-
-                    transmitButton.isEnabled = false
-
                     /* save command */
                     /* TODO CRA */
                     // addExecutedApdu(capduTextBox.text.toString())
@@ -376,6 +374,8 @@ abstract class DeviceFragment : Fragment() {
                         /* Trigger 1st APDU */
                         sendApdu()
                     }
+
+                    transmitButton.isEnabled = false
                 }
             }
 
@@ -449,25 +449,22 @@ abstract class DeviceFragment : Fragment() {
         val responseString = response.toHexString()
         mainActivity.logInfo(">$responseString")
         rapduTextBox.text.append(responseString + "\n")
-
-        if(responseString.length >= 4)
-        {
-            if(responseString.takeLast(4) != "9000" && mainActivity.stopOnError) {
-                mainActivity.logInfo("Stop on error : ${responseString.takeLast(4)}")
+        
+        if(responseString.takeLast(4) != "9000" && mainActivity.stopOnError) {
+            mainActivity.logInfo("Stop on error : ${responseString.takeLast(4)}")
+        }
+        else {
+            cptApdu++
+            if(cptApdu < cApdu.size) {
+                sendApdu()
             }
             else {
-                cptApdu++
-                if(cptApdu < cApdu.size) {
-                    sendApdu()
+                if(mainActivity.enableTimeMeasurement) {
+                    apduListStopTime = SystemClock.elapsedRealtime()
+                    val elapsedTime = apduListStopTime - apduListStartTime
+                    Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                 }
-                else {
-                    if(mainActivity.enableTimeMeasurement) {
-                        apduListStopTime = SystemClock.elapsedRealtime()
-                        val elapsedTime = apduListStopTime - apduListStartTime
-                        Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
-                    }
-                    transmitButton.isEnabled = true
-                }
+                transmitButton.isEnabled = true
             }
         }
     }
