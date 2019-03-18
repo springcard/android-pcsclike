@@ -4,6 +4,7 @@ import android.bluetooth.*
 import android.content.Context
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
 import android.support.annotation.RequiresApi
 import android.util.Log
 
@@ -17,7 +18,9 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
         Log.i(TAG, "Timeout BLE $timeoutDuration")
         highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
     }
-    private var bleSupervisionTimeout: Handler = android.os.Handler()
+    private val bleSupervisionTimeout: Handler by lazy {
+        Handler(Looper.getMainLooper())
+    }
 
 
     /* Various callback methods defined by the BLE API */
