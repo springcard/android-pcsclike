@@ -556,18 +556,25 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                 if (event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
 
-                    rxBuffer.addAll(event.characteristic.value.toList())
-                    val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
+                    /* Verify that write has finished */
+                    if (lowLayer.ccidWriteCharSequenced()) {
+                        Log.d(TAG, "Write finished")
+                        currentState = State.WaitingResponse
 
-                    /* Check if the response is compete or not */
-                    if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
-                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
-                    } else {
-                        analyseResponse(rxBuffer.toByteArray())
 
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
+                        rxBuffer.addAll(event.characteristic.value.toList())
+                        val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
 
+                        /* Check if the response is compete or not */
+                        if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
+                            Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
+                        } else {
+                            analyseResponse(rxBuffer.toByteArray())
+
+                            /* reset rxBuffer */
+                            rxBuffer = mutableListOf<Byte>()
+
+                        }
                     }
                 }
                 else {
