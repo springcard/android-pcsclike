@@ -64,10 +64,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
         }
     }
 
-    fun setTimeout(duration: Long) {
-        lowLayer.timeoutDuration = duration
-    }
-
     /* State machine */
 
     override fun process(event: ActionEvent) {
@@ -572,6 +568,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
                 else {
+
                     handleCommonActionEvents(event)
                 }
             }
