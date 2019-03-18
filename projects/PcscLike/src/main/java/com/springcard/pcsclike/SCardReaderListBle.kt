@@ -32,6 +32,15 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
         }
     }
 
+    /**
+     * Set the communication supervision Timeout (720ms by default in BLE)
+     * @param duration timeout duration in ms
+     */
+    fun setTimeout(duration: Long) {
+        (commLayer as BluetoothLayer).setTimeout(duration)
+    }
+
+
 
     companion object {
 

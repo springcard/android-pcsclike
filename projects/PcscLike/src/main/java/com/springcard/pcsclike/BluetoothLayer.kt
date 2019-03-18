@@ -64,10 +64,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
         }
     }
 
-    override fun setTimeout(duration: Long) {
-        lowLayer.timeoutDuration = duration
-    }
-
     /* State machine */
 
     override fun process(event: ActionEvent) {
@@ -118,10 +114,9 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 Log.i(TAG, "Attempting to start service discovery")
             }
             is ActionEvent.EventDisconnected -> {
-                // Retry connecting
+                /* Retry connecting */
                 currentState = State.Disconnected
                 process(ActionEvent.ActionCreate(context))
-                //TODO add cpt
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
@@ -368,7 +363,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
         }
     }
 
-
     private var rxBuffer = mutableListOf<Byte>()
     private fun handleStateConnectingToCard(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
@@ -573,7 +567,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                             /* reset rxBuffer */
                             rxBuffer = mutableListOf<Byte>()
-
                         }
                     }
                 }
@@ -604,7 +597,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                         /* reset rxBuffer */
                         rxBuffer = mutableListOf<Byte>()
-
                     }
                 }
                 else {
@@ -633,33 +625,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
-
-   /* private fun handleRdrToPcAnswer(event: ActionEvent) {
-        when (event) {
-            is ActionEvent.EventCharacteristicWrite -> {
-
-                if (event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
-
-                    rxBuffer.addAll(event.characteristic.value.toList())
-                    val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
-
-                    /* Check if the response is compete or not */
-                    if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
-                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
-                    } else {
-                        analyseResponse(rxBuffer.toByteArray())
-
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
-
-                    }
-                }
-            }
-        }
-    }*/
-
-
-
 
     private fun handleCommonActionEvents(event: ActionEvent) {
         when (event) {
