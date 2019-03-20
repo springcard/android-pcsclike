@@ -55,7 +55,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
     }
 
     override fun process(event: ActionEvent) {
-        scardReaderList.handler.post {
+        scardReaderList.callbacksHandler.post {
             Log.d(TAG, "Current state = ${currentState.name}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
 
@@ -168,7 +168,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -207,7 +207,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     processNextSlotConnection()
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -237,8 +237,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 if (!interpretSlotsErrorInCcidHeader(
                         ccidResponse.slotError,
                         ccidResponse.slotStatus,
-                        slot,
-                        false // do not post callback
+                        slot
                     )
                 ) {
                     Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
@@ -266,7 +265,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 }
 
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -314,7 +313,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.Idle
                 /* TODO: create an entry point in FW to get this info */
-                scardReaderList.handler.post{ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) }
+                scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
             }
             else -> handleCommonActionEvents(event)
         }
@@ -330,7 +329,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
-                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexSlots = 0
@@ -339,47 +338,24 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             is ActionEvent.EventOnUsbInterrupt -> {
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
-            }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
-        }
-    }
 
-    private fun handleCommonActionEventsCreating(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionDisconnect -> {
-                currentState = State.Disconnected
-                disconnect()
-            }
-            is ActionEvent.EventDisconnected -> {
-                currentState = State.Disconnected
-                scardReaderList.isConnected = false
-                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
-
-                // Reset all lists
-                indexSlots = 0
-                disconnect()
-            }
-            is ActionEvent.EventOnUsbInterrupt -> {
-
-                /* Update readers status */
-                interpretSlotsStatus(event.data, false)
-
-                for(slot in scardReaderList.readers) {
-                    if(!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                        Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                        listReadersToConnect.remove(slot)
-                    }
-                    else if(slot.cardPresent && !listReadersToConnect.contains(slot)) {
-                        Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                        listReadersToConnect.add(slot)
+                /* If readerList is being created, update list of slots to connect*/
+                if(!scardReaderList.isAlreadyCreated) {
+                    for(slot in scardReaderList.readers) {
+                        if(!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                            Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                            listReadersToConnect.remove(slot)
+                        }
+                        else if(slot.cardPresent && !listReadersToConnect.contains(slot)) {
+                            Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                            listReadersToConnect.add(slot)
+                        }
                     }
                 }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
     }
-
 
     /* Utilities func */
 
@@ -509,7 +485,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         usbDeviceConnection.releaseInterface(usbDevice.getInterface(0))
         usbDeviceConnection.close()
         stop()
-        scardReaderList.handler.post{ scardReaderList.callbacks.onReaderListClosed(scardReaderList) }
+        scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) })
     }
 
     private fun getNextInfoCommand(index: Int): ByteArray {

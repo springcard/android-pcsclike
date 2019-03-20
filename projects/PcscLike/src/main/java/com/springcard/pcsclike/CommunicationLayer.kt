@@ -64,26 +64,33 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
     internal fun postReaderListError(code : SCardError.ErrorCodes, detail: String, isFatal: Boolean = true) {
         Log.e(TAG, "Error readerList: ${code.name}, $detail")
 
-        scardReaderList.handler.post {
-            callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
-        }
+        scardReaderList.postCallback({
+            /* If the ScardReaderList has not been created yet --> null */
+            if(scardReaderList.isAlreadyCreated) {
+                callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
+            }
+            else {
+                callbacks.onReaderListError(null, SCardError(code, detail, isFatal))
+            }
+        }, true)
 
         /* irrecoverable error --> close */
         if (isFatal) {
             process(ActionEvent.ActionDisconnect())
-            /* Remove it from the list of device known because we are not sure of anything about this one */
-            scardReaderList.isCorrectlyKnown = false
+            /* If an error happened while creating the device */
+            if(!scardReaderList.isAlreadyCreated) {
+                /* Remove it from the list of device known because we are not sure of anything about this one */
+                scardReaderList.isCorrectlyKnown = false
+            }
         }
     }
 
     internal fun postCardOrReaderError(code : SCardError.ErrorCodes, detail: String, reader: SCardReader) {
         Log.e(TAG, "Error reader or card: ${code.name}, $detail")
-        scardReaderList.handler.post {
-            callbacks.onReaderOrCardError(reader, SCardError(code, detail))
-        }
+        scardReaderList.postCallback({ callbacks.onReaderOrCardError(reader, SCardError(code, detail)) })
     }
 
-    protected fun interpretSlotsStatus(data: ByteArray, isReaderCreated: Boolean = true) {
+    protected fun interpretSlotsStatus(data: ByteArray) {
 
         /* If reader is being created, do not post callbacks neither return to Idle state */
 
@@ -106,7 +113,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
         /* Is slot count matching nb of readers in scardReaderList obj */
         if(slotCount.toInt() != scardReaderList.readers.size) {
-            if(isReaderCreated) {
+            if(scardReaderList.isAlreadyCreated) {
                 postReaderListError(
                     SCardError.ErrorCodes.PROTOCOL_ERROR,
                     "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
@@ -144,17 +151,17 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                             Log.w(TAG, "Impossible value : $slotStatus")
                         }
                     }
-                    if(isReaderCreated) {
+                    if(scardReaderList.isAlreadyCreated) {
                         val cardChanged =
                             (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
                         if (cardChanged) {
-                            scardReaderList.handler.post {
+                            scardReaderList.postCallback({
                                 callbacks.onReaderStatus(
                                     scardReaderList.readers[slotNumber],
                                     scardReaderList.readers[slotNumber].cardPresent,
                                     scardReaderList.readers[slotNumber].cardPowered
                                 )
-                            }
+                            })
                         }
                     }
                 }
@@ -206,7 +213,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
      * @param slot SCardReader
      * @return true if there is no error, false otherwise
      */
-    protected fun interpretSlotsErrorInCcidHeader(slotError: Byte, slotStatus: Byte, slot: SCardReader, postScardErrorCb: Boolean = true): Boolean {
+    protected fun interpretSlotsErrorInCcidHeader(slotError: Byte, slotStatus: Byte, slot: SCardReader): Boolean {
 
         val commandStatus = (slotStatus.toInt() and 0b11000000) shr 6
 
@@ -292,7 +299,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             }
         }
 
-        if(postScardErrorCb) {
+        if(scardReaderList.isAlreadyCreated) {
             postCardOrReaderError(errorCode, detail, slot)
         }
         else {
@@ -324,12 +331,12 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
         when {
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
-                CcidCommand.CommandCode.PC_To_RDR_Escape -> scardReaderList.handler.post {
+                CcidCommand.CommandCode.PC_To_RDR_Escape -> scardReaderList.postCallback({
                     callbacks.onControlResponse(
                         scardReaderList,
                         ccidResponse.payload
                     )
-                }
+                })
                 else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value -> when (scardReaderList.ccidHandler.commandSend) {
@@ -342,12 +349,12 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     } else {
 
                         currentState = State.Idle
-                        scardReaderList.handler.post {
+                        scardReaderList.postCallback({
                             callbacks.onTransmitResponse(
                                 slot.channel,
                                 ccidResponse.payload
                             )
-                        }
+                        })
                     }
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
@@ -358,7 +365,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     /* Change state */
                     currentState = State.Idle
                     /* Call callback */
-                    scardReaderList.handler.post { callbacks.onCardConnected(slot.channel) }
+                    scardReaderList.postCallback({ callbacks.onCardConnected(slot.channel) })
                 }
                 else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
@@ -372,16 +379,15 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
                     slot.cardPowered = false
-                    scardReaderList.handler.post {callbacks.onCardDisconnected(slot.channel)}
+                    scardReaderList.postCallback({ callbacks.onCardDisconnected(slot.channel) })
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
-                    // TODO CRA scardReaderList.handler.post {callbacks?.onReaderStatus()}
-                    //  scardReaderList.handler.post {callbacks?.onCardConnected(channel)}
+                    // TODO CRA scardReaderList.postCallback({callbacks?.onReaderStatus()})
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
                     val channel = slot.channel
                     slot.cardPowered = true
-                    scardReaderList.handler.post {callbacks.onCardConnected(channel)}
+                    scardReaderList.postCallback({ callbacks.onCardConnected(channel) })
                     // TODO onReaderOrCardError
                 }
                 else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
@@ -402,8 +408,9 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         /* Otherwise go to idle state */
         else {
             currentState = State.Idle
-            scardReaderList.handler.post { callbacks.onReaderListCreated(scardReaderList) }
+            scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
             scardReaderList.isCorrectlyKnown = true
+            scardReaderList.isAlreadyCreated = true
         }
     }
 

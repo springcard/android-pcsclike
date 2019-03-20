@@ -118,7 +118,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 currentState = State.Disconnected
                 process(ActionEvent.ActionCreate(context))
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -179,7 +179,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     Log.w(TAG, "onServicesDiscovered received: ${event.status}")
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -220,7 +220,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         }
 
                         /* Update readers status */
-                        interpretSlotsStatus(event.characteristic.value, false)
+                        interpretSlotsStatus(event.characteristic.value)
 
                         /* Check if there is some card already presents on the slots */
                         listReadersToConnect.clear()
@@ -249,7 +249,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     lowLayer.enableNotifications(chr)
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -291,7 +291,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -328,10 +328,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
                 else {
-                    handleCommonActionEventsCreating(event)
+                    handleCommonActionEvents(event)
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -365,10 +365,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
                 else {
-                    handleCommonActionEventsCreating(event)
+                    handleCommonActionEvents(event)
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -416,8 +416,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         if (!interpretSlotsErrorInCcidHeader(
                                 ccidResponse.slotError,
                                 ccidResponse.slotStatus,
-                                slot,
-                                false // do not post callback
+                                slot
                             )
                         ) {
                             Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
@@ -453,10 +452,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
                 else {
-                    handleCommonActionEventsCreating(event)
+                    handleCommonActionEvents(event)
                 }
             }
-            else -> handleCommonActionEventsCreating(event)
+            else -> handleCommonActionEvents(event)
         }
     }
 
@@ -514,13 +513,13 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 else {
                     currentState = State.Idle
                     /* read done --> send callback */
-                    scardReaderList.handler.post {
+                    scardReaderList.postCallback({
                         callbacks.onPowerInfo(
                             scardReaderList,
                             powerState,
                             batteryLevel
                         )
-                    }
+                    })
                 }
             }
             is ActionEvent.ActionReadPowerInfo -> {
@@ -580,7 +579,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
                 }
                 else {
-
                     handleCommonActionEvents(event)
                 }
             }
@@ -623,7 +621,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
             is ActionEvent.EventDisconnected -> {
                 scardReaderList.isConnected = false
                 currentState = State.Disconnected
-                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -646,7 +644,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
-                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -659,48 +657,17 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
                     /* Update readers status */
                     interpretSlotsStatus(event.characteristic.value)
-                }
-                else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
-                }
-            }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
-        }
-    }
 
-    private fun handleCommonActionEventsCreating(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionDisconnect -> {
-                currentState = State.Disconnecting
-                lowLayer.disconnect()
-            }
-            is ActionEvent.EventDisconnected -> {
-                currentState = State.Disconnected
-                scardReaderList.isConnected = false
-                scardReaderList.handler.post {callbacks.onReaderListClosed(scardReaderList)}
-
-                // Reset all lists
-                indexCharToBeSubscribed = 0
-                indexCharToBeRead = 0
-                indexSlots = 0
-
-                lowLayer.close()
-            }
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value, false)
-
-                    for(slot in scardReaderList.readers) {
-                        if(!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                            Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                            listReadersToConnect.remove(slot)
-                        }
-                        else if(slot.cardPresent && !listReadersToConnect.contains(slot)) {
-                            Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                            listReadersToConnect.add(slot)
+                    /* If readerList is being created, update list of slots to connect */
+                    if(!scardReaderList.isAlreadyCreated) {
+                        for (slot in scardReaderList.readers) {
+                            if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                                Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                                listReadersToConnect.remove(slot)
+                            } else if (slot.cardPresent && !listReadersToConnect.contains(slot)) {
+                                Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                                listReadersToConnect.add(slot)
+                            }
                         }
                     }
                 }
