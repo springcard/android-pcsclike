@@ -70,10 +70,10 @@ abstract class SCardReaderListCallback {
 
     /**
      * Invoked for all readerList-level errors, e.g. BLE error, protocol error, etc. When this callback is invoked, the connection to the readerList is often closed.
-     * @param readerList SCardReaderList
+     * @param readerList SCardReaderList (could be null if the ScardReaderList has not been created yet)
      * @param error SCardError
      */
-    abstract fun onReaderListError(readerList: SCardReaderList, error: SCardError)
+    abstract fun onReaderListError(readerList: SCardReaderList?, error: SCardError)
 
     /**
      * Invoked for all “recoverable” errors, e.g. invalid slot number, card absent, card removed or mute, etc.

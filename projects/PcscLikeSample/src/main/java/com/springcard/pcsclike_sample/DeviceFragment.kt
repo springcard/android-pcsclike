@@ -188,10 +188,10 @@ abstract class DeviceFragment : Fragment() {
 
         /* Errors callbacks */
 
-        override fun onReaderListError(readerList: SCardReaderList, error: SCardError) {
+        override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
 
-            if(!isDeviceInitialized) {
+            if(readerList == null) {
                 mainActivity.logInfo("SCardReaderList not initialized")
                 progressDialog.dismiss()
                 mainActivity.backToScanFragment()

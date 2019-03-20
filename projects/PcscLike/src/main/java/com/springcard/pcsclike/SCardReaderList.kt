@@ -9,6 +9,7 @@ package com.springcard.pcsclike
 import android.content.*
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 
 /**
  *
@@ -19,7 +20,7 @@ import android.os.Looper
  * @property TAG (kotlin.String..kotlin.String?)
  * @property commLayer Communication Layer
  * @property ccidHandler CcidHandler
- * @property handler Handler
+ * @property callbacksHandler Handler
  * @property vendorName Manufacturer name of the device
  * @property productName Product name of the device
  * @property serialNumber Serial number of the device, expressed in hexadecimal
@@ -42,7 +43,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler()
-    internal var handler  =  Handler(Looper.getMainLooper())
+    internal var callbacksHandler  =  Handler(Looper.getMainLooper())
 
     var vendorName: String = ""
         internal set
@@ -65,6 +66,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         internal set
     var isCorrectlyKnown = false
         internal set
+    internal var isAlreadyCreated = false
 
     internal var hardwareVersion: String = ""
     internal var softwareVersion: String = ""
@@ -167,5 +169,20 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      */
     fun getPowerInfo() {
         process(ActionEvent.ActionReadPowerInfo())
+    }
+
+
+    /**
+     * Post a callback to the main thread if the device is created
+     * @param callback () -> Lambda to callback to be called
+     * @param forceCallback force callback to be called even if device is npot created yet
+     */
+    internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false) {
+        if(isAlreadyCreated || forceCallback) {
+            callbacksHandler.post {callback()}
+        }
+        else {
+            Log.d(TAG, "Device not created yet, do not post callback")
+        }
     }
 }
