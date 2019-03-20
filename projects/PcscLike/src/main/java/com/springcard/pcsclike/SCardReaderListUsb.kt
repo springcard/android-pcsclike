@@ -19,54 +19,7 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
         }
     }
 
-
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         throw NotImplementedError("Cannot create SCardReaderListUsb with secure parameters for the moment")
-    }
-
-    companion object {
-        /**
-         * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
-         * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
-         *
-         * @param ctx Application's context use to instantiate the object
-         * @param device BLE device
-         * @param callbacks list of callbacks
-         */
-        fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback) {
-
-            val readerList = SCardReaderListUsb.checkIfDeviceKnown(device, callbacks)
-            readerList.create(ctx)
-        }
-
-
-        private fun checkIfDeviceKnown(device: Any, callbacks: SCardReaderListCallback): SCardReaderList {
-            lateinit var scardReaderList: SCardReaderListUsb
-
-            /* Warning, IDs are not persistent across USB disconnects */
-            val address = (device as UsbDevice).deviceId.toString()
-
-            if(knownSCardReaderList.containsKey(address) && knownSCardReaderList[address]?.isCorrectlyKnown == true) {
-                if (knownSCardReaderList[address]!!.isConnected) {
-                    throw IllegalArgumentException("SCardReaderList with address $address already exist")
-                } else {
-                    scardReaderList = knownSCardReaderList[address] as SCardReaderListUsb
-                }
-            }
-            else {
-                scardReaderList = SCardReaderListUsb(device, callbacks)
-                knownSCardReaderList[address] = scardReaderList
-            }
-            return scardReaderList
-        }
-
-        private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
-
-        /**
-         * Clear list of devices known
-         */
-        fun clearCache() {
-            knownSCardReaderList.clear()
-        }
     }
 }

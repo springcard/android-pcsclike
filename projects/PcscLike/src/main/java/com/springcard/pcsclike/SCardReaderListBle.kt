@@ -22,7 +22,6 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
         }
     }
 
-
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         if(layerDevice is BluetoothDevice) {
             commLayer = BluetoothLayer(layerDevice, callbacks, this)
@@ -32,63 +31,6 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
     }
 
     companion object {
-
-        /**
-         * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
-         * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
-         *
-         * @param ctx Application's context use to instantiate the object
-         * @param device BLE device
-         * @param callbacks list of callbacks
-         */
-        fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback) {
-            val readerList = checkIfDeviceKnown(device, callbacks)
-            readerList.create(ctx)
-        }
-
-        /**
-         * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
-         * callback when succeed : [SCardReaderListCallback.onReaderListCreated]
-         * It also creates a secure communication channel based on info given in parameter
-         *
-         * @param ctx Application's context use to instantiate the object
-         * @param device BLE device
-         * @param callbacks list of callbacks
-         * @param secureConnexionParameters CcidSecureParameters
-         */
-        fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback, secureConnexionParameters: CcidSecureParameters) {
-            val readerList = checkIfDeviceKnown(device, callbacks)
-            readerList.create(ctx, secureConnexionParameters)
-        }
-
-
-        private fun checkIfDeviceKnown(device: Any, callbacks: SCardReaderListCallback): SCardReaderList {
-            lateinit var scardReaderList: SCardReaderListBle
-            val address= (device as BluetoothDevice).address
-
-            if(knownSCardReaderList.containsKey(address) && knownSCardReaderList[address]?.isCorrectlyKnown == true) {
-                if (knownSCardReaderList[address]!!.isConnected) {
-                    throw IllegalArgumentException("SCardReaderList with address $address already exist")
-                } else {
-                    scardReaderList = knownSCardReaderList[address] as SCardReaderListBle
-                }
-            }
-            else {
-                scardReaderList = SCardReaderListBle(device, callbacks)
-                knownSCardReaderList[address] = scardReaderList
-            }
-            return scardReaderList
-        }
-
-        private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
-
-        /**
-         * Clear list of devices known
-         */
-        fun clearCache() {
-            knownSCardReaderList.clear()
-        }
-
         /**
          * Communication supervision timeout in ms (30s by default)
          * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly

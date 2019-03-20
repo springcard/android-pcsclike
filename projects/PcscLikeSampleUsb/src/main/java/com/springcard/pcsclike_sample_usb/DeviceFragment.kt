@@ -18,7 +18,7 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
 
         if(device is UsbDevice) {
             deviceName = "${(device as UsbDevice).manufacturerName} ${(device as UsbDevice).productName} [${(device as UsbDevice).serialNumber}]"
-            SCardReaderListUsb.create(mainActivity, device as UsbDevice, scardCallbacks)
+            SCardReaderList.create(mainActivity, device as UsbDevice, scardCallbacks)
         }
         else {
             mainActivity.logInfo("Device is not a USB device")
