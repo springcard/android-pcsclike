@@ -135,7 +135,6 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                         scardReaderList.readers[slotNumber].cardPowered = false
                     }
 
-
                     when (slotStatus) {
                         SCardReader.SlotStatus.Absent.code -> Log.i(TAG, "card absent, no change since last notification")
                         SCardReader.SlotStatus.Present.code -> Log.i(TAG, "card present, no change since last notification")

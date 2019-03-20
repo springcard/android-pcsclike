@@ -13,8 +13,9 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
+    private var currentTimeout: Long = 0 // 0 means that there is no pending timeout operations
     private var bleSupervisionTimeoutCallback: Runnable = Runnable {
-        Log.i(TAG, "Timeout BLE ${SCardReaderListBle.timeout}")
+        Log.e(TAG, "Timeout BLE after ${currentTimeout}ms")
         highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
     }
     private val bleSupervisionTimeout: Handler by lazy {
@@ -110,7 +111,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     fun connect(ctx: Context) {
         Log.d(TAG, "Connect")
         mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(ctx, false, mGattCallback)
-        beginTimer(object{}.javaClass.enclosingMethod!!.name, 5000)
+        beginTimer(object{}.javaClass.enclosingMethod!!.name, SCardReaderListBle.connexionSupervisionTimeout)
     }
 
     fun disconnect() {
@@ -190,20 +191,28 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             highLayer.postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED,"Failed to write in descriptor, to enable notification on characteristic ${chr.uuid}")
             return
         }
-
     }
 
 
     /* Timeout utilities */
 
-    private fun beginTimer(callingMethod: String = "", duration: Long = SCardReaderListBle.timeout) {
+    private fun beginTimer(callingMethod: String = "", duration: Long = SCardReaderListBle.communicationSupervisionTimeout) {
         Log.i(TAG, "Begin BLE timer ($callingMethod)")
+
+        /* Reset timeout if there is one already running */
+        if(currentTimeout != 0.toLong()) {
+            bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
+        }
+
+        currentTimeout = duration
         bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
     }
 
     private fun cancelTimer(callingMethod: String = "") {
         Log.i(TAG, "Stop BLE timer ($callingMethod)")
         bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
+        /* Reset current timeout to indicate that there is no action running*/
+        currentTimeout = 0
     }
 
 }
