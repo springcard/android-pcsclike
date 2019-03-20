@@ -39,7 +39,13 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     highLayer.process(ActionEvent.EventDisconnected())
                 }
-                // TODO CRA else ...
+                else
+                {
+                    if(newState == BluetoothProfile.STATE_CONNECTING)
+                        Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
+                    else if (newState == BluetoothProfile.STATE_DISCONNECTING)
+                        Log.i(TAG, "BLE state changed, unhandled STATE_DISCONNECTING")
+                }
             }
 
             override// New services discovered

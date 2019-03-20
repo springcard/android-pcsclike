@@ -62,17 +62,17 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
     /* Post error callbacks */
 
     internal fun postReaderListError(code : SCardError.ErrorCodes, detail: String, isFatal: Boolean = true) {
-        if(scardReaderList.isConnected) {
-            Log.e(TAG, "Error readerList: ${code.name}, $detail")
+        Log.e(TAG, "Error readerList: ${code.name}, $detail")
 
-            scardReaderList.handler.post {
-                callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
-            }
+        scardReaderList.handler.post {
+            callbacks.onReaderListError(scardReaderList, SCardError(code, detail, isFatal))
+        }
 
-            /* irrecoverable error --> close */
-            if (isFatal) {
-                process(ActionEvent.ActionDisconnect())
-            }
+        /* irrecoverable error --> close */
+        if (isFatal) {
+            process(ActionEvent.ActionDisconnect())
+            /* Remove it from the list of device known because we are not sure of anything about this one */
+            scardReaderList.isCorrectlyKnown = false
         }
     }
 
@@ -135,12 +135,6 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                         scardReaderList.readers[slotNumber].cardPowered = false
                     }
 
-                    /* If the card on the slot we used is gone */
-                    if(scardReaderList.ccidHandler.currentReaderIndex == slotNumber && isReaderCreated) {
-                        if(!scardReaderList.readers[slotNumber].cardPresent || !scardReaderList.readers[slotNumber].cardPowered) {
-                            currentState = State.Idle
-                        }
-                    }
 
                     when (slotStatus) {
                         SCardReader.SlotStatus.Absent.code -> Log.i(TAG, "card absent, no change since last notification")
@@ -410,6 +404,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         else {
             currentState = State.Idle
             scardReaderList.handler.post { callbacks.onReaderListCreated(scardReaderList) }
+            scardReaderList.isCorrectlyKnown = true
         }
     }
 

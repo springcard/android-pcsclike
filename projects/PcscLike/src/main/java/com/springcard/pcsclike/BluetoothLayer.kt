@@ -118,7 +118,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 currentState = State.Disconnected
                 process(ActionEvent.ActionCreate(context))
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -129,13 +129,18 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 if (event.status == BluetoothGatt.GATT_SUCCESS) {
 
                     /* If device is already known, do not read any char except CCID status */
-                    if(scardReaderList.isAlreadyKnown) {
+                    if(scardReaderList.isCorrectlyKnown) {
                         uuidCharacteristicsToRead.clear()
                         uuidCharacteristicsToRead.add(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)
                     }
 
                     val services =  lowLayer.getServices()
                     Log.d(TAG, services.toString())
+
+                    if(services.isEmpty()) {
+                        postReaderListError(SCardError.ErrorCodes.MISSING_SERVICE, "Android thinks that the GATT of the device is empty")
+                        return
+                    }
 
                     for (srv in services) {
                         Log.d(TAG, "Service = " + srv.uuid.toString())
@@ -157,6 +162,13 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         }
                     }
 
+                    if(uuidCharacteristicsCanIndicate.size != characteristicsCanIndicate.size
+                        || uuidCharacteristicsToRead.size != characteristicsToRead.size
+                        || uuidCharacteristicsToReadPower.size != characteristicsToReadPower.size) {
+                        postReaderListError(SCardError.ErrorCodes.MISSING_CHARACTERISTIC, "One or more characteristic are missing in the GATT")
+                        return
+                    }
+
                     Log.d(TAG, "Go to ReadingInformation")
                     currentState = State.ReadingInformation
                     /* trigger 1st read */
@@ -167,7 +179,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     Log.w(TAG, "onServicesDiscovered received: ${event.status}")
                 }
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -201,7 +213,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         }
 
                         /* Add n new readers */
-                        if(!scardReaderList.isAlreadyKnown) {
+                        if(!scardReaderList.isCorrectlyKnown) {
                             for (i in 0 until slotCount) {
                                 scardReaderList.readers.add(SCardReader(scardReaderList))
                             }
@@ -237,7 +249,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     lowLayer.enableNotifications(chr)
                 }
             }
-            else ->  Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> handleCommonActionEventsCreating(event)
         }
     }
 
@@ -259,7 +271,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 else {
                     Log.d(TAG, "Subscribing finished")
 
-                    if(scardReaderList.isAlreadyKnown) {
+                    if(scardReaderList.isCorrectlyKnown) {
                         Log.d(TAG, "Device already known: go to processNextSlotConnection or authenticate")
                         /* Go to authenticate state if necessary */
                         if(scardReaderList.ccidHandler.isSecure) {

@@ -39,6 +39,9 @@ abstract class DeviceFragment : Fragment() {
     var connectToNewDevice = true
 
     protected lateinit var  mainActivity: MainActivity
+    private var isUInitialized = false
+    private var isDeviceInitialized = false
+
 
     /* Various callback methods defined by the ScardReaderLis */
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
@@ -50,56 +53,33 @@ abstract class DeviceFragment : Fragment() {
                 val elapsedTime = apduListStopTime - apduListStartTime
                 Toast.makeText(activity, "Device instantiated in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
             }
-
-            val spinnerList =  mutableListOf<String>()
             scardDevice = readerList
-
-            for(i in 0 until scardDevice.slotCount) {
-                spinnerList.add("$i - ${scardDevice.slots[i]}")
+            isDeviceInitialized = true
+            if(isResumed) {
+                initializeUI(readerList)
             }
-
-            val adapter = ArrayAdapter<String>(
-                activity?.applicationContext!!,
-                android.R.layout.simple_spinner_item, spinnerList
-            )
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            spinnerSlots.adapter = adapter
-
-            val dataAdapter = ArrayAdapter<String>(
-                activity?.applicationContext!!,
-                android.R.layout.simple_spinner_item, sendCommands
-            )
-            // Drop down layout style - list view
-            dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            spinnerTransmitControl.adapter = dataAdapter
-
-            textState.text = getString(R.string.absent)
-            connectCardButton.isEnabled = false
-            disconnectCardButton.isEnabled = false
-
-            currentSlot = scardDevice.getReader(spinnerSlots.selectedItemPosition)
-
-            spinnerSlots.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-
-                }
-
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    currentSlot = scardDevice.getReader(spinnerSlots.selectedItemPosition)
-                    currentChannel = currentSlot?.channel!!
-                    updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardPowered!!)
-                }
+            else {
+                isUInitialized = false
             }
-            progressDialog.dismiss()
         }
 
         override fun onReaderListClosed(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListClosed")
 
+            if(!isDeviceInitialized) {
+                mainActivity.logInfo("SCardReaderList not initialized")
+                progressDialog.dismiss()
+                mainActivity.backToScanFragment()
+                return
+            }
+
             if(readerList != scardDevice) {
                 mainActivity.logInfo("Error: wrong SCardReaderList")
                 return
             }
+
+            isUInitialized = false
+            isDeviceInitialized = false
             mainActivity.backToScanFragment()
         }
 
@@ -211,6 +191,13 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderListError(readerList: SCardReaderList, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
 
+            if(!isDeviceInitialized) {
+                mainActivity.logInfo("SCardReaderList not initialized")
+                progressDialog.dismiss()
+                mainActivity.backToScanFragment()
+                return
+            }
+
             if(readerList != scardDevice) {
                 mainActivity.logInfo("Error: wrong SCardReaderList")
                 return
@@ -294,6 +281,10 @@ abstract class DeviceFragment : Fragment() {
 
         prevButton.setOnClickListener {
             goToPreviousCommand()
+        }
+
+        if(!isUInitialized && ::scardDevice.isInitialized) {
+            initializeUI(scardDevice)
         }
     }
 
@@ -565,5 +556,51 @@ abstract class DeviceFragment : Fragment() {
         progressDialog.dismiss()
         scardDevice.close()
         mainActivity.backToScanFragment()
+    }
+
+    private fun initializeUI(readerList: SCardReaderList) {
+
+        val spinnerList =  mutableListOf<String>()
+
+
+        for(i in 0 until readerList.slotCount) {
+            spinnerList.add("$i - ${readerList.slots[i]}")
+        }
+
+        val adapter = ArrayAdapter<String>(
+            activity?.applicationContext!!,
+            android.R.layout.simple_spinner_item, spinnerList
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerSlots.adapter = adapter
+
+        val dataAdapter = ArrayAdapter<String>(
+            activity?.applicationContext!!,
+            android.R.layout.simple_spinner_item, sendCommands
+        )
+        // Drop down layout style - list view
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerTransmitControl.adapter = dataAdapter
+
+        textState.text = getString(R.string.absent)
+        connectCardButton.isEnabled = false
+        disconnectCardButton.isEnabled = false
+
+        currentSlot = readerList.getReader(spinnerSlots.selectedItemPosition)
+
+        spinnerSlots.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+
+            }
+
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                currentSlot = readerList.getReader(spinnerSlots.selectedItemPosition)
+                currentChannel = currentSlot?.channel!!
+                updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardPowered!!)
+            }
+        }
+        progressDialog.dismiss()
+
+        isUInitialized = true
     }
 }
