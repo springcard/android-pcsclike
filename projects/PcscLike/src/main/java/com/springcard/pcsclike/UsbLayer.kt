@@ -450,7 +450,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 val slotCount = descriptor[curPos + 4] + 1
                 Log.d(TAG, "Descriptor found, slotCount = $slotCount")
                 /* Add n new readers */
-                if(!scardReaderList.isAlreadyKnown) {
+                if(!scardReaderList.isCorrectlyKnown) {
                     for (i in 0 until slotCount) {
                         scardReaderList.readers.add(SCardReader(scardReaderList))
                     }

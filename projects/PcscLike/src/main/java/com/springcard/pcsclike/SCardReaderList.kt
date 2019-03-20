@@ -6,7 +6,6 @@
 
 package com.springcard.pcsclike
 
-import android.bluetooth.*
 import android.content.*
 import android.os.Handler
 import android.os.Looper
@@ -30,15 +29,14 @@ import android.os.Looper
  * @property firmwareVersionMinor The mm part of libraryVersion
  * @property firmwareVersionBuild The build number (bb part of libraryVersion)
  * @property isConnected True the device is connected to the phone
- * @property isAlreadyKnown True if the device as previously been connected (and the library as not been unloaded or SCardReaderList.clearCache has not been called)
+ * @property isCorrectlyKnown True if the device has previously been correctly connected (and the library as not been unloaded or SCardReaderList.clearCache has not been called)
  * @property readers List of SCardReader
  * @property slots  Name of every slot
  * @property slotCount Number of slots
  * @constructor Instantiate an new SpringCard PC/SC device
  *
  */
-abstract class SCardReaderList internal constructor(protected val layerDevice: Any, internal val callbacks: SCardReaderListCallback) {
-
+abstract class SCardReaderList internal constructor(internal val layerDevice: Any, internal val callbacks: SCardReaderListCallback) {
 
     private val TAG = this::class.java.simpleName
 
@@ -65,7 +63,7 @@ abstract class SCardReaderList internal constructor(protected val layerDevice: A
 
     var isConnected = false
         internal set
-    var isAlreadyKnown = false
+    var isCorrectlyKnown = false
         internal set
 
     internal var hardwareVersion: String = ""

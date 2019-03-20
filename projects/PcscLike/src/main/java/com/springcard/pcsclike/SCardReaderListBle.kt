@@ -9,7 +9,6 @@ package com.springcard.pcsclike
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
-import java.util.*
 import android.support.annotation.RequiresApi
 
 
@@ -67,11 +66,10 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
             lateinit var scardReaderList: SCardReaderListBle
             val address= (device as BluetoothDevice).address
 
-            if(knownSCardReaderList.containsKey(address)) {
+            if(knownSCardReaderList.containsKey(address) && knownSCardReaderList[address]?.isCorrectlyKnown == true) {
                 if (knownSCardReaderList[address]!!.isConnected) {
                     throw IllegalArgumentException("SCardReaderList with address $address already exist")
                 } else {
-                    knownSCardReaderList[address]?.isAlreadyKnown = true
                     scardReaderList = knownSCardReaderList[address] as SCardReaderListBle
                 }
             }
@@ -92,9 +90,9 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
         }
 
         /**
-         * Communication supervision Timeout in ms (720ms by default)
+         * Communication supervision Timeout in ms (2s by default)
          */
-        var timeout: Long = 720
+        var timeout: Long = 2000
     }
 
 }

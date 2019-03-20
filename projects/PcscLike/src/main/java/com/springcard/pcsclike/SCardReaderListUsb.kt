@@ -6,7 +6,6 @@
 
 package com.springcard.pcsclike
 
-import android.bluetooth.BluetoothDevice
 import android.hardware.usb.UsbDevice
 import android.content.Context
 
@@ -47,11 +46,10 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
             /* Warning, IDs are not persistent across USB disconnects */
             val address = (device as UsbDevice).deviceId.toString()
 
-            if(knownSCardReaderList.containsKey(address)) {
+            if(knownSCardReaderList.containsKey(address) && knownSCardReaderList[address]?.isCorrectlyKnown == true) {
                 if (knownSCardReaderList[address]!!.isConnected) {
                     throw IllegalArgumentException("SCardReaderList with address $address already exist")
                 } else {
-                    knownSCardReaderList[address]?.isAlreadyKnown = true
                     scardReaderList = knownSCardReaderList[address] as SCardReaderListUsb
                 }
             }
