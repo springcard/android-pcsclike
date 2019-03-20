@@ -17,7 +17,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.ParcelUuid
-import android.support.annotation.RequiresApi
 import android.util.Log
 import android.widget.AdapterView
 import com.springcard.pcsclike.*

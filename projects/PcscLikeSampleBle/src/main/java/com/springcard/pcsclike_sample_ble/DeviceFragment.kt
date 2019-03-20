@@ -50,7 +50,7 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
                     }
                 }
 
-                SCardReaderListBle.create(
+                SCardReaderList.create(
                     mainActivity.applicationContext,
                     device as BluetoothDevice,
                     scardCallbacks,
@@ -63,7 +63,7 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
                 )
             }
             else {
-                SCardReaderListBle.create(mainActivity.applicationContext, device as BluetoothDevice, scardCallbacks)
+                SCardReaderList.create(mainActivity.applicationContext, device as BluetoothDevice, scardCallbacks)
             }
         }
         else {
