@@ -137,14 +137,6 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
             mainActivity.logInfo("onReaderStatus")
 
-            /* Check if device is sleeping */
-            if(slot.parent.isSleeping) {
-                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName} (z)")
-            }
-            else {
-                mainActivity.setActionBarTitle(this@DeviceFragment.deviceName)
-            }
-
             if(slot != currentSlot) {
                 mainActivity.logInfo("Error: wrong slot")
                 return
@@ -192,6 +184,17 @@ abstract class DeviceFragment : Fragment() {
             }
 
             handleRapdu(response)
+        }
+
+        override fun onReaderListState(readerList: SCardReaderList, state: Boolean) {
+            /* Check if device is sleeping */
+            /* Could also be checked via readerList.isSleeping */
+            if(state) {
+                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName} (z)")
+            }
+            else{
+                mainActivity.setActionBarTitle(this@DeviceFragment.deviceName)
+            }
         }
 
         /* Errors callbacks */

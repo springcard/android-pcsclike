@@ -81,4 +81,11 @@ abstract class SCardReaderListCallback {
      * @param error SCardError
      */
     abstract fun onReaderOrCardError(readerOrCard: Any, error: SCardError)
+
+    /**
+     * Invoked when the device is going to sleep or waking up
+     * @param readerList SCardReaderList
+     * @param state true = going to sleep, false = waking-up
+     */
+    abstract fun onReaderListState(readerList: SCardReaderList, state: Boolean)
 }

@@ -221,6 +221,16 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         bleDeviceList.clear()
         adapter?.notifyDataSetChanged()
 
+
+       /* val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
+            val bluetoothManager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            bluetoothManager.adapter
+        }
+
+        var deviceDummy = mBluetoothAdapter!!.getRemoteDevice("00:0D:6F:47:3D:6A")
+
+        mainActivity.goToDeviceFragment(deviceDummy)*/
+
         /* Begin scan directly when arriving to this fragment */
         scanLeDevice(true)
     }

@@ -246,8 +246,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             else {
                 when (device) {
                     is BluetoothDevice -> {
-                        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP)
-                        {
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             scardReaderList = SCardReaderListBle(device, callbacks)
                         }
                         else {
