@@ -9,7 +9,10 @@ package com.springcard.pcsclike
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
+import android.service.autofill.Validators.not
 import android.util.Log
+import kotlin.experimental.and
+import kotlin.experimental.inv
 
 
 internal enum class State{
@@ -101,7 +104,10 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             return
         }
 
-        val slotCount = data[0]
+        /* If msb is set the device is gone to sleep, otherwise it is awake */
+        scardReaderList.isSleeping = data[0] and LOW_POWER_NOTIFICATION == LOW_POWER_NOTIFICATION
+
+        val slotCount = data[0] and LOW_POWER_NOTIFICATION.inv()
 
         /* Is slot count  matching nb of bytes*/
         if (slotCount > 4 * (data.size - 1)) {
@@ -419,5 +425,9 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         scardReaderList.firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
         scardReaderList.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
         scardReaderList.firmwareVersionBuild = revString.split("-")[1].toInt()
+    }
+
+    companion object {
+        const val LOW_POWER_NOTIFICATION: Byte = 0x80.toByte()
     }
 }

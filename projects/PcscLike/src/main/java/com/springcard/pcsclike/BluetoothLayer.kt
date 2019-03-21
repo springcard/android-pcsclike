@@ -13,6 +13,7 @@ import android.util.Log
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
 import java.util.*
+import kotlin.experimental.inv
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -205,7 +206,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.vendorName = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.pnpId = event.characteristic.value.toHexString()
                     GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
-                        val slotCount = event.characteristic.value[0]
+                        val slotCount = event.characteristic.value[0] and LOW_POWER_NOTIFICATION.inv()
 
                         if(slotCount.toInt() == 0) {
                             postReaderListError(SCardError.ErrorCodes.DUMMY_DEVICE, "This device has 0 slots")
@@ -219,6 +220,13 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             }
                         }
 
+                        /* Recreate dummy data with just slotCount and card absent on all slots */
+                        val ccidStatusData = ByteArray(event.characteristic.value.size)
+                        ccidStatusData[0] = event.characteristic.value[0]
+                        for (i in 1 until event.characteristic.value.size) {
+                            ccidStatusData[i] = 0x00
+                        }
+
                         /* Update readers status */
                         interpretSlotsStatus(event.characteristic.value)
 
@@ -226,7 +234,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         listReadersToConnect.clear()
                         for (slot in scardReaderList.readers) {
                             if(slot.cardPresent) { // TODO and !slot.cardPowered
-                                Log.d(TAG, "Slot: ${slot.name}, card present but not powered --> must connect to this card")
+                                Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
                                 listReadersToConnect.add(slot)
                             }
                         }
