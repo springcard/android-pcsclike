@@ -105,73 +105,107 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
 
         /* If msb is set the device is gone to sleep, otherwise it is awake */
-        scardReaderList.isSleeping = data[0] and LOW_POWER_NOTIFICATION == LOW_POWER_NOTIFICATION
+        val isSleeping = data[0] and LOW_POWER_NOTIFICATION == LOW_POWER_NOTIFICATION
 
-        val slotCount = data[0] and LOW_POWER_NOTIFICATION.inv()
-
-        /* Is slot count  matching nb of bytes*/
-        if (slotCount > 4 * (data.size - 1)) {
-            postReaderListError(
-                SCardError.ErrorCodes.PROTOCOL_ERROR,
-                "Error, too much slot ($slotCount) for ${data.size - 1} bytes")
-            return
+        /* Product waking-up */
+        if(scardReaderList.isSleeping && !isSleeping) {
+            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
+        }
+        /* Device going to sleep */
+        else if(!scardReaderList.isSleeping && isSleeping) {
+            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
+        }
+        else if (scardReaderList.isSleeping && isSleeping) {
+            Log.i(TAG, "Device is still sleeping...")
+        }
+        else if(!scardReaderList.isSleeping && !isSleeping) {
+            Log.i(TAG, "Device is still awake...")
         }
 
-        /* Is slot count matching nb of readers in scardReaderList obj */
-        if(slotCount.toInt() != scardReaderList.readers.size) {
-            if(scardReaderList.isAlreadyCreated) {
+        /* Update scardDevice state */
+        scardReaderList.isSleeping = isSleeping
+
+        /* If device is awake -> Interpret slot status */
+        if(!isSleeping) {
+
+            val slotCount = data[0] and LOW_POWER_NOTIFICATION.inv()
+
+            /* Is slot count  matching nb of bytes*/
+            if (slotCount > 4 * (data.size - 1)) {
                 postReaderListError(
                     SCardError.ErrorCodes.PROTOCOL_ERROR,
-                    "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+                    "Error, too much slot ($slotCount) for ${data.size - 1} bytes"
                 )
+                return
             }
-            else {
-                Log.e(TAG, "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})")
+
+            /* Is slot count matching nb of readers in scardReaderList obj */
+            if (slotCount.toInt() != scardReaderList.readers.size) {
+                if (scardReaderList.isAlreadyCreated) {
+                    postReaderListError(
+                        SCardError.ErrorCodes.PROTOCOL_ERROR,
+                        "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+                    )
+                } else {
+                    Log.e(
+                        TAG,
+                        "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+                    )
+                }
+                return
             }
-            return
-        }
 
-        for (i in 1 until data.size) {
-            for (j in 0..3) {
-                val slotNumber = (i - 1) * 4 + j
-                if (slotNumber < slotCount) {
+            for (i in 1 until data.size) {
+                for (j in 0..3) {
+                    val slotNumber = (i - 1) * 4 + j
+                    if (slotNumber < slotCount) {
 
-                    val slotStatus = (data[i].toInt() shr j*2) and 0x03
-                    Log.i(TAG, "Slot $slotNumber")
+                        val slotStatus = (data[i].toInt() shr j * 2) and 0x03
+                        Log.i(TAG, "Slot $slotNumber")
 
-                    /* Update SCardReadList slot status */
-                    scardReaderList.readers[slotNumber].cardPresent =
-                        !(slotStatus == SCardReader.SlotStatus.Absent.code || slotStatus == SCardReader.SlotStatus.Removed.code)
+                        /* Update SCardReadList slot status */
+                        scardReaderList.readers[slotNumber].cardPresent =
+                            !(slotStatus == SCardReader.SlotStatus.Absent.code || slotStatus == SCardReader.SlotStatus.Removed.code)
 
-                    /* If card is not present, it can not be powered */
-                    if(!scardReaderList.readers[slotNumber].cardPresent) {
-                        scardReaderList.readers[slotNumber].cardPowered = false
-                    }
-
-                    when (slotStatus) {
-                        SCardReader.SlotStatus.Absent.code -> Log.i(TAG, "card absent, no change since last notification")
-                        SCardReader.SlotStatus.Present.code -> Log.i(TAG, "card present, no change since last notification")
-                        SCardReader.SlotStatus.Removed.code  -> Log.i(TAG, "card removed notification")
-                        SCardReader.SlotStatus.Inserted.code  -> Log.i(TAG, "card inserted notification")
-                        else -> {
-                            Log.w(TAG, "Impossible value : $slotStatus")
+                        /* If card is not present, it can not be powered */
+                        if (!scardReaderList.readers[slotNumber].cardPresent) {
+                            scardReaderList.readers[slotNumber].cardPowered = false
                         }
-                    }
-                    if(scardReaderList.isAlreadyCreated) {
-                        val cardChanged =
-                            (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
-                        if (cardChanged) {
-                            scardReaderList.postCallback({
-                                callbacks.onReaderStatus(
-                                    scardReaderList.readers[slotNumber],
-                                    scardReaderList.readers[slotNumber].cardPresent,
-                                    scardReaderList.readers[slotNumber].cardPowered
-                                )
-                            })
+
+                        when (slotStatus) {
+                            SCardReader.SlotStatus.Absent.code -> Log.i(
+                                TAG,
+                                "card absent, no change since last notification"
+                            )
+                            SCardReader.SlotStatus.Present.code -> Log.i(
+                                TAG,
+                                "card present, no change since last notification"
+                            )
+                            SCardReader.SlotStatus.Removed.code -> Log.i(TAG, "card removed notification")
+                            SCardReader.SlotStatus.Inserted.code -> Log.i(TAG, "card inserted notification")
+                            else -> {
+                                Log.w(TAG, "Impossible value : $slotStatus")
+                            }
+                        }
+                        if (scardReaderList.isAlreadyCreated) {
+                            val cardChanged =
+                                (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
+                            if (cardChanged) {
+                                scardReaderList.postCallback({
+                                    callbacks.onReaderStatus(
+                                        scardReaderList.readers[slotNumber],
+                                        scardReaderList.readers[slotNumber].cardPresent,
+                                        scardReaderList.readers[slotNumber].cardPowered
+                                    )
+                                })
+                            }
                         }
                     }
                 }
             }
+        }
+        else {
+            Log.i(TAG,"ScardReaderList is sleeping, do not read CCID status data")
         }
     }
 
@@ -343,7 +377,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                         ccidResponse.payload
                     )
                 })
-                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value -> when (scardReaderList.ccidHandler.commandSend) {
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
@@ -373,7 +407,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     /* Call callback */
                     scardReaderList.postCallback({ callbacks.onCardConnected(slot.channel) })
                 }
-                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
                 CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
@@ -396,9 +430,9 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     scardReaderList.postCallback({ callbacks.onCardConnected(channel) })
                     // TODO onReaderOrCardError
                 }
-                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+                else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unexpected CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}")
             }
-            else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unknown CCID response (${ccidResponse.code}) for command : ${scardReaderList.ccidHandler.commandSend}")
+            else -> postReaderListError(SCardError.ErrorCodes.DIALOG_ERROR, "Unknown CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}")
         }
     }
 
@@ -414,9 +448,12 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         /* Otherwise go to idle state */
         else {
             currentState = State.Idle
-            scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
-            scardReaderList.isCorrectlyKnown = true
-            scardReaderList.isAlreadyCreated = true
+            /* Post callback and set variable only while creating the object*/
+            if(!scardReaderList.isAlreadyCreated) {
+                scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
+                scardReaderList.isCorrectlyKnown = true
+                scardReaderList.isAlreadyCreated = true
+            }
         }
     }
 
