@@ -75,7 +75,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 status: Int
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(ActionEvent.EventCharacteristicWrite(characteristic, status))
+                highLayer.process(ActionEvent.EventCharacteristicWritten(characteristic, status))
             }
 
             override// Characteristic notification

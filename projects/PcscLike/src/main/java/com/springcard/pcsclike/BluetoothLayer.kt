@@ -397,7 +397,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     currentState = State.WaitingResponse
                 }
             }
-            is ActionEvent.EventCharacteristicWrite -> {
+            is ActionEvent.EventCharacteristicWritten -> {
                 Log.d(TAG, "Write succeed")
             }
             is ActionEvent.EventCharacteristicChanged -> {
@@ -455,6 +455,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             /* Remove reader we just processed */
                             listReadersToConnect.remove(slot)
 
+                            /* Change state if we are at the end of the list */
+                            processNextSlotConnection()
+
+                            /* Send callback AFTER checking state of the slots */
                             scardReaderList.postCallback({
                                 callbacks.onReaderStatus(
                                     slot,
@@ -463,8 +467,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                                 )
                             })
 
-                            /* Change state if we are at the end of the list */
-                            processNextSlotConnection()
+
                         }
                     }
                 }
@@ -529,6 +532,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 }
                 else {
                     currentState = State.Idle
+
+                    /* Check if there are some cards to connect*/
+                    processNextSlotConnection()
+
                     /* read done --> send callback */
                     scardReaderList.postCallback({
                         callbacks.onPowerInfo(
@@ -537,7 +544,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             batteryLevel
                         )
                     })
-                    processNextSlotConnection()
+
                 }
             }
             is ActionEvent.ActionReadPowerInfo -> {
@@ -553,7 +560,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     private fun handleStateWritingCommand(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.EventCharacteristicWrite -> {
+            is ActionEvent.EventCharacteristicWritten -> {
 
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR) {
                     if(event.status == BluetoothGatt.GATT_SUCCESS) {
@@ -589,13 +596,14 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
                             Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
                         } else {
+                            /* Check if there are some cards to connect*/
+                            processNextSlotConnection()
+
+                            /* Send callback AFTER checking state of the slots */
                             analyseResponse(rxBuffer.toByteArray())
 
                             /* reset rxBuffer */
                             rxBuffer = mutableListOf<Byte>()
-
-                            /* Check if there are some cards to connect*/
-                            processNextSlotConnection()
                         }
                     }
                 }
@@ -618,17 +626,18 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
 
                     /* Check if the response is compete or not */
-                    if( rxBuffer.size- CcidFrame.HEADER_SIZE != ccidLength) {
+                    if(rxBuffer.size- CcidFrame.HEADER_SIZE != ccidLength) {
                         Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
                     }
                     else {
+                        /* Check if there are some cards to connect */
+                        processNextSlotConnection()
+
+                        /* Send callback AFTER checking state of the slots */
                         analyseResponse(rxBuffer.toByteArray())
 
                         /* reset rxBuffer */
                         rxBuffer = mutableListOf<Byte>()
-
-                        /* Check if there are some cards to connect */
-                        processNextSlotConnection()
                     }
                 }
                 else {
