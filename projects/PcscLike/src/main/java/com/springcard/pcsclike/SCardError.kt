@@ -16,7 +16,7 @@ package com.springcard.pcsclike
  * @property message Message corresponding to the ErrorCodes
  *
  */
-class SCardError (val code: ErrorCodes, val detail : String, val isFatal: Boolean = false) {
+class SCardError(val code: ErrorCodes, val detail : String, val isFatal: Boolean = false) {
 
     val message : String
     get() {

@@ -4,9 +4,13 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.CCID
 
 import android.util.Log
+import com.springcard.pcsclike.RotateLeftOneByte
+import com.springcard.pcsclike.RotateRightOneByte
+import com.springcard.pcsclike.XOR
+import com.springcard.pcsclike.toHexString
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec

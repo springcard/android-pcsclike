@@ -9,8 +9,9 @@ package com.springcard.pcsclike
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
-import android.service.autofill.Validators.not
 import android.util.Log
+import com.springcard.pcsclike.CCID.CcidCommand
+import com.springcard.pcsclike.CCID.CcidResponse
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
@@ -141,17 +142,10 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
             /* Is slot count matching nb of readers in scardReaderList obj */
             if (slotCount.toInt() != scardReaderList.readers.size) {
-                if (scardReaderList.isAlreadyCreated) {
-                    postReaderListError(
-                        SCardError.ErrorCodes.PROTOCOL_ERROR,
-                        "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
-                    )
-                } else {
-                    Log.e(
-                        TAG,
-                        "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
-                    )
-                }
+                postReaderListError(
+                    SCardError.ErrorCodes.PROTOCOL_ERROR,
+                    "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+                )
                 return
             }
 
@@ -169,7 +163,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
                         /* If card is not present, it can not be powered */
                         if (!scardReaderList.readers[slotNumber].cardPresent) {
-                            scardReaderList.readers[slotNumber].cardPowered = false
+                            scardReaderList.readers[slotNumber].cardConnected = false
                         }
 
                         when (slotStatus) {
@@ -187,19 +181,22 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                                 Log.w(TAG, "Impossible value : $slotStatus")
                             }
                         }
-                        if (scardReaderList.isAlreadyCreated) {
-                            val cardChanged =
-                                (slotStatus == SCardReader.SlotStatus.Removed.code || slotStatus == SCardReader.SlotStatus.Inserted.code)
-                            if (cardChanged) {
-                                scardReaderList.postCallback({
-                                    callbacks.onReaderStatus(
-                                        scardReaderList.readers[slotNumber],
-                                        scardReaderList.readers[slotNumber].cardPresent,
-                                        scardReaderList.readers[slotNumber].cardPowered
-                                    )
-                                })
-                            }
+
+                        /* Send callback only if card removed, when the card is inserted */
+                        /* the callback will be send after the connection to the card  */
+                        val cardChanged =
+                            (slotStatus == SCardReader.SlotStatus.Removed.code)
+
+                        if (cardChanged) {
+                            scardReaderList.postCallback({
+                                callbacks.onReaderStatus(
+                                    scardReaderList.readers[slotNumber],
+                                    scardReaderList.readers[slotNumber].cardPresent,
+                                    scardReaderList.readers[slotNumber].cardConnected
+                                )
+                            })
                         }
+
                     }
                 }
             }
@@ -284,7 +281,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 errorCode = SCardError.ErrorCodes.CARD_MUTE
                 detail = "CCID slot error: Time out in Card communication"
             }
-            SCardReader.SlotError.ICC_MUTE.code -> {
+            SCardReader.SlotError.XFR_PARITY_ERROR.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Parity error in Card communication"
             }
@@ -365,7 +362,6 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             return
         }
 
-
         currentState = State.Idle
         Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
 
@@ -400,8 +396,8 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
                     /* save ATR */
                     slot.channel.atr = ccidResponse.payload
-                    /* set cardPowered flag */
-                    slot.cardPowered = true
+                    /* set cardConnected flag */
+                    slot.cardConnected = true
                     /* Change state */
                     currentState = State.Idle
                     /* Call callback */
@@ -415,18 +411,25 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                     Log.d(TAG, "Reader Status --> Cool! ...but useless")
 
                     /* Update slot concerned */
-                    interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, scardReaderList.readers[ccidResponse.slotNumber.toInt()])
+                    interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
-                    slot.cardPowered = false
+                    slot.cardConnected = false
                     scardReaderList.postCallback({ callbacks.onCardDisconnected(slot.channel) })
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
-                    // TODO CRA scardReaderList.postCallback({callbacks?.onReaderStatus()})
+                    if(slot.cardPresent && !slot.cardPowered) {
+                        val scardError = SCardError(
+                            SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR,
+                            "Transmit invoked, but card not powered"
+                        )
+                        scardReaderList.postCallback({ callbacks.onReaderOrCardError(slot, scardError) })
+                    }
+                    // TODO CRA else ...
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
                     val channel = slot.channel
-                    slot.cardPowered = true
+                    slot.cardConnected = true
                     scardReaderList.postCallback({ callbacks.onCardConnected(channel) })
                     // TODO onReaderOrCardError
                 }
@@ -447,9 +450,11 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
         /* Otherwise go to idle state */
         else {
+            Log.e(TAG, "----------------------------------> Going to idle")
             currentState = State.Idle
             /* Post callback and set variable only while creating the object*/
             if(!scardReaderList.isAlreadyCreated) {
+
                 scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
                 scardReaderList.isCorrectlyKnown = true
                 scardReaderList.isAlreadyCreated = true

@@ -10,6 +10,8 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import android.support.annotation.RequiresApi
+import com.springcard.pcsclike.CCID.CcidHandler
+import com.springcard.pcsclike.CCID.CcidSecureParameters
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)

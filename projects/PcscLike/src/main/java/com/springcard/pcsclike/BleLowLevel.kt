@@ -155,7 +155,6 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     /* return Boolean true if finished */
     fun ccidWriteCharSequenced(): Boolean {
-        Log.d(TAG, "Writing ${dataToWrite.toHexString()}")
         /* Temporary workaround: we can not send to much data in one write */
         /* (we can write more than MTU but less than ~512 bytes) */
         val maxSize = 512
@@ -165,7 +164,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             /* If the data length is greater than MTU, Android will automatically send multiple packets */
             /* There is no need to split the data ourself  */
             mBluetoothGatt.writeCharacteristic(highLayer.charCcidPcToRdr)
-            Log.d(TAG, "Writing ${dataToWriteCursorEnd - dataToWriteCursorBegin} bytes")
+            Log.d(TAG, "Writing ${highLayer.charCcidPcToRdr.value.toHexString()}")
             dataToWriteCursorBegin = dataToWriteCursorEnd
             beginTimer(object{}.javaClass.enclosingMethod!!.name)
             false
@@ -205,7 +204,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
         }
 
         currentTimeout = duration
-        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
+        //bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
     }
 
     private fun cancelTimer(callingMethod: String = "") {

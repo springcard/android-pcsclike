@@ -4,9 +4,10 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.CCID
 
 import android.util.Log
+import com.springcard.pcsclike.toHexString
 import java.lang.Exception
 
 internal class CcidHandler() {
@@ -68,7 +69,8 @@ internal class CcidHandler() {
         commandSend = code
         currentReaderIndex = slotNumber
 
-        var command = CcidCommand(code, slotNumber.toByte(), sequenceNumber.toByte(), payload)
+        var command =
+            CcidCommand(code, slotNumber.toByte(), sequenceNumber.toByte(), payload)
 
         /* authenticateOk --> cipher and mmc frame */
         if(isSecure && authenticateOk) {
@@ -87,7 +89,7 @@ internal class CcidHandler() {
             throw Exception(msg)
         }
 
-        if(frame.size-CcidFrame.HEADER_SIZE != response.length ) {
+        if(frame.size- CcidFrame.HEADER_SIZE != response.length ) {
               Log.d(TAG, "Frame not complete, excepted length = ${response.length}")
         }
 
