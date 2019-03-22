@@ -39,7 +39,7 @@ internal sealed class ActionEvent {
     class EventServicesDiscovered(val status: Int) : ActionEvent()
     class EventDescriptorWrite(val descriptor: BluetoothGattDescriptor, val status: Int) : ActionEvent()
     class EventCharacteristicChanged(val characteristic: BluetoothGattCharacteristic) : ActionEvent()
-    class EventCharacteristicWrite(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
+    class EventCharacteristicWritten(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventCharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventOnUsbInterrupt(val data: ByteArray) : ActionEvent()
     class EventOnUsbDataIn(val data: ByteArray) : ActionEvent()
@@ -450,7 +450,6 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
         /* Otherwise go to idle state */
         else {
-            Log.e(TAG, "----------------------------------> Going to idle")
             currentState = State.Idle
             /* Post callback and set variable only while creating the object*/
             if(!scardReaderList.isAlreadyCreated) {

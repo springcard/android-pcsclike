@@ -50,7 +50,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler()
-    internal var callbacksHandler  =  Handler(Looper.getMainLooper())
+    internal var callbacksHandler  =  Handler()
 
     var vendorName: String = ""
         internal set
@@ -187,7 +187,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      */
     internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false) {
         if(isAlreadyCreated || forceCallback) {
-            callbacksHandler.post {callback()}
+            callbacksHandler.post(Runnable(callback))
         }
         else {
             Log.d(TAG, "Device not created yet, do not post callback")
