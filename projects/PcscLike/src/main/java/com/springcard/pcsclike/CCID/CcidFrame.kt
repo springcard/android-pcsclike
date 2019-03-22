@@ -4,9 +4,10 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.CCID
 
 import android.util.Log
+import com.springcard.pcsclike.bytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.experimental.and

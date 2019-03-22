@@ -332,7 +332,7 @@ abstract class DeviceFragment : Fragment() {
 
                 mainActivity.logInfo("Click on Run APDU")
 
-                if((!currentSlot?.cardPresent!! || !currentSlot?.cardPowered!!) &&
+                if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!!) &&
                     spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
                     rapduTextBox.text.clear()
                     rapduTextBox.text.append(getString(R.string.no_card))
@@ -437,6 +437,8 @@ abstract class DeviceFragment : Fragment() {
     private fun sendApdu() {
 
         mainActivity.logInfo("sendApdu")
+        mainActivity.logInfo("<${cApdu[cptApdu].toHexString()}")
+
         // TODO CRA create resource string
         if(spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
             currentChannel.transmit(cApdu[cptApdu])
@@ -444,7 +446,6 @@ abstract class DeviceFragment : Fragment() {
         else if (spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Control")) {
             scardDevice.control(cApdu[cptApdu])
         }
-        mainActivity.logInfo("<${cApdu[cptApdu].toHexString()}")
     }
 
     private fun handleRapdu(response: ByteArray) {
@@ -495,10 +496,8 @@ abstract class DeviceFragment : Fragment() {
             indexCommand = apduSend.size-1
         }
 
-
         enableButton(prevButton, true)
         enableButton(nextButton, false)
-
     }
 
     private fun goToPreviousCommand() {
@@ -539,7 +538,6 @@ abstract class DeviceFragment : Fragment() {
 
     private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
         if(cardPresent && !cardPowered) {
-            slot.cardConnect()
             textAtr?.text = getString(R.string.atr)
             textState?.text = getString(R.string.present)
             connectCardButton.isEnabled = true
@@ -558,7 +556,7 @@ abstract class DeviceFragment : Fragment() {
             connectCardButton.isEnabled = false
             disconnectCardButton.isEnabled = false
         }
-        else{
+        else {
            mainActivity.logInfo("Impossible value: card not present but powered!")
         }
     }
@@ -607,7 +605,7 @@ abstract class DeviceFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 currentSlot = readerList.getReader(spinnerSlots.selectedItemPosition)
                 currentChannel = currentSlot?.channel!!
-                updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardPowered!!)
+                updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
             }
         }
         progressDialog.dismiss()

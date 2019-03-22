@@ -12,6 +12,8 @@ import android.support.annotation.RequiresApi
 import android.util.Log
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
+import com.springcard.pcsclike.CCID.CcidFrame
+import com.springcard.pcsclike.CCID.CcidResponse
 import java.util.*
 import kotlin.experimental.inv
 
@@ -230,11 +232,11 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         /* Update readers status */
                         interpretSlotsStatus(event.characteristic.value)
 
-                        /* Check if there is some card already presents on the slots */
+                        /* Check if there is some card already present and not connected on the slots */
                         listReadersToConnect.clear()
                         for (slot in scardReaderList.readers) {
-                            if(slot.cardPresent) { // TODO and !slot.cardPowered
-                                Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
+                            if(slot.cardPresent and !slot.cardConnected) {
+                                Log.d(TAG, "Slot: ${slot.name}, card present and not connected --> must connect to this card")
                                 listReadersToConnect.add(slot)
                             }
                         }
@@ -433,7 +435,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                             /* Remove reader we just processed */
                             listReadersToConnect.remove(slot)
-
                             processNextSlotConnection()
 
                             /* Do not go further */
@@ -448,11 +449,19 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                             // save ATR
                             slot.channel.atr = ccidResponse.payload
-                            // set cardPowered flag
-                            slot.cardPowered = true
+                            // set cardConnected flag
+                            slot.cardConnected = true
 
                             /* Remove reader we just processed */
                             listReadersToConnect.remove(slot)
+
+                            scardReaderList.postCallback({
+                                callbacks.onReaderStatus(
+                                    slot,
+                                    slot.cardPresent,
+                                    slot.cardConnected
+                                )
+                            })
 
                             /* Change state if we are at the end of the list */
                             processNextSlotConnection()
@@ -528,6 +537,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             batteryLevel
                         )
                     })
+                    processNextSlotConnection()
                 }
             }
             is ActionEvent.ActionReadPowerInfo -> {
@@ -583,6 +593,9 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                             /* reset rxBuffer */
                             rxBuffer = mutableListOf<Byte>()
+
+                            /* Check if there are some cards to connect*/
+                            processNextSlotConnection()
                         }
                     }
                 }
@@ -613,6 +626,9 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
 
                         /* reset rxBuffer */
                         rxBuffer = mutableListOf<Byte>()
+
+                        /* Check if there are some cards to connect */
+                        processNextSlotConnection()
                     }
                 }
                 else {
@@ -630,6 +646,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 scardReaderList.isConnected = false
                 currentState = State.Disconnected
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.isAlreadyCreated = false
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -643,7 +660,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     }
 
     private fun handleCommonActionEvents(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (Common)")
         when (event) {
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnecting
@@ -653,6 +670,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.isAlreadyCreated = false
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -666,21 +684,24 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     /* Update readers status */
                     interpretSlotsStatus(event.characteristic.value)
 
-                    /* If readerList is being created, update list of slots to connect */
-                    if(!scardReaderList.isAlreadyCreated) {
-                        for (slot in scardReaderList.readers) {
-                            if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                                Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                                listReadersToConnect.remove(slot)
-                            } else if (slot.cardPresent && !listReadersToConnect.contains(slot)) {
-                                Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                                listReadersToConnect.add(slot)
-                            }
+                    /* Update list of slots to connect */
+                    for (slot in scardReaderList.readers) {
+                        if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                            Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                            listReadersToConnect.remove(slot)
+                        } else if (slot.cardPresent && !slot.cardConnected && !listReadersToConnect.contains(slot)) {
+                            Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                            listReadersToConnect.add(slot)
                         }
+                    }
+
+                    /* If we are idle or already connecting to cards */
+                    if(currentState == State.Idle || currentState == State.ConnectingToCard) {
+                        processNextSlotConnection()
                     }
                 }
                 else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic  ${event.characteristic.uuid}")
+                    Log.w(TAG,"Received notification/indication on an unexpected characteristic ${event.characteristic.uuid} (value: ${event.characteristic.value.toHexString()})")
                 }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")

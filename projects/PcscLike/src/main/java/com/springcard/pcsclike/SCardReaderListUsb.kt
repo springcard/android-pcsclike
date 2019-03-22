@@ -8,6 +8,7 @@ package com.springcard.pcsclike
 
 import android.hardware.usb.UsbDevice
 import android.content.Context
+import com.springcard.pcsclike.CCID.CcidSecureParameters
 
 class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks: SCardReaderListCallback): SCardReaderList(layerDevice as Any, callbacks) {
 

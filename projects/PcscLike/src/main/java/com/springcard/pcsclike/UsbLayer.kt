@@ -18,6 +18,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.hardware.usb.UsbConstants
+import com.springcard.pcsclike.CCID.CcidCommand
+import com.springcard.pcsclike.CCID.CcidFrame
+import com.springcard.pcsclike.CCID.CcidResponse
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -195,9 +198,9 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Check if there is some card already presents on the slots */
                     listReadersToConnect.clear()
                     for (slot in scardReaderList.readers) {
-                        /* We don't have to check cardPowered because in BLE it will  */
+                        /* We don't have to check cardConnected because in BLE it will  */
                         /* not be powered whereas in USB it will be the case */
-                        if (slot.cardPresent /*&& !slot.cardPowered*/) {
+                        if (slot.cardPresent /*&& !slot.cardConnected*/) {
                             Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
                             listReadersToConnect.add(slot)
                         }
@@ -256,10 +259,19 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
                     /* save ATR */
                     slot.channel.atr = ccidResponse.payload
-                    /* set cardPowered flag */
-                    slot.cardPowered = true
+                    /* set cardConnected flag */
+                    slot.cardConnected = true
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
+
+                    scardReaderList.postCallback({
+                        callbacks.onReaderStatus(
+                            slot,
+                            slot.cardPresent,
+                            slot.cardConnected
+                        )
+                    })
+
                     /* Change state if we are at the end of the list */
                     processNextSlotConnection()
                 }
@@ -273,21 +285,12 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
     private fun handleStateIdle(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.ActionDisconnect -> {
-                currentState = State.Disconnected
-                disconnect()
-                context.unregisterReceiver(mUsbReceiver)
-            }
             is ActionEvent.ActionWriting -> {
                 currentState = State.WaitingResponse
                 Log.d(TAG, "Writing ${event.command.toHexString()}")
 
                 /* Trigger 1st write operation */
                 bulkOutTransfer(event.command)
-            }
-            is ActionEvent.EventOnUsbInterrupt -> {
-                /* Update readers status */
-                interpretSlotsStatus(event.data)
             }
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
@@ -302,6 +305,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
                 analyseResponse(event.data)
+                /* Check if there are some cards to connect */
+                processNextSlotConnection()
             }
             else -> handleCommonActionEvents(event)
         }
@@ -314,22 +319,27 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 currentState = State.Idle
                 /* TODO: create an entry point in FW to get this info */
                 scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
+
+                /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                processNextSlotConnection()
             }
             else -> handleCommonActionEvents(event)
         }
     }
 
     private fun handleCommonActionEvents(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (Common)")
         when (event) {
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnected
                 disconnect()
+                context.unregisterReceiver(mUsbReceiver)
             }
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.isAlreadyCreated = false
 
                 // Reset all lists
                 indexSlots = 0
@@ -339,18 +349,20 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
 
-                /* If readerList is being created, update list of slots to connect*/
-                if(!scardReaderList.isAlreadyCreated) {
-                    for(slot in scardReaderList.readers) {
-                        if(!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                            Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                            listReadersToConnect.remove(slot)
-                        }
-                        else if(slot.cardPresent && !listReadersToConnect.contains(slot)) {
-                            Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                            listReadersToConnect.add(slot)
-                        }
+                /* Update list of slots to connect */
+                for (slot in scardReaderList.readers) {
+                    if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                        Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                        listReadersToConnect.remove(slot)
+                    } else if (slot.cardPresent && !slot.cardConnected && !listReadersToConnect.contains(slot)) {
+                        Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                        listReadersToConnect.add(slot)
                     }
+                }
+
+                /* If we are idle or already connecting to cards */
+                if(currentState == State.Idle || currentState == State.ConnectingToCard) {
+                    processNextSlotConnection()
                 }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
@@ -486,6 +498,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         usbDeviceConnection.close()
         stop()
         scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) })
+        scardReaderList.isAlreadyCreated = false
     }
 
     private fun getNextInfoCommand(index: Int): ByteArray {
@@ -595,6 +608,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                         ccidStatus.add(scardReaderList.slotCount.toByte())
                         ccidStatus.addAll(data.toMutableList())
 
+                        Log.d(TAG, "Received data on interruptIn, value : ${ccidStatus.toHexString()}")
+
                         /* Post message to USB layer thread */
                         handler.post {
                             onInterruptIn(ccidStatus.toByteArray())
@@ -625,6 +640,8 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                         Log.d(TAG, "Buffer not complete, expected ${ccidSize + CcidFrame.HEADER_SIZE} bytes, received $recvSize byte")
                         break
                     }
+
+                    Log.d(TAG, "Read ${rxBuffer.toHexString()} on bulkIn")
 
                     /* Post message to USB layer thread */
                     handler.post {

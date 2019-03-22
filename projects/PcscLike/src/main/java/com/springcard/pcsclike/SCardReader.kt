@@ -11,8 +11,9 @@ package com.springcard.pcsclike
  * You can get this object with a call to [SCardReaderList.getReader]
  *
  * @property parent Points to an [SCardReaderList] object
- * @property cardPresent Is the card powered (by the application) ?
- * @property cardPowered Is a card present in the reader (slot) ?
+ * @property cardPresent Is the card present in the slot ?
+ * @property cardConnected Is a card connected (a ICC PwrOn happened) ?
+ * @property cardPowered Is the card powered (by the device) ?
  * @property name Name of the slot
  * @property index Index of the slot in the [SCardReaderList]
  * @property channel Communication channel with a card
@@ -48,6 +49,8 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     var cardPresent = false
         internal set
+    var cardConnected = false
+        internal set
     var cardPowered = false
         internal set
 
@@ -73,7 +76,7 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
      * Connect to the card (power up + open a communication channel with the card)
      */
     fun cardConnect() {
-        if(cardPowered && cardPresent) {
+        if(cardConnected && cardPresent) {
             parent.postCallback({ parent.callbacks.onCardConnected(channel) })
         }
         else {
