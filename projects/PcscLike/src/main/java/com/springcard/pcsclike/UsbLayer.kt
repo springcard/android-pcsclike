@@ -264,6 +264,10 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
 
+                    /* Change state if we are at the end of the list */
+                    processNextSlotConnection()
+
+                    /* Send callback AFTER checking state of the slots */
                     scardReaderList.postCallback({
                         callbacks.onReaderStatus(
                             slot,
@@ -271,11 +275,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                             slot.cardConnected
                         )
                     })
-
-                    /* Change state if we are at the end of the list */
-                    processNextSlotConnection()
                 }
-
             }
             else -> handleCommonActionEvents(event)
         }
@@ -304,9 +304,11 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
-                analyseResponse(event.data)
                 /* Check if there are some cards to connect */
                 processNextSlotConnection()
+
+                /* Send callback AFTER checking state of the slots */
+                analyseResponse(event.data)
             }
             else -> handleCommonActionEvents(event)
         }
@@ -317,11 +319,13 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
         when (event) {
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.Idle
-                /* TODO: create an entry point in FW to get this info */
-                scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
 
                 /* If there are one card present on one or more slot --> go to state ConnectingToCard */
                 processNextSlotConnection()
+
+                /* TODO: create an entry point in FW to get this info */
+                /* Send callback AFTER checking state of the slots */
+                scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
             }
             else -> handleCommonActionEvents(event)
         }
