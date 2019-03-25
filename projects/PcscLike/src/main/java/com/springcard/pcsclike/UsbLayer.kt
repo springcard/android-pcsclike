@@ -18,9 +18,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.hardware.usb.UsbConstants
-import com.springcard.pcsclike.CCID.CcidCommand
-import com.springcard.pcsclike.CCID.CcidFrame
-import com.springcard.pcsclike.CCID.CcidResponse
+import com.springcard.pcsclike.CCID.*
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -257,10 +255,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
 
                 if (ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value) {
 
-                    /* save ATR */
-                    slot.channel.atr = ccidResponse.payload
-                    /* set cardConnected flag */
-                    slot.cardConnected = true
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
 
@@ -275,6 +269,11 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                             slot.cardConnected
                         )
                     })
+
+                    /* Set flags AFTER sending the callback */
+
+                    /* save ATR */
+                    slot.channel.atr = ccidResponse.payload
                 }
             }
             else -> handleCommonActionEvents(event)

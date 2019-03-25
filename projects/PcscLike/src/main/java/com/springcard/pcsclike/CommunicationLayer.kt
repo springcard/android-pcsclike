@@ -10,8 +10,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
 import android.util.Log
-import com.springcard.pcsclike.CCID.CcidCommand
-import com.springcard.pcsclike.CCID.CcidResponse
+import com.springcard.pcsclike.CCID.*
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
@@ -164,6 +163,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                         /* If card is not present, it can not be powered */
                         if (!scardReaderList.readers[slotNumber].cardPresent) {
                             scardReaderList.readers[slotNumber].cardConnected = false
+                            scardReaderList.readers[slotNumber].channel.atr = ByteArray(0)
                         }
 
                         when (slotStatus) {
@@ -196,13 +196,16 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                                 )
                             })
                         }
-
                     }
                 }
             }
         }
         else {
-            Log.i(TAG,"ScardReaderList is sleeping, do not read CCID status data")
+            Log.i(TAG,"ScardReaderList is sleeping, do not read CCID status data, consider all cards not connected and not powered")
+            for(i in 0 until  scardReaderList.readers.size) {
+                scardReaderList.readers[i].cardPowered = false
+                scardReaderList.readers[i].cardPowered = false
+            }
         }
     }
 
@@ -415,6 +418,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
                     slot.cardConnected = false
+                    slot.channel.atr = ByteArray(0)
                     scardReaderList.postCallback({ callbacks.onCardDisconnected(slot.channel) })
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
@@ -429,6 +433,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 }
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOn -> {
                     val channel = slot.channel
+                    slot.channel.atr = ccidResponse.payload
                     slot.cardConnected = true
                     scardReaderList.postCallback({ callbacks.onCardConnected(channel) })
                     // TODO onReaderOrCardError

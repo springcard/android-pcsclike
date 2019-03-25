@@ -12,8 +12,7 @@ import android.support.annotation.RequiresApi
 import android.util.Log
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
-import com.springcard.pcsclike.CCID.CcidFrame
-import com.springcard.pcsclike.CCID.CcidResponse
+import com.springcard.pcsclike.CCID.*
 import java.util.*
 import kotlin.experimental.inv
 
@@ -447,11 +446,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         rxBuffer = mutableListOf<Byte>()
                         if (ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value) {
 
-                            // save ATR
-                            slot.channel.atr = ccidResponse.payload
-                            // set cardConnected flag
-                            slot.cardConnected = true
-
                             /* Remove reader we just processed */
                             listReadersToConnect.remove(slot)
 
@@ -467,7 +461,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                                 )
                             })
 
+                            /* Set flags AFTER sending the callback */
 
+                            /* save ATR */
+                            slot.channel.atr = ccidResponse.payload
                         }
                     }
                 }
@@ -544,7 +541,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             batteryLevel
                         )
                     })
-
                 }
             }
             is ActionEvent.ActionReadPowerInfo -> {

@@ -76,7 +76,8 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
      * Connect to the card (power up + open a communication channel with the card)
      */
     fun cardConnect() {
-        if(cardConnected && cardPresent) {
+        if(channel.atr.isNotEmpty() && cardPresent) {
+            cardConnected = true
             parent.postCallback({ parent.callbacks.onCardConnected(channel) })
         }
         else {

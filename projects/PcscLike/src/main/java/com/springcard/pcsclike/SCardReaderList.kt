@@ -13,8 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.springcard.pcsclike.CCID.CcidHandler
-import com.springcard.pcsclike.CCID.CcidSecureParameters
+import com.springcard.pcsclike.CCID.*
 import java.lang.Exception
 
 /**
@@ -69,6 +68,10 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     var firmwareVersionBuild = 0
         internal set
 
+    internal var hardwareVersion: String = ""
+    internal var softwareVersion: String = ""
+    internal var pnpId: String = ""
+
     var isSleeping = false
         internal set
     var isConnected = false
@@ -77,9 +80,6 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         internal set
     internal var isAlreadyCreated = false
 
-    internal var hardwareVersion: String = ""
-    internal var softwareVersion: String = ""
-    internal var pnpId: String = ""
 
     internal var readers: MutableList<SCardReader> = mutableListOf<SCardReader>()
 
@@ -88,8 +88,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
 
-    protected abstract fun create(ctx : Context)
-    protected abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
+    internal abstract fun create(ctx : Context)
+    internal abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
 
 
     /**

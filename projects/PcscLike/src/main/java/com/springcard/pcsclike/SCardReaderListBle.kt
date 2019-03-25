@@ -10,8 +10,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.Build
 import android.support.annotation.RequiresApi
-import com.springcard.pcsclike.CCID.CcidHandler
-import com.springcard.pcsclike.CCID.CcidSecureParameters
+import com.springcard.pcsclike.CCID.*
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -34,14 +33,22 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
 
     companion object {
         /**
-         * Communication supervision timeout in ms (30s by default)
-         * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly
+         *
+         * Communication supervision timeout in ms (30s by default).
+         *
+         * If a communication takes too much time it will disconnect the device.
+         *
+         * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly.
+         *
          */
         var communicationSupervisionTimeout: Long = 30_000
 
 
         /**
          * Connexion supervision timeout in ms (30s by default)
+         *
+         * If the device is not powered or is too long to respond to the connect action, it will not connect and the error callback.
+         *
          * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly
          */
         var connexionSupervisionTimeout: Long = 30_000

@@ -536,21 +536,22 @@ abstract class DeviceFragment : Fragment() {
         }
     }
 
-    private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
-        if(cardPresent && !cardPowered) {
+    private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
+        if(cardPresent && !cardConnected) {
+            slot.cardConnect()
             textAtr?.text = getString(R.string.atr)
             textState?.text = getString(R.string.present)
             connectCardButton.isEnabled = true
             disconnectCardButton.isEnabled = false
         }
-        else if(cardPresent && cardPowered) {
+        else if(cardPresent && cardConnected) {
             textAtr.text = currentSlot?.channel!!.atr.toHexString()
             textState?.text = getString(R.string.connected)
             currentChannel = slot.channel
             connectCardButton.isEnabled = false
             disconnectCardButton.isEnabled = true
         }
-        else if(!cardPresent && !cardPowered) {
+        else if(!cardPresent && !cardConnected) {
             textAtr?.text = getString(R.string.atr)
             textState?.text = getString(R.string.absent)
             connectCardButton.isEnabled = false

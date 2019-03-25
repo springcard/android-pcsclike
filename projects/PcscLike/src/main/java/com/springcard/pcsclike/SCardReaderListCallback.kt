@@ -35,9 +35,9 @@ abstract class SCardReaderListCallback {
      * When a card is inserted into, or removed from an active reader
      * @param slot SCardReader
      * @param cardPresent Is the card present?
-     * @param cardPowered Is the card powered?
+     * @param cardConnected Is the card connected?
      */
-    abstract fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean)
+    abstract fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean)
 
     /**
      * Used to give the result of a [SCardReader.cardConnect]
