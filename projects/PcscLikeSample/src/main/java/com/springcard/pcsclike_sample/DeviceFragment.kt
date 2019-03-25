@@ -134,7 +134,7 @@ abstract class DeviceFragment : Fragment() {
             dialog.show()
         }
 
-        override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardPowered: Boolean) {
+        override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
             mainActivity.logInfo("onReaderStatus")
 
             if(slot != currentSlot) {
@@ -144,7 +144,7 @@ abstract class DeviceFragment : Fragment() {
 
             /* Is update concerning selected slot */
             if(spinnerSlots?.selectedItemPosition == slot.index) {
-                updateCardStatus(slot, cardPresent, cardPowered)
+                updateCardStatus(slot, cardPresent, cardConnected)
             }
         }
 

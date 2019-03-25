@@ -34,13 +34,11 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
 
     companion object {
         /**
-         *
          * Communication supervision timeout in ms (30s by default).
          *
          * If a communication takes too much time it will disconnect the device.
          *
          * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly.
-         *
          */
         var communicationSupervisionTimeout: Long = 30_000
 
@@ -54,5 +52,4 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
          */
         var connexionSupervisionTimeout: Long = 30_000
     }
-
 }
