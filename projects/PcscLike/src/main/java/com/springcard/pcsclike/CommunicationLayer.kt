@@ -204,7 +204,8 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             Log.i(TAG,"ScardReaderList is sleeping, do not read CCID status data, consider all cards not connected and not powered")
             for(i in 0 until  scardReaderList.readers.size) {
                 scardReaderList.readers[i].cardPowered = false
-                scardReaderList.readers[i].cardPowered = false
+                scardReaderList.readers[i].cardConnected = false
+                scardReaderList.readers[i].channel.atr = ByteArray(0)
             }
         }
     }

@@ -357,7 +357,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
                         Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
                         listReadersToConnect.remove(slot)
-                    } else if (slot.cardPresent && !slot.cardConnected && !listReadersToConnect.contains(slot)) {
+                    } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot)) {
                         Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
                         listReadersToConnect.add(slot)
                     }

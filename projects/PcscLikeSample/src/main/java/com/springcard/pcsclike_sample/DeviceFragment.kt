@@ -190,10 +190,17 @@ abstract class DeviceFragment : Fragment() {
             /* Check if device is sleeping */
             /* Could also be checked via readerList.isSleeping */
             if(state) {
-                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName} (z)")
+                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName } (z)")
+
+                /* Disable all UI */
+                updateCardStatus(currentSlot!!, false, false)
+                disconnectCardButton.isEnabled = false
+                connectCardButton.isEnabled = false
+                transmitButton.isEnabled = false
             }
             else{
                 mainActivity.setActionBarTitle(this@DeviceFragment.deviceName)
+                transmitButton.isEnabled = true
             }
         }
 
@@ -332,10 +339,11 @@ abstract class DeviceFragment : Fragment() {
 
                 mainActivity.logInfo("Click on Run APDU")
 
-                if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!!) &&
+                if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!! || !currentSlot?.cardPowered!!) &&
                     spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
                     rapduTextBox.text.clear()
                     rapduTextBox.text.append(getString(R.string.no_card))
+                    updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
                 }
                 else {
                     transmitButton.isEnabled = false
