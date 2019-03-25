@@ -338,12 +338,15 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 currentState = State.Disconnected
                 disconnect()
                 context.unregisterReceiver(mUsbReceiver)
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
+
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
                 // Reset all lists
                 indexSlots = 0
@@ -442,9 +445,14 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 val slotCount = descriptor[curPos + 4] + 1
                 Log.d(TAG, "Descriptor found, slotCount = $slotCount")
                 /* Add n new readers */
-                if(!scardReaderList.isCorrectlyKnown) {
+                for (i in 0 until slotCount) {
+                    scardReaderList.readers.add(SCardReader(scardReaderList))
+                }
+
+                /* Retrieve readers name */
+                if(scardReaderList.isCorrectlyKnown) {
                     for (i in 0 until slotCount) {
-                        scardReaderList.readers.add(SCardReader(scardReaderList))
+                        scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
                     }
                 }
                 break
@@ -466,10 +474,10 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
             productName = usbDeviceConnection.getString(descriptor, 15 /* iProduct */, buffer)
             serialNumber = usbDeviceConnection.getString(descriptor, 16 /* iSerialNumber */, buffer)
         }
-        scardReaderList.vendorName = manufacturerName
-        scardReaderList.productName = productName
-        scardReaderList.serialNumber = serialNumber
-        scardReaderList.serialNumberRaw = serialNumber.hexStringToByteArray()
+        scardReaderList.constants.vendorName = manufacturerName
+        scardReaderList.constants.productName = productName
+        scardReaderList.constants.serialNumber = serialNumber
+        scardReaderList.constants.serialNumberRaw = serialNumber.hexStringToByteArray()
 
         return  scardReaderList.slotCount != 0
     }

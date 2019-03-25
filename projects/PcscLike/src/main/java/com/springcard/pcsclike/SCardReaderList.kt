@@ -52,22 +52,41 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     internal var ccidHandler = CcidHandler()
     internal var callbacksHandler  =  Handler(Looper.getMainLooper())
 
-    var vendorName: String = ""
-        internal set
-    var productName: String = ""
-        internal set
-    var serialNumber: String = ""
-        internal set
-    var serialNumberRaw: ByteArray = byteArrayOf(0)
-        internal set
-    var firmwareVersion: String = ""
-        internal set
-    var firmwareVersionMajor = 0
-        internal set
-    var firmwareVersionMinor = 0
-        internal set
-    var firmwareVersionBuild = 0
-        internal set
+    internal inner class Constants {
+        var vendorName: String = ""
+        var productName: String = ""
+        var serialNumber: String = ""
+        var serialNumberRaw: ByteArray = byteArrayOf(0)
+        var firmwareVersion: String = ""
+        var firmwareVersionMajor = 0
+        var firmwareVersionMinor = 0
+        var firmwareVersionBuild = 0
+
+        internal var hardwareVersion: String = ""
+        internal var softwareVersion: String = ""
+        internal var pnpId: String = ""
+
+        var slotsName = mutableListOf<String>()
+    }
+    internal var constants = Constants()
+
+    /* Keep old syntax */
+    val vendorName: String
+        get() { return constants.vendorName }
+    val productName: String
+        get() { return constants.productName }
+    val serialNumber: String
+        get() { return constants.serialNumber }
+    val serialNumberRaw: ByteArray
+        get() { return constants.serialNumberRaw }
+    val firmwareVersion: String
+        get() { return constants.firmwareVersion }
+    val firmwareVersionMajor: Int
+        get() { return constants.firmwareVersionMajor }
+    val firmwareVersionMinor: Int
+        get() { return constants.firmwareVersionMinor }
+    val firmwareVersionBuild: Int
+        get() { return constants.firmwareVersionBuild }
 
     internal var hardwareVersion: String = ""
     internal var softwareVersion: String = ""
@@ -195,6 +214,11 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         }
     }
 
+    internal fun setKnownConstants(const: Constants) {
+        this.isCorrectlyKnown = true
+        constants = const
+    }
+
     companion object {
         /**
          * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)
@@ -228,52 +252,59 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         private fun checkIfDeviceKnown(device: Any, callbacks: SCardReaderListCallback): SCardReaderList {
             lateinit var scardReaderList: SCardReaderList
 
-            val address = when (device) {
+            /* Get device unique id */
+            val deviceId = getDeviceUniqueId(device)
+
+            /* Create USB or BLE ScardReaderList  */
+            when (device) {
                 is BluetoothDevice -> {
-                    (device as BluetoothDevice).address
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        scardReaderList = SCardReaderListBle(device, callbacks)
+                    }
+                    else {
+                        throw UnsupportedOperationException("BLE not available on Android SDK < ${Build.VERSION_CODES.LOLLIPOP}")
+                    }
                 }
                 is UsbDevice -> {
-                    (device as UsbDevice).deviceId.toString()
+                    scardReaderList = SCardReaderListUsb(device, callbacks)
                 }
                 else -> throw Exception("Device is neither a USB neither a BLE peripheral")
             }
 
+            /* Set constants previously retrieved */
+            if(knownSCardReaderList.containsKey(deviceId)) {
+                    scardReaderList.setKnownConstants(knownSCardReaderList[deviceId]!!)
+            }
 
-            if(knownSCardReaderList.containsKey(address) && knownSCardReaderList[address]?.isCorrectlyKnown == true) {
-                if (knownSCardReaderList[address]!!.isConnected) {
-                    throw IllegalArgumentException("SCardReaderList with address $address already exist")
-                } else {
-                    scardReaderList = knownSCardReaderList[address]!!
-                }
+            /* Exception if device already connected */
+            if(connectedScardReaderList.contains(deviceId)) {
+                throw IllegalArgumentException("SCardReaderList with address $deviceId already connected")
             }
-            else {
-                when (device) {
-                    is BluetoothDevice -> {
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            scardReaderList = SCardReaderListBle(device, callbacks)
-                        }
-                        else {
-                            throw UnsupportedOperationException("BLE not available on Android SDK < ${Build.VERSION_CODES.LOLLIPOP}")
-                        }
-                    }
-                    is UsbDevice -> {
-                        scardReaderList = SCardReaderListUsb(device, callbacks)
-                    }
-                    else -> throw Exception("Device is neither a USB neither a BLE peripheral")
-                }
-                knownSCardReaderList[address] = scardReaderList
-            }
+
             return scardReaderList
         }
 
-        private var knownSCardReaderList = mutableMapOf<String, SCardReaderList>()
+        internal var connectedScardReaderList = mutableListOf<String>()
+        internal var knownSCardReaderList = mutableMapOf<String, SCardReaderList.Constants>()
 
         /**
          * Clear list of devices known
          */
         fun clearCache() {
+            connectedScardReaderList.clear()
             knownSCardReaderList.clear()
         }
 
+        internal fun getDeviceUniqueId(device: Any): String {
+            return when (device) {
+                is BluetoothDevice -> {
+                    device.address
+                }
+                is UsbDevice -> {
+                    device.deviceId.toString()
+                }
+                else -> throw Exception("Device is neither a USB neither a BLE peripheral")
+            }
+        }
     }
 }

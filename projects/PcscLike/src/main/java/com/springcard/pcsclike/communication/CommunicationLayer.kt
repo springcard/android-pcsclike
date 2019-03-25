@@ -14,6 +14,7 @@ import com.springcard.pcsclike.ccid.*
 import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReader
 import com.springcard.pcsclike.SCardReaderList
+import com.springcard.pcsclike.SCardReaderList.Companion.getDeviceUniqueId
 import com.springcard.pcsclike.SCardReaderListCallback
 import kotlin.experimental.and
 import kotlin.experimental.inv
@@ -475,15 +476,23 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
                 scardReaderList.isCorrectlyKnown = true
                 scardReaderList.isAlreadyCreated = true
+                val uniqueId = SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice)
+                SCardReaderList.knownSCardReaderList[uniqueId] = scardReaderList.constants
+                SCardReaderList.connectedScardReaderList.add(uniqueId)
+                /* Retrieve readers name */
+                for (i in 0 until scardReaderList.slotCount) {
+                    scardReaderList.constants.slotsName.add(scardReaderList.readers[i].name)
+                }
+
             }
         }
     }
 
     protected fun getVersionFromRevString(revString: String) {
-        scardReaderList.firmwareVersion = revString
-        scardReaderList.firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
-        scardReaderList.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
-        scardReaderList.firmwareVersionBuild = revString.split("-")[1].toInt()
+        scardReaderList.constants.firmwareVersion = revString
+        scardReaderList.constants.firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
+        scardReaderList.constants.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
+        scardReaderList.constants.firmwareVersionBuild = revString.split("-")[1].toInt()
     }
 
     companion object {

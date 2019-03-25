@@ -198,16 +198,16 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 }
 
                 when(event.characteristic.uuid) {
-                    GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR -> scardReaderList.productName = event.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR -> scardReaderList.constants.productName = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR -> {
-                        scardReaderList.serialNumber = event.characteristic.value.toString(charset("ASCII"))
-                        scardReaderList.serialNumberRaw = event.characteristic.value.toString(charset("ASCII")).hexStringToByteArray()
+                        scardReaderList.constants.serialNumber = event.characteristic.value.toString(charset("ASCII"))
+                        scardReaderList.constants.serialNumberRaw = event.characteristic.value.toString(charset("ASCII")).hexStringToByteArray()
                     }
-                    GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.softwareVersion = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.hardwareVersion = event.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.constants.softwareVersion = event.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.constants.hardwareVersion = event.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> getVersionFromRevString(event.characteristic.value.toString(charset("ASCII")))
-                    GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.vendorName = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.pnpId = event.characteristic.value.toHexString()
+                    GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.constants.vendorName = event.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.constants.pnpId = event.characteristic.value.toHexString()
                     GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
                         val slotCount = event.characteristic.value[0] and LOW_POWER_NOTIFICATION.inv()
 
@@ -217,9 +217,14 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         }
 
                         /* Add n new readers */
-                        if(!scardReaderList.isCorrectlyKnown) {
+                        for (i in 0 until slotCount) {
+                            scardReaderList.readers.add(SCardReader(scardReaderList))
+                        }
+
+                        /* Retrieve readers name */
+                        if(scardReaderList.isCorrectlyKnown) {
                             for (i in 0 until slotCount) {
-                                scardReaderList.readers.add(SCardReader(scardReaderList))
+                                scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
                             }
                         }
 
@@ -655,6 +660,8 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
 
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
                 // Reset all lists
                 indexCharToBeSubscribed = 0
                 indexCharToBeRead = 0
@@ -672,12 +679,15 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnecting
                 lowLayer.disconnect()
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
+
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
