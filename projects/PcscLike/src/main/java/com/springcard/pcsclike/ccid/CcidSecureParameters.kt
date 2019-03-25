@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike.CCID
+package com.springcard.pcsclike.ccid
 
 /**
  * Class used to authenticate and ciphering CCID frames

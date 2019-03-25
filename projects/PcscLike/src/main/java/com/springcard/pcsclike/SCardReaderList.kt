@@ -13,7 +13,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.springcard.pcsclike.CCID.*
+import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.communication.*
 import java.lang.Exception
 
 /**

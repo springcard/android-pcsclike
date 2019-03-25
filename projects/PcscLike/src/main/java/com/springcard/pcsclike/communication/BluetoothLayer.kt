@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
 import android.os.Build
@@ -12,7 +12,8 @@ import android.support.annotation.RequiresApi
 import android.util.Log
 import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
-import com.springcard.pcsclike.CCID.*
+import com.springcard.pcsclike.*
+import com.springcard.pcsclike.ccid.*
 import java.util.*
 import kotlin.experimental.inv
 
@@ -21,7 +22,8 @@ import kotlin.experimental.inv
 internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
 
     private val TAG = this::class.java.simpleName
-    private val lowLayer: BleLowLevel = BleLowLevel(this)
+    private val lowLayer: BleLowLevel =
+        BleLowLevel(this)
 
 
     private val uuidCharacteristicsToReadPower by lazy {
@@ -47,7 +49,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     private val uuidCharacteristicsCanIndicate  by lazy {
         mutableListOf<UUID>(
             GattAttributesSpringCore.UUID_CCID_STATUS_CHAR,
-           GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR
+            GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR
         )
     }
 
@@ -94,7 +96,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     private fun handleStateDisconnected(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.ActionCreate-> {
+            is ActionEvent.ActionCreate -> {
                 currentState = State.Connecting
                 lowLayer.connect(event.ctx)
                 /* save context if we need to try to reconnect */

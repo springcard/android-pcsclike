@@ -6,6 +6,8 @@
 
 package com.springcard.pcsclike
 
+import com.springcard.pcsclike.communication.*
+
 /**
  * Represents a channel
  * You can get this object with a call to reader.cardConnect()

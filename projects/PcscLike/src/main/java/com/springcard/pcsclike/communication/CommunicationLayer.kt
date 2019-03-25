@@ -4,13 +4,17 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.communication
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
 import android.util.Log
-import com.springcard.pcsclike.CCID.*
+import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.SCardError
+import com.springcard.pcsclike.SCardReader
+import com.springcard.pcsclike.SCardReaderList
+import com.springcard.pcsclike.SCardReaderListCallback
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
@@ -90,7 +94,9 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
     internal fun postCardOrReaderError(code : SCardError.ErrorCodes, detail: String, reader: SCardReader) {
         Log.e(TAG, "Error reader or card: ${code.name}, $detail")
-        scardReaderList.postCallback({ callbacks.onReaderOrCardError(reader, SCardError(code, detail)) })
+        scardReaderList.postCallback({ callbacks.onReaderOrCardError(reader,
+            SCardError(code, detail)
+        ) })
     }
 
     protected fun interpretSlotsStatus(data: ByteArray) {
@@ -452,7 +458,13 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             /* Call explicitly ccidHandler.scardConnect() instead of reader.scardConnect() */
             /* Because if the card is present and powered (in USB) the command will not be send */
             /* In USB the card is auto powered if present and it's not the case in BLE*/
-            process(ActionEvent.ActionWriting(scardReaderList.ccidHandler.scardConnect(listReadersToConnect[0].index)))
+            process(
+                ActionEvent.ActionWriting(
+                    scardReaderList.ccidHandler.scardConnect(
+                        listReadersToConnect[0].index
+                    )
+                )
+            )
         }
         /* Otherwise go to idle state */
         else {
@@ -469,8 +481,8 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
     protected fun getVersionFromRevString(revString: String) {
         scardReaderList.firmwareVersion = revString
-        scardReaderList.firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
-        scardReaderList.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
+        scardReaderList.firmwareVersionMajor = revString.split("-")[0].split("")[0].toInt()
+        scardReaderList.firmwareVersionMinor = revString.split("-")[0].split("")[1].toInt()
         scardReaderList.firmwareVersionBuild = revString.split("-")[1].toInt()
     }
 

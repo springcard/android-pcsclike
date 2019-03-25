@@ -19,11 +19,11 @@ import android.os.Bundle
 import android.os.ParcelUuid
 import android.util.Log
 import android.widget.AdapterView
-import com.springcard.pcsclike.*
 import kotlinx.android.synthetic.main.fragment_scan.*
 import java.util.ArrayList
 import android.view.*
 import android.widget.ProgressBar
+import com.springcard.pcsclike.communication.*
 import com.springcard.pcsclike_sample.*
 
 class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {

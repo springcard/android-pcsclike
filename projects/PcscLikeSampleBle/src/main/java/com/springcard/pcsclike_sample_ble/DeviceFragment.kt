@@ -10,7 +10,7 @@ package com.springcard.pcsclike_sample_ble
 import android.bluetooth.BluetoothDevice
 import android.widget.Toast
 import com.springcard.pcsclike.*
-import com.springcard.pcsclike.CCID.*
+import com.springcard.pcsclike.ccid.*
 
 
 class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {

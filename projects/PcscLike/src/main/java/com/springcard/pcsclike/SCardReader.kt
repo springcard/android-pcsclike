@@ -6,6 +6,8 @@
 
 package com.springcard.pcsclike
 
+import com.springcard.pcsclike.communication.*
+
 /**
  * Represents a slot
  * You can get this object with a call to [SCardReaderList.getReader]

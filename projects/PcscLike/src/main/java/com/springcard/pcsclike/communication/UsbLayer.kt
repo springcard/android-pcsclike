@@ -4,7 +4,7 @@
  * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
  */
 
-package com.springcard.pcsclike
+package com.springcard.pcsclike.communication
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -18,7 +18,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.hardware.usb.UsbConstants
-import com.springcard.pcsclike.CCID.*
+import com.springcard.pcsclike.*
+import com.springcard.pcsclike.ccid.*
 
 
 internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {

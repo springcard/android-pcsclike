@@ -1,4 +1,4 @@
-package com.springcard.pcsclike
+package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
 import android.content.Context
@@ -7,6 +7,9 @@ import android.os.Handler
 import android.os.Looper
 import android.support.annotation.RequiresApi
 import android.util.Log
+import com.springcard.pcsclike.SCardError
+import com.springcard.pcsclike.SCardReaderListBle
+import com.springcard.pcsclike.toHexString
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class BleLowLevel(private val highLayer: BluetoothLayer) {
@@ -66,7 +69,12 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 Log.d(TAG, "Read ${characteristic.value.toHexString()} on characteristic ${characteristic.uuid}")
-                highLayer.process(ActionEvent.EventCharacteristicRead(characteristic, status))
+                highLayer.process(
+                    ActionEvent.EventCharacteristicRead(
+                        characteristic,
+                        status
+                    )
+                )
             }
 
             override fun onCharacteristicWrite(
@@ -75,7 +83,12 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 status: Int
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(ActionEvent.EventCharacteristicWritten(characteristic, status))
+                highLayer.process(
+                    ActionEvent.EventCharacteristicWritten(
+                        characteristic,
+                        status
+                    )
+                )
             }
 
             override// Characteristic notification
@@ -85,7 +98,11 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 Log.d(TAG, "Characteristic ${characteristic.uuid} changed, value : ${characteristic.value.toHexString()}")
-                highLayer.process(ActionEvent.EventCharacteristicChanged(characteristic))
+                highLayer.process(
+                    ActionEvent.EventCharacteristicChanged(
+                        characteristic
+                    )
+                )
             }
 
             override fun onDescriptorWrite(
@@ -94,7 +111,12 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 status: Int
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(ActionEvent.EventDescriptorWrite(descriptor, status))
+                highLayer.process(
+                    ActionEvent.EventDescriptorWrite(
+                        descriptor,
+                        status
+                    )
+                )
             }
 
             override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
@@ -111,7 +133,9 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     fun connect(ctx: Context) {
         Log.d(TAG, "Connect")
         mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(ctx, false, mGattCallback)
-        beginTimer(object{}.javaClass.enclosingMethod!!.name, SCardReaderListBle.connexionSupervisionTimeout)
+        beginTimer(object{}.javaClass.enclosingMethod!!.name,
+            SCardReaderListBle.connexionSupervisionTimeout
+        )
     }
 
     fun disconnect() {
