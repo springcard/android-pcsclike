@@ -204,7 +204,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
         }
 
         currentTimeout = duration
-        //bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
+        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
     }
 
     private fun cancelTimer(callingMethod: String = "") {
