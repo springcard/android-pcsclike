@@ -50,7 +50,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler()
-    internal var callbacksHandler  =  Handler()
+    internal var callbacksHandler  =  Handler(Looper.getMainLooper())
 
     var vendorName: String = ""
         internal set
@@ -88,8 +88,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
 
-    abstract fun create(ctx : Context)
-    abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
+    protected abstract fun create(ctx : Context)
+    protected abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
 
 
     /**
