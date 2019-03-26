@@ -18,6 +18,7 @@ import com.springcard.pcsclike.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*
+import java.lang.Exception
 
 
 abstract class DeviceFragment : Fragment() {
@@ -187,6 +188,8 @@ abstract class DeviceFragment : Fragment() {
         }
 
         override fun onReaderListState(readerList: SCardReaderList, state: Boolean) {
+            mainActivity.logInfo("onReaderListState")
+
             /* Check if device is sleeping */
             /* Could also be checked via readerList.isSleeping */
             if(state) {
@@ -265,17 +268,28 @@ abstract class DeviceFragment : Fragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // handle item selection
-        when (item.itemId) {
-            R.id.action_info -> {
-                scardDevice.getPowerInfo()
-                return true
+        try {
+            // handle item selection
+            when (item.itemId) {
+                R.id.action_info -> {
+
+                    scardDevice.getPowerInfo()
+                    return true
+                }
+                R.id.action_shutdown -> {
+                    scardDevice.control("58AF".hexStringToByteArray())
+                    return true
+                }
+                R.id.action_wakeup -> {
+                    scardDevice.wakeUp()
+                    return true
+                }
+                else -> return super.onOptionsItemSelected(item)
             }
-            R.id.action_shutdown -> {
-                scardDevice.control("58AF".hexStringToByteArray())
-                return true
-            }
-            else -> return super.onOptionsItemSelected(item)
+        }
+        catch (e: Exception) {
+            mainActivity.logInfo("Impossible to send APDU (maybe the device is sleeping?)")
+            return false
         }
     }
 

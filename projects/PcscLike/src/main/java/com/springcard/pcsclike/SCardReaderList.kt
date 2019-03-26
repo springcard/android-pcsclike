@@ -214,6 +214,13 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         }
     }
 
+    /**
+     * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep
+     */
+    fun wakeUp() {
+        process(ActionEvent.ActionWakeUp())
+    }
+
     internal fun setKnownConstants(const: Constants) {
         this.isCorrectlyKnown = true
         constants = const

@@ -37,6 +37,7 @@
     <string name="authentication_key">Authentication key</string>
     <string name="no_capdu">no C-APDU</string>
     <string name="no_card">no card</string>
+    <string name="wake_up">Wake-up</string>
 
     <!-- TODO: Remove or change this placeholder text -->
 </resources>

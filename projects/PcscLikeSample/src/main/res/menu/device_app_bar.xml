@@ -12,5 +12,10 @@
             android:title="@string/shutdown"
             app:showAsAction="never"
             android:icon="@android:drawable/ic_lock_power_off"/>
+    <item
+            android:id="@+id/action_wakeup"
+            android:title="@string/wake_up"
+            app:showAsAction="never"
+            android:icon="@android:drawable/ic_lock_power_off"/>
 
 </menu>

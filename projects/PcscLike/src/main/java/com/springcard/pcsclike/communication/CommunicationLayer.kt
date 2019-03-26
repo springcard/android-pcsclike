@@ -30,6 +30,7 @@ internal enum class State{
     Authenticate,
     ConnectingToCard,
     Idle,
+    Sleeping,
     ReadingPowerInfo,
     WritingCommand,
     WaitingResponse,
@@ -41,7 +42,7 @@ internal sealed class ActionEvent {
     class EventConnected : ActionEvent()
     class ActionCreate(val ctx: Context) : ActionEvent()
     class EventServicesDiscovered(val status: Int) : ActionEvent()
-    class EventDescriptorWrite(val descriptor: BluetoothGattDescriptor, val status: Int) : ActionEvent()
+    class EventDescriptorWritten(val descriptor: BluetoothGattDescriptor, val status: Int) : ActionEvent()
     class EventCharacteristicChanged(val characteristic: BluetoothGattCharacteristic) : ActionEvent()
     class EventCharacteristicWritten(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
     class EventCharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
@@ -52,6 +53,7 @@ internal sealed class ActionEvent {
     class ActionDisconnect : ActionEvent()
     class EventDisconnected : ActionEvent()
     class ActionReadPowerInfo : ActionEvent()
+    class ActionWakeUp: ActionEvent()
 }
 
 
@@ -214,6 +216,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                 scardReaderList.readers[i].cardConnected = false
                 scardReaderList.readers[i].channel.atr = ByteArray(0)
             }
+            currentState = State.Sleeping
         }
     }
 

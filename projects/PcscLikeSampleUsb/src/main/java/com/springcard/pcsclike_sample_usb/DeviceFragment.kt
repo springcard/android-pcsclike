@@ -40,8 +40,9 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
     ) {
         super.onCreateOptionsMenu(menu, inflater)
 
-        /* Hide shutdown button when we are on USB */
+        /* Hide shutdown and wake-up buttons when we are on USB */
         menu.findItem(com.springcard.pcsclike_sample.R.id.action_shutdown).isVisible = false
+        menu.findItem(com.springcard.pcsclike_sample.R.id.action_wakeup).isVisible = false
     }
 
 }

@@ -112,7 +112,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 highLayer.process(
-                    ActionEvent.EventDescriptorWrite(
+                    ActionEvent.EventDescriptorWritten(
                         descriptor,
                         status
                     )
@@ -147,7 +147,8 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     fun close() {
         Log.d(TAG, "Close")
         mBluetoothGatt.close()
-        /* No timer needed */
+        /* Last timer canceled */
+        cancelTimer(object{}.javaClass.enclosingMethod!!.name)
     }
 
     fun discoverGatt() {

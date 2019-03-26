@@ -14,6 +14,7 @@ import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
+import java.lang.Exception
 import java.util.*
 import kotlin.experimental.inv
 
@@ -85,6 +86,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
             State.Authenticate -> handleStateAuthenticate(event)
             State.ConnectingToCard -> handleStateConnectingToCard(event)
             State.Idle ->  handleStateIdle(event)
+            State.Sleeping -> handleStateSleeping(event)
             State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
             State.WritingCommand -> handleStateWritingCommand(event)
             State.WaitingResponse -> handleStateWaitingResponse(event)
@@ -273,7 +275,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     private fun handleStateSubscribingNotifications(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.EventDescriptorWrite -> {
+            is ActionEvent.EventDescriptorWritten -> {
                 if(event.status != BluetoothGatt.GATT_SUCCESS) {
                     postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED, "Failed to subscribe to notification for characteristic ${event.descriptor.characteristic}")
                     return
@@ -503,6 +505,50 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 process(event)
             }
             else -> handleCommonActionEvents(event)
+        }
+    }
+
+    private fun handleStateSleeping(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.EventCharacteristicChanged -> {
+                /* Send callback when device is waking-up */
+                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, false) })
+                currentState = State.Idle
+
+                handleCommonActionEvents(event)
+            }
+            is ActionEvent.EventCharacteristicWritten,
+            is ActionEvent.EventDescriptorWritten -> {
+                /* Send callback when device is waking-up */
+                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, false) })
+                currentState = State.Idle
+            }
+            is ActionEvent.ActionWakeUp -> {
+                val chr = characteristicsCanIndicate[0]
+                lowLayer.enableNotifications(chr)
+            }
+            is ActionEvent.ActionDisconnect -> {
+                currentState = State.Disconnecting
+                lowLayer.disconnect()
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+            }
+            is ActionEvent.EventDisconnected -> {
+                currentState = State.Disconnected
+                scardReaderList.isConnected = false
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.isAlreadyCreated = false
+
+                SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
+                // Reset all lists
+                indexCharToBeSubscribed = 0
+                indexCharToBeRead = 0
+                indexSlots = 0
+
+                lowLayer.close()
+            }
+            else -> throw Exception("Forbidden to do anything when the device is sleeping (apart from waking-up)")
         }
     }
 
