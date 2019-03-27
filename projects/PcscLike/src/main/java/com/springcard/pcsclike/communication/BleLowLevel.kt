@@ -26,31 +26,29 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
     }
 
     /* Various callback methods defined by the BLE API */
-    private val mGattCallback: BluetoothGattCallback by lazy {
+    private val mGattCallback =
         object : BluetoothGattCallback() {
             override fun onConnectionStateChange(
                 gatt: BluetoothGatt,
                 status: Int,
                 newState: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
 
-                    //mBluetoothGatt.requestMtu(250)
-                    mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                        //mBluetoothGatt.requestMtu(250)
+                        mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
 
-                    highLayer.process(ActionEvent.EventConnected())
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    highLayer.process(ActionEvent.EventDisconnected())
+                        highLayer.process(ActionEvent.EventConnected())
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        highLayer.process(ActionEvent.EventDisconnected())
+                    } else {
+                        if (newState == BluetoothProfile.STATE_CONNECTING)
+                            Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
+                        else if (newState == BluetoothProfile.STATE_DISCONNECTING)
+                            Log.i(TAG, "BLE state changed, unhandled STATE_DISCONNECTING")
+                    }
                 }
-                else
-                {
-                    if(newState == BluetoothProfile.STATE_CONNECTING)
-                        Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
-                    else if (newState == BluetoothProfile.STATE_DISCONNECTING)
-                        Log.i(TAG, "BLE state changed, unhandled STATE_DISCONNECTING")
-                }
-            }
 
             override// New services discovered
             fun onServicesDiscovered(
@@ -126,7 +124,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 super.onMtuChanged(gatt, mtu, status)
             }
         }
-    }
+
 
     /* Utilities methods */
 

@@ -59,7 +59,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
     private var characteristicsCanIndicate : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
     private var characteristicsToReadPower : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
     internal lateinit var charCcidPcToRdr : BluetoothGattCharacteristic
-
+    internal lateinit var charServiceChanged : BluetoothGattCharacteristic
 
 
     init {
@@ -164,6 +164,10 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             }
                             if(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR == chr.uuid) {
                                charCcidPcToRdr = chr
+                            }
+
+                            if((GattAttributesSpringCore.UUID_SERVICE_CHANGED_CHAR == chr.uuid)) {
+                                charServiceChanged = chr
                             }
                         }
                     }
@@ -525,8 +529,8 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                 currentState = State.Idle
             }
             is ActionEvent.ActionWakeUp -> {
-                val chr = characteristicsCanIndicate[0]
-                lowLayer.enableNotifications(chr)
+                /* Subscribe to Service changed to wake-up device */
+                lowLayer.enableNotifications(charServiceChanged)
             }
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnecting

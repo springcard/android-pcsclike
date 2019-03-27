@@ -42,7 +42,7 @@ open class GattAttributes {
     val UUID_BATTERY_POWER_STATE_CHAR =  getUuidFromShort("2A1A")
 
     val UUID_GENERIC_ATTRIBUTE_SERVICE = getUuidFromShort("180F")
-    val UUID_SERVICE_CHANGEED_CHAR = getUuidFromShort("2A05")
+    val UUID_SERVICE_CHANGED_CHAR = getUuidFromShort("2A05")
 
 }
 
