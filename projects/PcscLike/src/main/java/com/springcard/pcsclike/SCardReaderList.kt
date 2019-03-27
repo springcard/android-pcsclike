@@ -49,7 +49,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     private val TAG = this::class.java.simpleName
 
     internal lateinit var commLayer: CommunicationLayer
-    internal var ccidHandler = CcidHandler()
+    internal var ccidHandler = CcidHandler(this)
     internal var callbacksHandler  =  Handler(Looper.getMainLooper())
 
     internal inner class Constants {

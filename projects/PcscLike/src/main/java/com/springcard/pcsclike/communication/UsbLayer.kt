@@ -259,6 +259,9 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
 
+                    /* save ATR */
+                    slot.channel.atr = ccidResponse.payload
+
                     /* Change state if we are at the end of the list */
                     processNextSlotConnection()
 
@@ -270,11 +273,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                             slot.cardConnected
                         )
                     })
-
-                    /* Set flags AFTER sending the callback */
-
-                    /* save ATR */
-                    slot.channel.atr = ccidResponse.payload
                 }
             }
             else -> handleCommonActionEvents(event)

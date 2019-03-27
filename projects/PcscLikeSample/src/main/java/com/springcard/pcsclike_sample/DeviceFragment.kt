@@ -577,6 +577,9 @@ abstract class DeviceFragment : Fragment() {
     }
 
     private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
+
+        rapduTextBox.text.clear()
+
         if(cardPresent && !cardConnected) {
             slot.cardConnect()
             textAtr?.text = getString(R.string.atr)

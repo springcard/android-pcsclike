@@ -462,6 +462,9 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                             /* Remove reader we just processed */
                             listReadersToConnect.remove(slot)
 
+                            /* save ATR */
+                            slot.channel.atr = ccidResponse.payload
+
                             /* Change state if we are at the end of the list */
                             processNextSlotConnection()
 
@@ -473,11 +476,6 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                                     slot.cardConnected
                                 )
                             })
-
-                            /* Set flags AFTER sending the callback */
-
-                            /* save ATR */
-                            slot.channel.atr = ccidResponse.payload
                         }
                     }
                 }

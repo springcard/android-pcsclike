@@ -7,10 +7,12 @@
 package com.springcard.pcsclike.ccid
 
 import android.util.Log
+import com.springcard.pcsclike.SCardError
+import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.toHexString
 import java.lang.Exception
 
-internal class CcidHandler() {
+internal class CcidHandler(private val scardDevice: SCardReaderList) {
 
     private var sequenceNumber = 0
     internal var commandSend = CcidCommand.CommandCode.PC_To_RDR_Escape
@@ -24,12 +26,14 @@ internal class CcidHandler() {
     internal lateinit var ccidSecure: CcidSecure
         private set
 
+    private var pendingCommand = false
+
     private val TAG: String
         get() = this::class.java.simpleName
 
     /* Secondary Constructor */
 
-    constructor(parameters: CcidSecureParameters) : this() {
+    constructor(scardDevice: SCardReaderList, parameters: CcidSecureParameters) : this(scardDevice) {
         isSecure = true
         ccidSecure = CcidSecure(parameters)
     }
@@ -60,6 +64,12 @@ internal class CcidHandler() {
 
     private fun buildCcidCommand(code: CcidCommand.CommandCode, slotNumber: Int, payload: ByteArray): ByteArray {
 
+        if(pendingCommand) {
+            val msg = "A command is already processing, do not try to send another command"
+            Log.e(TAG, msg)
+            throw Exception(msg)
+        }
+
         if(slotNumber > 255) {
             val msg = "Slot number is too much ($slotNumber)"
             Log.e(TAG, msg)
@@ -77,10 +87,15 @@ internal class CcidHandler() {
             command = ccidSecure.encryptCcidBuffer(command)
         }
 
+        pendingCommand = true
+
         return command.raw.toByteArray()
     }
 
     fun getCcidResponse(frame: ByteArray): CcidResponse {
+
+        pendingCommand = false
+
         var response = CcidResponse(frame)
 
         if(frame.size < 10) {
@@ -89,7 +104,7 @@ internal class CcidHandler() {
             throw Exception(msg)
         }
 
-        if(frame.size- CcidFrame.HEADER_SIZE != response.length ) {
+        if(frame.size - CcidFrame.HEADER_SIZE != response.length ) {
               Log.d(TAG, "Frame not complete, excepted length = ${response.length}")
         }
 
@@ -108,7 +123,6 @@ internal class CcidHandler() {
         sequenceNumber++
         if(sequenceNumber > 255)
         sequenceNumber = 0
-
 
         return response
     }
