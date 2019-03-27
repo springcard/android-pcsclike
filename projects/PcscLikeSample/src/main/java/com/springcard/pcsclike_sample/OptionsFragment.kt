@@ -40,22 +40,22 @@ class OptionsFragment : Fragment(), TextWatcher {
 
         mainActivity.setDrawerState(true)
 
-        switchLog.isChecked = mainActivity.enableLog
-        switchStopOnError.isChecked = mainActivity.stopOnError
-        switchEnableTimeMeasurement.isChecked = mainActivity.enableTimeMeasurement
+        switchLog.isChecked = mainActivity.preferences.enableLog
+        switchStopOnError.isChecked = mainActivity.preferences.stopOnError
+        switchEnableTimeMeasurement.isChecked = mainActivity.preferences.enableTimeMeasurement
 
         switchLog.setOnCheckedChangeListener { _, isChecked ->
-            mainActivity.enableLog = isChecked
+            mainActivity.preferences.enableLog = isChecked
             mainActivity.logInfo("Enable logs = $isChecked")
         }
 
         switchStopOnError.setOnCheckedChangeListener { _, isChecked ->
-            mainActivity.stopOnError = isChecked
+            mainActivity.preferences.stopOnError = isChecked
             mainActivity.logInfo("Stop on error = $isChecked")
         }
 
         switchEnableTimeMeasurement.setOnCheckedChangeListener { _, isChecked ->
-            mainActivity.enableTimeMeasurement = isChecked
+            mainActivity.preferences.enableTimeMeasurement = isChecked
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
 
@@ -67,22 +67,22 @@ class OptionsFragment : Fragment(), TextWatcher {
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerKeyIndex.adapter = dataAdapter
 
-        spinnerKeyIndex.setSelection(mainActivity.authenticationKeyIndex)
+        spinnerKeyIndex.setSelection(mainActivity.preferences.authenticationKeyIndex)
 
         if(mainActivity.supportCrypto) {
 
             /* Initial state */
-            editTextAuthenticationKey.isEnabled = mainActivity.useAuthentication
-            editTextAuthenticationKey.setText(mainActivity.authenticationKey, TextView.BufferType.EDITABLE)
+            editTextAuthenticationKey.isEnabled = mainActivity.preferences.useAuthentication
+            editTextAuthenticationKey.setText(mainActivity.preferences.authenticationKey, TextView.BufferType.EDITABLE)
             if(editTextAuthenticationKey.text.length != 32) {
                 editTextAuthenticationKey.error = "The key must be 16 bytes long"
             }
             editTextAuthenticationKey.addTextChangedListener(this)
 
-            switchUseAuthentication.isChecked = mainActivity.useAuthentication
+            switchUseAuthentication.isChecked = mainActivity.preferences.useAuthentication
 
-            spinnerKeyIndex.isEnabled = mainActivity.useAuthentication
-            textViewKeyIndex.isEnabled = mainActivity.useAuthentication
+            spinnerKeyIndex.isEnabled = mainActivity.preferences.useAuthentication
+            textViewKeyIndex.isEnabled = mainActivity.preferences.useAuthentication
 
             /* On key index changed*/
             spinnerKeyIndex.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
@@ -90,13 +90,13 @@ class OptionsFragment : Fragment(), TextWatcher {
                 }
 
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    mainActivity.authenticationKeyIndex = position
+                    mainActivity.preferences.authenticationKeyIndex = position
                 }
             }
 
             /* On key value changed */
             switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
-                mainActivity.useAuthentication = isChecked
+                mainActivity.preferences.useAuthentication = isChecked
                 mainActivity.logInfo("Enable authentication = $isChecked")
 
                 /* Enable or not key text box */
@@ -134,6 +134,6 @@ class OptionsFragment : Fragment(), TextWatcher {
         if(editTextAuthenticationKey.text.length != 32) {
             editTextAuthenticationKey.error = "The key must be 16 bytes long"
         }
-        mainActivity.authenticationKey = editTextAuthenticationKey.text.toString()
+        mainActivity.preferences.authenticationKey = editTextAuthenticationKey.text.toString()
     }
 }

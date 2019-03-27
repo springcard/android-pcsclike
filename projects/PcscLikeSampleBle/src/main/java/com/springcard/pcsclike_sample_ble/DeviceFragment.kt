@@ -20,12 +20,12 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
         if(device is BluetoothDevice) {
             deviceName = (device as BluetoothDevice).name
 
-            if(mainActivity.supportCrypto && mainActivity.useAuthentication) {
+            if(mainActivity.supportCrypto && mainActivity.preferences.useAuthentication) {
                 mainActivity.logInfo("Create readerList with authentication")
 
                 val key: MutableList<Byte>
-                if(mainActivity.authenticationKey.isHex()) {
-                    key = mainActivity.authenticationKey.hexStringToByteArray().toMutableList()
+                if(mainActivity.preferences.authenticationKey.isHex()) {
+                    key = mainActivity.preferences.authenticationKey.hexStringToByteArray().toMutableList()
                 }
                 else {
                     progressDialog.dismiss()
@@ -41,10 +41,10 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
                 }
 
                 val index: CcidSecureParameters.AuthenticationKeyIndex = when {
-                    mainActivity.authenticationKeyIndex == 0 -> CcidSecureParameters.AuthenticationKeyIndex.User
-                    mainActivity.authenticationKeyIndex == 1 -> CcidSecureParameters.AuthenticationKeyIndex.Admin
+                    mainActivity.preferences.authenticationKeyIndex == 0 -> CcidSecureParameters.AuthenticationKeyIndex.User
+                    mainActivity.preferences.authenticationKeyIndex == 1 -> CcidSecureParameters.AuthenticationKeyIndex.Admin
                     else -> {
-                        Toast.makeText(mainActivity.applicationContext, "Wrong key index ${mainActivity.authenticationKeyIndex}", Toast.LENGTH_LONG)
+                        Toast.makeText(mainActivity.applicationContext, "Wrong key index ${mainActivity.preferences.authenticationKeyIndex}", Toast.LENGTH_LONG)
                         progressDialog.dismiss()
                         mainActivity.backToScanFragment()
                         return

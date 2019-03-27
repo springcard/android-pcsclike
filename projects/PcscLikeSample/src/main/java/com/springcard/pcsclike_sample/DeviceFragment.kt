@@ -49,7 +49,7 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderListCreated(readerList: SCardReaderList) {
             mainActivity.logInfo("onReaderListCreated")
 
-            if(mainActivity.enableTimeMeasurement) {
+            if(mainActivity.preferences.enableTimeMeasurement) {
                 apduListStopTime = SystemClock.elapsedRealtime()
                 val elapsedTime = apduListStopTime - apduListStartTime
                 Toast.makeText(activity, "Device instantiated in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
@@ -340,7 +340,7 @@ abstract class DeviceFragment : Fragment() {
 
             connectToDevice()
 
-            if (mainActivity.enableTimeMeasurement) {
+            if (mainActivity.preferences.enableTimeMeasurement) {
                 apduListStartTime = SystemClock.elapsedRealtime()
             }
 
@@ -394,7 +394,10 @@ abstract class DeviceFragment : Fragment() {
                     }
                     else {
 
-                        if (mainActivity.enableTimeMeasurement) {
+                        /* Save default APDU */
+                        mainActivity.preferences.defaultApdus = ApduModel(0, "default APDUs", capduTextBox.text.toString(), spinnerTransmitControl.selectedItemPosition,"", "" )
+
+                        if (mainActivity.preferences.enableTimeMeasurement) {
                             apduListStartTime = SystemClock.elapsedRealtime()
                         }
                         /* Trigger 1st APDU */
@@ -439,13 +442,28 @@ abstract class DeviceFragment : Fragment() {
                     capduTextBox.text.clear()
                     capduTextBox.text.append(modelsApdus[spinnerModels.selectedItemPosition].apdu)
                     spinnerTransmitControl.setSelection(modelsApdus[spinnerModels.selectedItemPosition].mode)
+
+                    if(!defaultApdusLoaded)
+                        loadDefaultApdus()
                 }
             }
+
+            defaultApdusLoaded = false
             connectToNewDevice = false
         }
         else {
             mainActivity.logInfo("DeviceFragment onResume, device already connected")
         }
+    }
+
+    private var defaultApdusLoaded = false
+    private fun loadDefaultApdus() {
+        if(mainActivity.preferences.defaultApdus != null) {
+            capduTextBox.text.clear()
+            capduTextBox.text.append(mainActivity.preferences.defaultApdus!!.apdu)
+            spinnerTransmitControl.setSelection(mainActivity.preferences.defaultApdus!!.mode)
+        }
+        defaultApdusLoaded = true
     }
 
     abstract fun connectToDevice()
@@ -475,7 +493,7 @@ abstract class DeviceFragment : Fragment() {
         mainActivity.logInfo(">$responseString")
         rapduTextBox.text.append(responseString + "\n")
 
-        if(responseString.takeLast(4) != "9000" && mainActivity.stopOnError) {
+        if(responseString.takeLast(4) != "9000" && mainActivity.preferences.stopOnError) {
             mainActivity.logInfo("Stop on error : ${responseString.takeLast(4)}")
         }
         else {
@@ -484,7 +502,7 @@ abstract class DeviceFragment : Fragment() {
                 sendApdu()
             }
             else {
-                if(mainActivity.enableTimeMeasurement) {
+                if(mainActivity.preferences.enableTimeMeasurement) {
                     apduListStopTime = SystemClock.elapsedRealtime()
                     val elapsedTime = apduListStopTime - apduListStartTime
                     Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
