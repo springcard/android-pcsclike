@@ -22,9 +22,9 @@ copyAppFilesTogithub()
     cp -r projects/PcscLikeSample/src _output/$REPO/PcscLikeSample
     cp projects/PcscLikeSample/build.gradle _output/$REPO/PcscLikeSample/build.gradle
 
-    #mkdir -p _output/$REPO/libs/
-    #rm _output/$REPO/libs/*.aar
-    #cp -r projects/PcscLike/build/outputs/aar/*.aar _output/$REPO/libs/
+    mkdir -p _output/$REPO/libs/
+    rm _output/$REPO/libs/*.aar
+    cp -r projects/PcscLike/build/outputs/aar/*.aar _output/$REPO/libs/
 
     #GRADE_LIB_FILENAME='_output/PcscOverBle/PcscLike/build.gradle'
     #AAR_FILENAME=$(ls projects/PcscLike/build/outputs/aar/ | grep release | tail -1)
@@ -71,7 +71,7 @@ copyLibFilesTogithub()
 # appel de ma fonction
 
 copyAppFilesTogithub 'android-pcsclike-sample-ble' 'PcscLikeSampleBle'
-copyAppFilesTogithub 'android-pcsclike-sample-usb' 'PcscLikeSampleUsb'
+#copyAppFilesTogithub 'android-pcsclike-sample-usb' 'PcscLikeSampleUsb'
 
-copyLibFilesTogithub 'android-pcsclike' 'PcscLike'
+#copyLibFilesTogithub 'android-pcsclike' 'PcscLike'
 

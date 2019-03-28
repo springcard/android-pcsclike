@@ -33,7 +33,7 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
                 status: Int,
                 newState: Int
             ) {
-                    cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                    //cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                         //mBluetoothGatt.requestMtu(250)

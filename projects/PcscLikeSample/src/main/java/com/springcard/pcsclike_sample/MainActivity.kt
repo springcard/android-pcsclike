@@ -22,7 +22,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import org.json.JSONArray
 import com.android.volley.toolbox.*
-import com.google.gson.Gson
 
 
 abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
