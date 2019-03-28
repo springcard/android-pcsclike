@@ -26,7 +26,8 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
     internal lateinit var ccidSecure: CcidSecure
         private set
 
-    private var pendingCommand = false
+    internal var pendingCommand = false
+        private set
 
     private val TAG: String
         get() = this::class.java.simpleName

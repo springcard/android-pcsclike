@@ -197,6 +197,8 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                             (slotStatus == SCardReader.SlotStatus.Removed.code)
 
                         if (cardChanged) {
+                            /* Reset cardError flag */
+                            scardReaderList.readers[slotNumber].cardError = false
                             scardReaderList.postCallback({
                                 callbacks.onReaderStatus(
                                     scardReaderList.readers[slotNumber],
@@ -356,6 +358,8 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         else {
             Log.e(TAG, "Error reader or card: ${errorCode.name}, $detail")
         }
+
+        slot.cardError = true
 
         return false
     }

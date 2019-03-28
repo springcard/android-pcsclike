@@ -354,19 +354,21 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
 
-                /* Update list of slots to connect */
+                /* Update list of slots to connect (if there is no card error)*/
                 for (slot in scardReaderList.readers) {
                     if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
                         Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
                         listReadersToConnect.remove(slot)
-                    } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot)) {
+                    } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) && !slot.cardError) {
                         Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
                         listReadersToConnect.add(slot)
                     }
                 }
 
                 /* If we are idle or already connecting to cards */
-                if(currentState == State.Idle || currentState == State.ConnectingToCard) {
+                /* And if there is no pending command */
+                if((currentState == State.Idle || currentState == State.ConnectingToCard)
+                    && !scardReaderList.ccidHandler.pendingCommand){
                     processNextSlotConnection()
                 }
             }
@@ -662,7 +664,6 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                     inBuffer.rewind()
                     inRequest.queue(inBuffer, 65536)
                 }
-
             }
 
             /* free USB listener */

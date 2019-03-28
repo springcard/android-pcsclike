@@ -56,6 +56,8 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
     var cardPowered = false
         internal set
 
+    internal var cardError = false
+
     var name: String = ""
         internal set
     var index: Int = 0

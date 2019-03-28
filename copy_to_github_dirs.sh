@@ -3,8 +3,8 @@
 
 #git clone https://github.com/springcard/$REPO.git
 
-    TAG=$(git describe --abbrev=0)
-    REV=$(git describe --tags)
+TAG=$(git describe --abbrev=0)
+REV=$(git describe --tags)
 
 copyAppFilesTogithub() 
 { 

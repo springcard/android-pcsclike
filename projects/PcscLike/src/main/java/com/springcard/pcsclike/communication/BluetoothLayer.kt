@@ -750,15 +750,13 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     interpretSlotsStatus(event.characteristic.value)
 
                     if(!scardReaderList.isSleeping) {
-                        /* Update list of slots to connect */
+                        /* Update list of slots to connect (if there is no card error) */
                         for (slot in scardReaderList.readers) {
                             if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
                                 Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
                                 listReadersToConnect.remove(slot)
-                            } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(
-                                    slot
-                                )
-                            ) {
+                            } else if (slot.cardPresent && slot.channel.atr.isEmpty() &&
+                                !listReadersToConnect.contains(slot) && !slot.cardError) {
                                 Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
                                 listReadersToConnect.add(slot)
                             }
@@ -766,7 +764,9 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                     }
 
                     /* If we are idle or already connecting to cards */
-                    if(currentState == State.Idle || currentState == State.ConnectingToCard) {
+                    /* And if there is no pending command */
+                    if((currentState == State.Idle || currentState == State.ConnectingToCard)
+                        && !scardReaderList.ccidHandler.pendingCommand){
                         processNextSlotConnection()
                     }
                 }
