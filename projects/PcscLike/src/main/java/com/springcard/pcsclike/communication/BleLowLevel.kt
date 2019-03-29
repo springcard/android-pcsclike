@@ -12,7 +12,7 @@ import com.springcard.pcsclike.SCardReaderListBle
 import com.springcard.pcsclike.toHexString
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal class BleLowLevel(private val highLayer: BluetoothLayer) {
+internal class BleLowLevel(private val highLayer: BleLayer) {
 
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
@@ -128,9 +128,9 @@ internal class BleLowLevel(private val highLayer: BluetoothLayer) {
 
     /* Utilities methods */
 
-    fun connect(ctx: Context) {
+    fun connect() {
         Log.d(TAG, "Connect")
-        mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(ctx, false, mGattCallback)
+        mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(highLayer.context, false, mGattCallback)
         beginTimer(object{}.javaClass.enclosingMethod!!.name,
             SCardReaderListBle.connexionSupervisionTimeout
         )

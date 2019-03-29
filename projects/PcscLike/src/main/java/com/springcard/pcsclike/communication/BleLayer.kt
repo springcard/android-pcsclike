@@ -20,7 +20,7 @@ import kotlin.experimental.inv
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
+internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
 
     private val TAG = this::class.java.simpleName
     private val lowLayer: BleLowLevel =
@@ -100,7 +100,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
         when (event) {
             is ActionEvent.ActionCreate -> {
                 currentState = State.Connecting
-                lowLayer.connect(event.ctx)
+                lowLayer.connect()
                 /* save context if we need to try to reconnect */
                 context = event.ctx
             }

@@ -19,14 +19,14 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
 
     override fun create(ctx : Context) {
         if(layerDevice is BluetoothDevice) {
-            commLayer = BluetoothLayer(layerDevice, callbacks, this)
+            commLayer = BleLayer(layerDevice, callbacks, this)
             process(ActionEvent.ActionCreate(ctx))
         }
     }
 
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         if(layerDevice is BluetoothDevice) {
-            commLayer = BluetoothLayer(layerDevice, callbacks, this)
+            commLayer = BleLayer(layerDevice, callbacks, this)
             ccidHandler = CcidHandler(this, secureConnexionParameters)
             process(ActionEvent.ActionCreate(ctx))
         }

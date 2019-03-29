@@ -61,7 +61,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
     private val TAG = this::class.java.simpleName
     protected var currentState = State.Disconnected
-    protected lateinit var context: Context
+    internal lateinit var context: Context
 
 
     protected var indexSlots: Int = 0
