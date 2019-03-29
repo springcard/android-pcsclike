@@ -231,6 +231,7 @@ internal class BluetoothLayer(internal var bluetoothDevice: BluetoothDevice, pri
                         if(scardReaderList.isCorrectlyKnown) {
                             for (i in 0 until slotCount) {
                                 scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
+                                scardReaderList.readers[i].index = i
                             }
                         }
 

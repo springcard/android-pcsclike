@@ -453,6 +453,7 @@ internal class UsbLayer(private var usbDevice: UsbDevice, private var callbacks:
                 if(scardReaderList.isCorrectlyKnown) {
                     for (i in 0 until slotCount) {
                         scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
+                        scardReaderList.readers[i].index = i
                     }
                 }
                 break
