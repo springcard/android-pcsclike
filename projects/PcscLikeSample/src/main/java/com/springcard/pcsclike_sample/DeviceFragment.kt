@@ -62,6 +62,8 @@ abstract class DeviceFragment : Fragment() {
             else {
                 isUInitialized = false
             }
+
+            loadDefaultApdus()
         }
 
         override fun onReaderListClosed(readerList: SCardReaderList) {
@@ -355,9 +357,9 @@ abstract class DeviceFragment : Fragment() {
 
                 if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!! || !currentSlot?.cardPowered!!) &&
                     spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
+                    updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
                     rapduTextBox.text.clear()
                     rapduTextBox.text.append(getString(R.string.no_card))
-                    updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
                 }
                 else {
                     transmitButton.isEnabled = false
@@ -442,13 +444,9 @@ abstract class DeviceFragment : Fragment() {
                     capduTextBox.text.clear()
                     capduTextBox.text.append(modelsApdus[spinnerModels.selectedItemPosition].apdu)
                     spinnerTransmitControl.setSelection(modelsApdus[spinnerModels.selectedItemPosition].mode)
-
-                    if(!defaultApdusLoaded)
-                        loadDefaultApdus()
                 }
             }
 
-            defaultApdusLoaded = false
             connectToNewDevice = false
         }
         else {
@@ -456,14 +454,12 @@ abstract class DeviceFragment : Fragment() {
         }
     }
 
-    private var defaultApdusLoaded = false
     private fun loadDefaultApdus() {
         if(mainActivity.preferences.defaultApdus != null) {
             capduTextBox.text.clear()
             capduTextBox.text.append(mainActivity.preferences.defaultApdus!!.apdu)
             spinnerTransmitControl.setSelection(mainActivity.preferences.defaultApdus!!.mode)
         }
-        defaultApdusLoaded = true
     }
 
     abstract fun connectToDevice()
