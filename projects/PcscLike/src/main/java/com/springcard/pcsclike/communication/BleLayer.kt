@@ -100,9 +100,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         when (event) {
             is ActionEvent.ActionCreate -> {
                 currentState = State.Connecting
-                lowLayer.connect()
                 /* save context if we need to try to reconnect */
                 context = event.ctx
+                lowLayer.connect()
             }
             else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
