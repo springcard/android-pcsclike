@@ -1,7 +1,6 @@
 package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
-import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -9,7 +8,7 @@ import android.support.annotation.RequiresApi
 import android.util.Log
 import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReaderListBle
-import com.springcard.pcsclike.toHexString
+import com.springcard.pcsclike.utils.*
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class BleLowLevel(private val highLayer: BleLayer) {

@@ -10,6 +10,7 @@ import android.hardware.usb.*
 import android.util.Log
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.utils.*
 
 
 internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, internal var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
@@ -187,7 +188,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                         /* We don't have to check cardConnected because in BLE it will  */
                         /* not be powered whereas in USB it will be the case */
                         if (slot.cardPresent /*&& !slot.cardConnected*/) {
-                            Log.d(TAG, "Slot: ${slot.name}, card present --> must connect to this card")
+                            Log.d(TAG, "Slot ${slot.index}, card present, must connect to this card")
                             listReadersToConnect.add(slot)
                         }
                     }

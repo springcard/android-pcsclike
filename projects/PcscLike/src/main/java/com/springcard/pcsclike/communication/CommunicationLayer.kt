@@ -426,7 +426,7 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
                 CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
                     /* Do nothing */
-                    Log.d(TAG, "Reader Status --> Cool! ...but useless")
+                    Log.d(TAG, "Reader Status, Cool! ...but useless")
 
                     /* Update slot concerned */
                     interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)

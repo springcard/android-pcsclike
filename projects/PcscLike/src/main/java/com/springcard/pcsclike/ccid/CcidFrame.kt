@@ -7,7 +7,7 @@
 package com.springcard.pcsclike.ccid
 
 import android.util.Log
-import com.springcard.pcsclike.bytes
+import com.springcard.pcsclike.utils.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.experimental.and

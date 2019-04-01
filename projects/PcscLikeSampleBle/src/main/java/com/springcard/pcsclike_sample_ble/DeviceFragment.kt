@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothDevice
 import android.widget.Toast
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.utils.*
 
 
 class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {

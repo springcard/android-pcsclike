@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import com.springcard.pcsclike.*
+import com.springcard.pcsclike.utils.*
 import com.springcard.pcsclike.ccid.CcidFrame
 import java.nio.ByteBuffer
 

@@ -7,9 +7,8 @@
 package com.springcard.pcsclike.ccid
 
 import android.util.Log
-import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReaderList
-import com.springcard.pcsclike.toHexString
+import com.springcard.pcsclike.utils.*
 import java.lang.Exception
 
 internal class CcidHandler(private val scardDevice: SCardReaderList) {

@@ -15,6 +15,7 @@ import android.support.v7.app.AlertDialog
 import android.view.*
 import android.widget.*
 import com.springcard.pcsclike.*
+import com.springcard.pcsclike.utils.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*

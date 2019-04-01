@@ -7,10 +7,7 @@
 package com.springcard.pcsclike.ccid
 
 import android.util.Log
-import com.springcard.pcsclike.RotateLeftOneByte
-import com.springcard.pcsclike.RotateRightOneByte
-import com.springcard.pcsclike.XOR
-import com.springcard.pcsclike.toHexString
+import com.springcard.pcsclike.utils.*
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec

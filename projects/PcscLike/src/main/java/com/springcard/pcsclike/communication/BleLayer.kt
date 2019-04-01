@@ -14,6 +14,7 @@ import kotlin.experimental.and
 import android.bluetooth.BluetoothDevice
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.utils.*
 import java.lang.Exception
 import java.util.*
 import kotlin.experimental.inv
@@ -249,7 +250,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                         listReadersToConnect.clear()
                         for (slot in scardReaderList.readers) {
                             if(slot.cardPresent and !slot.cardConnected) {
-                                Log.d(TAG, "Slot: ${slot.name}, card present and not connected --> must connect to this card")
+                                Log.d(TAG, "Slot ${slot.index}, card present and not connected, must connect to this card")
                                 listReadersToConnect.add(slot)
                             }
                         }
