@@ -6,6 +6,7 @@
 package com.springcard.pcsclike.aspect
 
 import android.util.Log
+import com.springcard.pcsclike.BuildConfig
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation .Aspect
 import org.aspectj.lang.annotation.Pointcut
@@ -27,9 +28,11 @@ internal class LogAscpect {
 
     @Before("methodAnnotatedWithDebugTrace() && !excludedMethodAnnotatedWithDebugTrace()")
     fun weaveJoinPoint(joinPoint: JoinPoint) {
-        val methodSignature = joinPoint.signature as MethodSignature
-        val className = methodSignature.declaringType.simpleName
-        val methodName = methodSignature.method.name
-        Log.d(className, "--> $methodName")
+        if(BuildConfig.libraryDebug) {
+            val methodSignature = joinPoint.signature as MethodSignature
+            val className = methodSignature.declaringType.simpleName
+            val methodName = methodSignature.method.name
+            Log.d(className, "--> $methodName")
+        }
     }
 }
