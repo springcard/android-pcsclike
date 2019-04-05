@@ -64,6 +64,12 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
 
     private fun buildCcidCommand(code: CcidCommand.CommandCode, slotNumber: Int, payload: ByteArray): ByteArray {
 
+        if(scardDevice.isSleeping) {
+            val msg = "Forbidden to build a command when the device is sleeping"
+            Log.e(TAG, msg)
+            throw Exception(msg)
+        }
+
         if(pendingCommand) {
             val msg = "A command is already processing, do not try to send another command"
             Log.e(TAG, msg)
