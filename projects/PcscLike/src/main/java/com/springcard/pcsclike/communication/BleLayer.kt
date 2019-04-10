@@ -373,19 +373,28 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                     val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.characteristic.value)
                     if(authenticateStep == 1) {
 
-                        scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)
-                        lowLayer.ccidWriteChar(
-                            scardReaderList.ccidHandler.scardControl(
-                                scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
+                        if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)) {
+                            lowLayer.ccidWriteChar(
+                                scardReaderList.ccidHandler.scardControl(
+                                    scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
+                                )
                             )
-                        )
-                        authenticateStep = 2
+                            authenticateStep = 2
+                        }
+                        else {
+                            postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 1")
+                            return
+                        }
                     }
                     else if(authenticateStep == 2) {
-                        scardReaderList.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)
-
-                        scardReaderList.ccidHandler.authenticateOk = true
-                        processNextSlotConnection()
+                        if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)) {
+                            scardReaderList.ccidHandler.authenticateOk = true
+                            processNextSlotConnection()
+                        }
+                        else {
+                            postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 3")
+                            return
+                        }
                     }
                 }
                 else {

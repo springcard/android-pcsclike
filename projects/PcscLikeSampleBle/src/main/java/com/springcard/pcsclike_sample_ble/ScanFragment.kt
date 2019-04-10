@@ -143,12 +143,12 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // handle item selection
-        when (item.itemId) {
+        return when (item.itemId) {
             R.id.scan_button -> {
                 scanLeDevice(true)
-                return true
+                true
             }
-            else -> return super.onOptionsItemSelected(item)
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
