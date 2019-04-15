@@ -183,7 +183,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         }
 
     /**
-     * Disconnect from the BLE device
+     * Disconnect from the device
      * callback when succeed : [SCardReaderListCallback.onReaderListClosed]
      */
     fun close() {

@@ -17,7 +17,8 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
     override fun connectToDevice() {
 
         if(device is UsbDevice) {
-            deviceName = "${(device as UsbDevice).manufacturerName} ${(device as UsbDevice).productName} [${(device as UsbDevice).serialNumber}]"
+            val extraInfo =(mainActivity.scanFragment as ScanFragment).getDeviceExtraInfo(device as UsbDevice)
+            deviceName = "${(device as UsbDevice).manufacturerName} ${(device as UsbDevice).productName} [$extraInfo]"
             SCardReaderList.create(mainActivity, device as UsbDevice, scardCallbacks)
         }
         else {

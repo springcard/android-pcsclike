@@ -20,6 +20,8 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
     private val lowLayer: UsbLowLevel =
         UsbLowLevel(this)
 
+    private val SPRINGCARD_VID = 0x1C34
+    private fun isSpringCardDevice() : Boolean = usbDevice.vendorId == SPRINGCARD_VID
 
 
     override fun process(event: ActionEvent) {
@@ -67,6 +69,13 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     if(scardReaderList.isCorrectlyKnown) {
                         for (i in 0 until slotCount) {
                             scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
+                            scardReaderList.readers[i].index = i
+                        }
+                    }
+                    else {
+                        /* Otherwise set temporary names */
+                        for (i in 0 until slotCount) {
+                            scardReaderList.readers[i].name =  "Slot $i"
                             scardReaderList.readers[i].index = i
                         }
                     }
@@ -124,7 +133,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     }
                     ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
                         CcidCommand.CommandCode.PC_To_RDR_Escape -> {
-                            if(indexInfoCmd == 2) {
+                            if(indexInfoCmd == 2 && isSpringCardDevice()) {
                                 getVersionFromRevString(ccidResponse.payload.drop(1).toByteArray().toString(charset("ASCII")))
                             }
                             Log.d(TAG, " ${ccidResponse.payload.toHexString()}")
@@ -152,10 +161,16 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                 }
                 else {
                     /* Go to next step */
-                    indexSlots = 0
-                    currentState = State.ReadingSlotsName
-                    /* Trigger 1st APDU to get slot name */
-                    lowLayer.bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                    if(isSpringCardDevice()) {
+                        indexSlots = 0
+                        currentState = State.ReadingSlotsName
+                        /* Trigger 1st APDU to get slot name */
+                        lowLayer.bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                    }
+                    else {
+                        /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                        processNextSlotConnection()
+                    }
                 }
             }
             else -> handleCommonActionEvents(event)

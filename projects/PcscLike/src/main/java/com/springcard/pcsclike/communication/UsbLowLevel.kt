@@ -103,6 +103,11 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
             highLayer.context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
         }
 
+        if (!::interruptIn.isInitialized || !::bulkOut.isInitialized || !::bulkIn.isInitialized) {
+            Log.e(TAG, "Device ${highLayer.usbDevice} miss on or more endpoint")
+            return false
+        }
+
         mWaiterThread.start()
 
         /* are those endpoints valid ? */

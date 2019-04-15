@@ -235,6 +235,13 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                                 scardReaderList.readers[i].index = i
                             }
                         }
+                        else {
+                            /* Otherwise set temporary names */
+                            for (i in 0 until slotCount) {
+                                scardReaderList.readers[i].name =  "Slot $i"
+                                scardReaderList.readers[i].index = i
+                            }
+                        }
 
                         /* Recreate dummy data with just slotCount and card absent on all slots */
                         val ccidStatusData = ByteArray(event.characteristic.value.size)

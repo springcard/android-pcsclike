@@ -141,7 +141,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         val usbManager = mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
         val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
         deviceList.values.forEach { device ->
-            /* Filter on SpringCard PID */
+            /* Filter on SpringCard VID */
             if(device.vendorId == SPRINGCARD_VID) {
                 addDevice(device)
             }
@@ -149,9 +149,9 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     private fun addDevice(device: UsbDevice) {
-        val newItem = DeviceListElement("${device.manufacturerName} ${device.productName}", device.serialNumber!!)
+        val newItem = DeviceListElement("${device.manufacturerName} ${device.productName}", getDeviceExtraInfo(device))
 
-        if (!deviceList.contains(newItem) && device.vendorId == SPRINGCARD_VID) {
+        if (!deviceList.contains(newItem)) {
             deviceList.add(newItem)
             usbDeviceList.add(device)
             adapter?.notifyDataSetChanged()
@@ -160,13 +160,21 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     private fun removeDevice(device: UsbDevice) {
-        val item = DeviceListElement("${device.manufacturerName} ${device.productName}", device.serialNumber!!)
+        val item = DeviceListElement("${device.manufacturerName} ${device.productName}", getDeviceExtraInfo(device))
 
         if (deviceList.contains(item)) {
             deviceList.remove(item)
             usbDeviceList.remove(device)
             adapter?.notifyDataSetChanged()
             mainActivity.logInfo("Device removed: ${item.name}")
+        }
+    }
+
+    fun getDeviceExtraInfo(device: UsbDevice): String {
+        return if(device.serialNumber != null) {
+            device.serialNumber!!
+        } else {
+            device.deviceId.toString()
         }
     }
 
