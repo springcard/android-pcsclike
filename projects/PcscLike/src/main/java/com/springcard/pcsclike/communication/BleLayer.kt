@@ -532,16 +532,20 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.EventCharacteristicChanged -> {
+                /* Set var before sending callback */
+                scardReaderList.isSleeping = false
                 /* Send callback when device is waking-up */
-                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, false) })
+                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
                 currentState = State.Idle
 
                 handleCommonActionEvents(event)
             }
             is ActionEvent.EventCharacteristicWritten,
             is ActionEvent.EventDescriptorWritten -> {
+                /* Set var before sending callback */
+                scardReaderList.isSleeping = false
                 /* Send callback when device is waking-up */
-                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, false) })
+                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
                 currentState = State.Idle
             }
             is ActionEvent.ActionWakeUp -> {

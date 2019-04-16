@@ -118,10 +118,14 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
 
         /* Product waking-up */
         if(scardReaderList.isSleeping && !isSleeping) {
+            /* Set var before sending callback */
+            scardReaderList.isSleeping = isSleeping
             scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
         }
         /* Device going to sleep */
         else if(!scardReaderList.isSleeping && isSleeping) {
+            /* Set var before sending callback */
+            scardReaderList.isSleeping = isSleeping
             scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
         }
         else if (scardReaderList.isSleeping && isSleeping) {
