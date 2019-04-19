@@ -255,7 +255,12 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             readerList.create(ctx, secureConnexionParameters)
         }
 
-
+        /**
+         *
+         * @param device Any
+         * @param callbacks SCardReaderListCallback
+         * @return SCardReaderList
+         */
         private fun checkIfDeviceKnown(device: Any, callbacks: SCardReaderListCallback): SCardReaderList {
             lateinit var scardReaderList: SCardReaderList
 
