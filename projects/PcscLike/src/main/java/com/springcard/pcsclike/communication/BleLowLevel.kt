@@ -18,7 +18,9 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
     private var currentTimeout: Long = 0 // 0 means that there is no pending timeout operations
     private var bleSupervisionTimeoutCallback: Runnable = Runnable {
         Log.e(TAG, "Timeout BLE after ${currentTimeout}ms")
-        highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off")
+        /* Post callback, but set isFatal to false, because device already disconnected */
+        highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off", false)
+        mBluetoothGatt.close()
     }
     private val bleSupervisionTimeout: Handler by lazy {
         Handler(Looper.getMainLooper())
@@ -32,22 +34,20 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 status: Int,
                 newState: Int
             ) {
-                    cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-
-                        //mBluetoothGatt.requestMtu(250)
-                        mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
-
-                        highLayer.process(ActionEvent.EventConnected())
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        highLayer.process(ActionEvent.EventDisconnected())
-                    } else {
-                        if (newState == BluetoothProfile.STATE_CONNECTING)
-                            Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
-                        else if (newState == BluetoothProfile.STATE_DISCONNECTING)
-                            Log.i(TAG, "BLE state changed, unhandled STATE_DISCONNECTING")
-                    }
+                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    //mBluetoothGatt.requestMtu(250)
+                    mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                    highLayer.process(ActionEvent.EventConnected())
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    highLayer.process(ActionEvent.EventDisconnected())
+                } else {
+                    if (newState == BluetoothProfile.STATE_CONNECTING)
+                        Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
+                    else if (newState == BluetoothProfile.STATE_DISCONNECTING)
+                        Log.i(TAG, "BLE state changed, unhandled STATE_DISCONNECTING")
                 }
+            }
 
             override// New services discovered
             fun onServicesDiscovered(

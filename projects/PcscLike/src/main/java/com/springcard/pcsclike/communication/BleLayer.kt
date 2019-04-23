@@ -120,11 +120,11 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                 lowLayer.discoverGatt()
                 Log.i(TAG, "Attempting to start service discovery")
             }
-            is ActionEvent.EventDisconnected -> {
+            /*is ActionEvent.EventDisconnected -> {
                 /* Retry connecting */
                 currentState = State.Disconnected
                 process(ActionEvent.ActionCreate(context))
-            }
+            }*/
             else -> handleCommonActionEvents(event)
         }
     }
