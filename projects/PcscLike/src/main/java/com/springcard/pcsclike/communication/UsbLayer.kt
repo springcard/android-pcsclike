@@ -338,18 +338,18 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
             is ActionEvent.ActionDisconnect -> {
                 currentState = State.Disconnected
                 lowLayer.disconnect()
-                scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
+                scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) })
 
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
-
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexSlots = 0

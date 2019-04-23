@@ -484,17 +484,20 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
             /* Post callback and set variable only while creating the object*/
             if(!scardReaderList.isAlreadyCreated) {
 
-                scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
                 scardReaderList.isCorrectlyKnown = true
                 scardReaderList.isAlreadyCreated = true
+
                 val uniqueId = SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice)
                 SCardReaderList.knownSCardReaderList[uniqueId] = scardReaderList.constants
                 SCardReaderList.connectedScardReaderList.add(uniqueId)
+
                 /* Retrieve readers name */
+                scardReaderList.constants.slotsName.clear()
                 for (i in 0 until scardReaderList.slotCount) {
                     scardReaderList.constants.slotsName.add(scardReaderList.readers[i].name)
                 }
 
+                scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
             }
         }
     }

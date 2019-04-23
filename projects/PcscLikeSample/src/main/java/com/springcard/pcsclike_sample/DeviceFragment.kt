@@ -358,7 +358,7 @@ abstract class DeviceFragment : Fragment() {
 
                 if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!! || !currentSlot?.cardPowered!!) &&
                     spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
-                    updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
+                    updateCardStatus(currentSlot!!, false, false)
                     rapduTextBox.text.clear()
                     rapduTextBox.text.append(getString(R.string.no_card))
                 }

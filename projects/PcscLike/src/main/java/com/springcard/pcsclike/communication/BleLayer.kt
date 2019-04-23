@@ -534,9 +534,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             is ActionEvent.EventCharacteristicChanged -> {
                 /* Set var before sending callback */
                 scardReaderList.isSleeping = false
+                currentState = State.Idle
                 /* Send callback when device is waking-up */
                 scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
-                currentState = State.Idle
 
                 handleCommonActionEvents(event)
             }
@@ -544,9 +544,11 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             is ActionEvent.EventDescriptorWritten -> {
                 /* Set var before sending callback */
                 scardReaderList.isSleeping = false
+                currentState = State.Idle
+
                 /* Send callback when device is waking-up */
                 scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
-                currentState = State.Idle
+
             }
             is ActionEvent.ActionWakeUp -> {
                 /* Subscribe to Service changed to wake-up device */
@@ -560,10 +562,10 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
-
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -727,10 +729,10 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             is ActionEvent.EventDisconnected -> {
                 scardReaderList.isConnected = false
                 currentState = State.Disconnected
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
-
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -754,10 +756,10 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             is ActionEvent.EventDisconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
                 scardReaderList.isAlreadyCreated = false
-
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
+
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
