@@ -203,7 +203,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     /**
      * Post a callback to the main thread if the device is created
      * @param callback () -> Lambda to callback to be called
-     * @param forceCallback force callback to be called even if device is npot created yet
+     * @param forceCallback force callback to be called even if device is not created yet
      */
     internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false) {
         if(isAlreadyCreated || forceCallback) {
