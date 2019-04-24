@@ -78,6 +78,8 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     /**
      * Connect to the card (power up + open a communication channel with the card)
+     *
+     * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun cardConnect() {
         if(channel.atr.isNotEmpty() && cardPresent) {

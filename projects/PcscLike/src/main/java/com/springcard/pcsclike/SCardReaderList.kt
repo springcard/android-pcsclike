@@ -118,6 +118,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * callback success: [SCardReaderListCallback.onControlResponse]
      *
      * @param command control APDU to send to the device
+     *
+     * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun control(command: ByteArray) {
         val ccidCmd = ccidHandler.scardControl(command)
@@ -194,6 +196,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     /**
      * Get battery level and power state from the device.
      * callback: [SCardReaderListCallback.onPowerInfo]
+     *
+     * @throws Exception if the device is sleeping
      */
     fun getPowerInfo() {
         process(ActionEvent.ActionReadPowerInfo())
@@ -234,6 +238,10 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
          * @param ctx Application's context use to instantiate the object
          * @param device BLE device
          * @param callbacks list of callbacks
+         * 
+         * @throws UnsupportedOperationException if the SDK version is too low
+         * @throws Exception if the device is neither a BluetoothDevice nor a UsbDevice
+         * @throws IllegalArgumentException if the device is already connected
          */
         fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback) {
             val readerList = checkIfDeviceKnown(device, callbacks)
@@ -249,6 +257,11 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
          * @param device BLE device
          * @param callbacks list of callbacks
          * @param secureConnexionParameters CcidSecureParameters
+         *
+         * @throws UnsupportedOperationException if the SDK version is too low
+         * @throws Exception if the device is neither a BluetoothDevice nor a UsbDevice
+         * @throws IllegalArgumentException if the device is already connected
+         *
          */
         fun create(ctx: Context, device: Any, callbacks: SCardReaderListCallback, secureConnexionParameters: CcidSecureParameters) {
             val readerList = checkIfDeviceKnown(device, callbacks)

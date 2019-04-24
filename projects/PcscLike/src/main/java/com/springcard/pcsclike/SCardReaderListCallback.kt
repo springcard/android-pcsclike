@@ -85,7 +85,7 @@ abstract class SCardReaderListCallback {
     /**
      * Invoked when the device is going to sleep or waking up
      * @param readerList SCardReaderList
-     * @param state True = going to sleep, False = waking-up
+     * @param isInLowPowerMode True = going to sleep, False = waking-up
      */
-    abstract fun onReaderListState(readerList: SCardReaderList, state: Boolean)
+    abstract fun onReaderListState(readerList: SCardReaderList, isInLowPowerMode: Boolean)
 }

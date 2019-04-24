@@ -24,6 +24,8 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
     /**
      * Transmit a C-APDU to the card, receive the R-APDU in response (in the callback)
      * @param command The C-APDU to send to the card
+     *
+     * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun transmit(command: ByteArray) {
         val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index, command)
@@ -32,6 +34,8 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
 
     /**
      * Disconnect from the card (close the communication channel + power down)
+     *
+     * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun disconnect() {
         val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index)
@@ -40,6 +44,8 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
 
     /**
      * Counterpart to PC/SC’s SCardReconnect, same as [SCardReader.cardConnect]
+     *
+     * @throws Exception the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun reconnect() {
         parent.cardConnect()

@@ -190,12 +190,12 @@ abstract class DeviceFragment : Fragment() {
             handleRapdu(response)
         }
 
-        override fun onReaderListState(readerList: SCardReaderList, state: Boolean) {
+        override fun onReaderListState(readerList: SCardReaderList, isInLowPowerMode: Boolean) {
             mainActivity.logInfo("onReaderListState")
 
             /* Check if device is sleeping */
             /* Could also be checked via readerList.isSleeping */
-            if(state) {
+            if(isInLowPowerMode) {
                 mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName } (z)")
 
                 /* Disable all UI */
