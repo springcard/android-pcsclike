@@ -109,6 +109,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         }
     }
 
+    private var cptConnectAttempts = 0
     private fun handleStateConnecting(event: ActionEvent) {
         when (event) {
             is ActionEvent.EventConnected -> {
@@ -120,11 +121,18 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                 lowLayer.discoverGatt()
                 Log.i(TAG, "Attempting to start service discovery")
             }
-            /*is ActionEvent.EventDisconnected -> {
-                /* Retry connecting */
-                currentState = State.Disconnected
-                process(ActionEvent.ActionCreate(context))
-            }*/
+            is ActionEvent.EventDisconnected -> {
+                cptConnectAttempts++
+                if(cptConnectAttempts < 3) {
+                    /* Retry connecting */
+                    currentState = State.Disconnected
+                    process(ActionEvent.ActionCreate(context))
+                }
+                else {
+                    cptConnectAttempts = 0
+                    handleCommonActionEvents(event)
+                }
+            }
             else -> handleCommonActionEvents(event)
         }
     }
@@ -754,12 +762,22 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
             is ActionEvent.EventDisconnected -> {
+                val deviceNotCreated = !scardReaderList.isAlreadyCreated
+
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.isAlreadyCreated = false
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                /* Even if device is not here Android tell us that the device is here */
+                if(deviceNotCreated)
+                {
+                    postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off", false)
+                }
+                else
+                {
+                    scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                }
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
