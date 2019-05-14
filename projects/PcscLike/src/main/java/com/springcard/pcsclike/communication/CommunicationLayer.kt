@@ -32,8 +32,7 @@ internal enum class State{
     Idle,
     Sleeping,
     ReadingPowerInfo,
-    WritingCommand,
-    WaitingResponse,
+    WritingCmdAndWaitingResp,
     Disconnecting
 }
 

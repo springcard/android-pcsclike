@@ -40,7 +40,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                 State.ConnectingToCard -> handleStateConnectingToCard(event)
                 State.Idle ->  handleStateIdle(event)
                 State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
-                State.WaitingResponse -> handleStateWaitingResponse(event)
+                State.WritingCmdAndWaitingResp -> handleStateWaitingResponse(event)
                 //State.Disconnecting ->  handleStateDisconnecting(event)
                 else -> Log.w(TAG, "Unhandled State : $currentState")
             }
@@ -287,7 +287,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionWriting -> {
-                currentState = State.WaitingResponse
+                currentState = State.WritingCmdAndWaitingResp
                 Log.d(TAG, "Writing ${event.command.toHexString()}")
 
                 /* Trigger 1st write operation */

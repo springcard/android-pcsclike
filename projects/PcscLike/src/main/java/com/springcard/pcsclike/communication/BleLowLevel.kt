@@ -195,15 +195,6 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
         }
     }
 
-    /* Warning only use this method if you are sure to have less than 512 byte  */
-    /* or if you want to use a specific characteristic */
-    fun ccidWriteChar(data: ByteArray) {
-        Log.d(TAG, "Writing ${data.toHexString()}")
-        highLayer.charCcidPcToRdr.value = data
-        mBluetoothGatt.writeCharacteristic(highLayer.charCcidPcToRdr)
-        beginTimer(object{}.javaClass.enclosingMethod!!.name)
-    }
-
     fun enableNotifications(chr : BluetoothGattCharacteristic) {
         mBluetoothGatt.setCharacteristicNotification(chr, true)
         val descriptor = chr.descriptors[0]

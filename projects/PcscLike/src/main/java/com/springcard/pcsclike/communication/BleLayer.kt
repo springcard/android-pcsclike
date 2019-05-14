@@ -48,7 +48,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         )
     }
 
-    private val uuidCharacteristicsCanIndicate  by lazy {
+    private val uuidCharacteristicsCanIndicate by lazy {
         mutableListOf<UUID>(
             GattAttributesSpringCore.UUID_CCID_STATUS_CHAR,
             GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR
@@ -62,6 +62,21 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
     internal lateinit var charCcidPcToRdr : BluetoothGattCharacteristic
     private lateinit var charCcidStatus : BluetoothGattCharacteristic
 
+    private class Response {
+        var ackReceived = false
+        var notifyReceived = false
+        val isResponseComplete: Boolean
+            get() { return ackReceived and notifyReceived }
+        fun resetReceivedFlags()
+        {
+            ackReceived = false
+            notifyReceived = false
+        }
+
+        var rxBuffer = mutableListOf<Byte>()
+    }
+    private var response: Response = Response()
+
 
     init {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -69,6 +84,24 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             throw UnsupportedOperationException("BLE not available on Android SDK < ${Build.VERSION_CODES.LOLLIPOP}")
         }
     }
+
+    private fun beginWriteCommand(value: ByteArray) {
+
+        /* WARNING: THIS FUNCTION MUST NOT MODIFY CURRENT STATE */
+
+        /* reset Ack and Notify Response flags */
+        response.resetReceivedFlags()
+
+        /* Reset Response Buffer */
+        response.rxBuffer.clear()
+
+        /* Clear and set data to write */
+        lowLayer.putDataToBeWrittenSequenced(value.toList())
+
+        /* Trigger 1st write operation */
+        lowLayer.ccidWriteCharSequenced()
+    }
+
 
     /* State machine */
 
@@ -89,8 +122,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             State.Idle ->  handleStateIdle(event)
             State.Sleeping -> handleStateSleeping(event)
             State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
-            State.WritingCommand -> handleStateWritingCommand(event)
-            State.WaitingResponse -> handleStateWaitingResponse(event)
+            State.WritingCmdAndWaitingResp -> handleStateWritingCmdAndWaitingResp(event)
             State.Disconnecting ->  handleStateDisconnecting(event)
             else -> Log.w(TAG,"Unhandled State : $currentState")
         }
@@ -325,8 +357,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                     else {
                         Log.d(TAG, "Device unknown: go to ReadingSlotsName")
                         currentState = State.ReadingSlotsName
-                        /* Trigger 1st APDU to get slot name */
-                        lowLayer.ccidWriteChar(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                        beginWriteCommand(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                     }
                 }
             }
@@ -337,39 +368,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
     private fun handleStateReadingSlotsName(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
-                {
-                    /* Response */
-                    val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.characteristic.value)
-                    val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
-                    Log.d(TAG, "Slot $indexSlots name : $slotName")
-                    scardReaderList.readers[indexSlots].name = slotName
-                    scardReaderList.readers[indexSlots].index = indexSlots
-
-                    /* Get next slot name */
-                    indexSlots++
-                    if (indexSlots < scardReaderList.readers.size) {
-                        lowLayer.ccidWriteChar(scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
-                    }
-                    else {
-                        Log.d(TAG, "Reading readers name finished")
-
-                        /* Go to authenticate state if necessary */
-                        if(scardReaderList.ccidHandler.isSecure) {
-                            currentState = State.Authenticate
-                            process(ActionEvent.ActionAuthenticate())
-                        }
-                        else {
-                            /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                            processNextSlotConnection()
-                        }
-                    }
-                }
-                else {
-                    handleCommonActionEvents(event)
-                }
-            }
+            is ActionEvent.EventCharacteristicChanged,
+            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
             else -> handleCommonActionEvents(event)
         }
     }
@@ -379,136 +379,21 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionAuthenticate -> {
-                lowLayer.ccidWriteChar(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
+                beginWriteCommand(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
                 authenticateStep = 1
             }
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
-                {
-                    val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.characteristic.value)
-                    if(authenticateStep == 1) {
-
-                        if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)) {
-                            lowLayer.ccidWriteChar(
-                                scardReaderList.ccidHandler.scardControl(
-                                    scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
-                                )
-                            )
-                            authenticateStep = 2
-                        }
-                        else {
-                            postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 1")
-                            return
-                        }
-                    }
-                    else if(authenticateStep == 2) {
-                        if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)) {
-                            scardReaderList.ccidHandler.authenticateOk = true
-                            processNextSlotConnection()
-                        }
-                        else {
-                            postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 3")
-                            return
-                        }
-                    }
-                }
-                else {
-                    handleCommonActionEvents(event)
-                }
-            }
+            is ActionEvent.EventCharacteristicChanged,
+            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
             else -> handleCommonActionEvents(event)
         }
     }
 
-    private var rxBuffer = mutableListOf<Byte>()
     private fun handleStateConnectingToCard(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.ActionWriting -> {
-
-                /* Clear and set data to write */
-                lowLayer.putDataToBeWrittenSequenced(event.command.toList())
-
-                /* Trigger 1st write operation */
-                if(lowLayer.ccidWriteCharSequenced()) {
-                    Log.d(TAG, "Write finished")
-                    currentState = State.WaitingResponse
-                }
-            }
-            is ActionEvent.EventCharacteristicWritten -> {
-                Log.d(TAG, "Write succeed")
-            }
-            is ActionEvent.EventCharacteristicChanged -> {
-
-                if (event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
-
-                    rxBuffer.addAll(event.characteristic.value.toList())
-                    val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
-
-                    /* Check if the response is compete or not */
-                    if( rxBuffer.size- CcidFrame.HEADER_SIZE != ccidLength) {
-                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
-                    }
-                    else {
-                        /* Put data in ccid frame */
-                        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(rxBuffer.toByteArray())
-                        val slot = scardReaderList.readers[ccidResponse.slotNumber.toInt()]
-
-                        /* Update slot status (present, powered) */
-                        interpretSlotsStatusInCcidHeader(
-                            ccidResponse.slotStatus,
-                            slot
-                        )
-
-                        /* Check slot error */
-                        if (!interpretSlotsErrorInCcidHeader(
-                                ccidResponse.slotError,
-                                ccidResponse.slotStatus,
-                                slot
-                            )
-                        ) {
-                            Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
-                            /* reset rxBuffer */
-                            rxBuffer = mutableListOf<Byte>()
-
-                            /* Remove reader we just processed */
-                            listReadersToConnect.remove(slot)
-                            processNextSlotConnection()
-
-                            /* Do not go further */
-                            return
-                        }
-
-                        Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
-
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
-                        if (ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value) {
-
-                            /* Remove reader we just processed */
-                            listReadersToConnect.remove(slot)
-
-                            /* save ATR */
-                            slot.channel.atr = ccidResponse.payload
-
-                            /* Change state if we are at the end of the list */
-                            processNextSlotConnection()
-
-                            /* Send callback AFTER checking state of the slots */
-                            scardReaderList.postCallback({
-                                callbacks.onReaderStatus(
-                                    slot,
-                                    slot.cardPresent,
-                                    slot.cardConnected
-                                )
-                            })
-                        }
-                    }
-                }
-                else {
-                    handleCommonActionEvents(event)
-                }
-            }
+            is ActionEvent.ActionWriting -> beginWriteCommand(event.command)
+            is ActionEvent.EventCharacteristicChanged,
+            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
             else -> handleCommonActionEvents(event)
         }
     }
@@ -517,16 +402,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.ActionWriting -> {
-                currentState = State.WritingCommand
+                currentState = State.WritingCmdAndWaitingResp
 
-                /* Clear and set data to write */
-                lowLayer.putDataToBeWrittenSequenced(event.command.toList())
-
-                /* Trigger 1st write operation */
-                if(lowLayer.ccidWriteCharSequenced()) {
-                    Log.d(TAG, "Write finished")
-                    currentState = State.WaitingResponse
-                }
+                beginWriteCommand(event.command)
             }
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
@@ -640,93 +518,11 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         }
     }
 
-    private fun handleStateWritingCommand(event: ActionEvent) {
+    private fun handleStateWritingCmdAndWaitingResp(event: ActionEvent) {
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
-            is ActionEvent.EventCharacteristicWritten -> {
-
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR) {
-                    if(event.status == BluetoothGatt.GATT_SUCCESS) {
-                        if(lowLayer.ccidWriteCharSequenced()) {
-                            Log.d(TAG, "Write finished")
-                            currentState = State.WaitingResponse
-                        }
-                    }
-                    else {
-                        currentState = State.Idle
-                        postReaderListError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED,"Writing on characteristic ${event.characteristic.uuid} failed with status ${event.status} (BluetoothGatt constant)")
-                    }
-                }
-                else {
-                    Log.w(TAG,"Received written indication on an unexpected characteristic  ${event.characteristic.uuid}")
-                }
-            }
-            /* If reader answer us before we have the write ok event */
-            is ActionEvent.EventCharacteristicChanged -> {
-
-                if (event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
-
-                    /* Verify that write has finished */
-                    if (lowLayer.ccidWriteCharSequenced()) {
-                        Log.d(TAG, "Write finished")
-                        currentState = State.WaitingResponse
-
-
-                        rxBuffer.addAll(event.characteristic.value.toList())
-                        val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
-
-                        /* Check if the response is compete or not */
-                        if (rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
-                            Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
-                        } else {
-                            /* Check if there are some cards to connect*/
-                            processNextSlotConnection()
-
-                            /* Send callback AFTER checking state of the slots */
-                            analyseResponse(rxBuffer.toByteArray())
-
-                            /* reset rxBuffer */
-                            rxBuffer = mutableListOf<Byte>()
-                        }
-                    }
-                }
-                else {
-                    handleCommonActionEvents(event)
-                }
-            }
-            else -> handleCommonActionEvents(event)
-        }
-    }
-
-    private fun handleStateWaitingResponse(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicChanged -> {
-
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
-
-                    rxBuffer.addAll(event.characteristic.value.toList())
-                    val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
-
-                    /* Check if the response is compete or not */
-                    if(rxBuffer.size- CcidFrame.HEADER_SIZE != ccidLength) {
-                        Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
-                    }
-                    else {
-                        /* Check if there are some cards to connect */
-                        processNextSlotConnection()
-
-                        /* Send callback AFTER checking state of the slots */
-                        analyseResponse(rxBuffer.toByteArray())
-
-                        /* reset rxBuffer */
-                        rxBuffer = mutableListOf<Byte>()
-                    }
-                }
-                else {
-                    handleCommonActionEvents(event)
-                }
-            }
+            is ActionEvent.EventCharacteristicWritten,
+            is ActionEvent.EventCharacteristicChanged -> handleResponseNotifyAndAck(event)
             else -> handleCommonActionEvents(event)
         }
     }
@@ -818,5 +614,198 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }
+    }
+
+    /*********** Response handling **********/
+
+    private fun handleResponseNotifyAndAck(event: ActionEvent) {
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        when (event) {
+            is ActionEvent.EventCharacteristicChanged -> {
+                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
+                {
+                    /* If there is still something to write */
+                    if(lowLayer.ccidWriteCharSequenced()) {
+                        response.rxBuffer.addAll(event.characteristic.value.toList())
+                        val ccidLength = scardReaderList.ccidHandler.getCcidLength(response.rxBuffer.toByteArray())
+
+                        /* Check if the Response is compete or not */
+                        if(response.rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
+                            Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
+                        }
+                        else {
+                            response.notifyReceived = true
+                            Log.d(TAG, "Write finished")
+                            /* To interpret Response we must receive all the write ack and the RDR_to_PC notif */
+                            if (response.isResponseComplete) {
+                                response.resetReceivedFlags()
+                                interpretResponse(response.rxBuffer.toByteArray())
+                            }
+                        }
+                    }
+                }
+                else {
+                    handleCommonActionEvents(event)
+                }
+            }
+            is ActionEvent.EventCharacteristicWritten -> {
+                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR) {
+                    if(event.status == BluetoothGatt.GATT_SUCCESS) {
+                        /* If there is still something to write */
+                        if (lowLayer.ccidWriteCharSequenced()) {
+                            response.ackReceived = true
+                            Log.d(TAG, "Write finished")
+                            /* To interpret Response we must receive all the write ack and the RDR_to_PC notif */
+                            if (response.isResponseComplete) {
+                                response.resetReceivedFlags()
+                                interpretResponse(response.rxBuffer.toByteArray())
+                            }
+                        }
+                    }
+                    else {
+                        currentState = State.Idle
+                        postReaderListError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED,"Writing on characteristic ${event.characteristic.uuid} failed with status ${event.status} (BluetoothGatt constant)")
+                    }
+                }
+            }
+            else -> handleCommonActionEvents(event)
+        }
+    }
+
+
+    private fun interpretResponse(value: ByteArray) {
+        when (currentState) {
+            State.ReadingSlotsName -> interpretResponseSlotName(value)
+            State.Authenticate -> interpretResponseAuthenticate(value)
+            State.ConnectingToCard -> interpretResponseConnectingToCard(value)
+            State.WritingCmdAndWaitingResp -> interpretResponseToCommand(value)
+            else -> {
+                Log.e(TAG, "Wrong state for interpreting response: $currentState")
+            }
+        }
+    }
+
+
+
+    private fun interpretResponseAuthenticate(value: ByteArray) {
+        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(value)
+        if(authenticateStep == 1) {
+
+            if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)) {
+                beginWriteCommand(scardReaderList.ccidHandler.scardControl(
+                    scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
+                ))
+                authenticateStep = 2
+            }
+            else {
+                postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 1")
+                return
+            }
+        }
+        else if(authenticateStep == 2) {
+            if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)) {
+                scardReaderList.ccidHandler.authenticateOk = true
+                processNextSlotConnection()
+            }
+            else {
+                postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 3")
+                return
+            }
+        }
+    }
+
+    private fun interpretResponseSlotName(value: ByteArray) {
+        /* Response */
+        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(value)
+        val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
+        Log.d(TAG, "Slot $indexSlots name : $slotName")
+        scardReaderList.readers[indexSlots].name = slotName
+        scardReaderList.readers[indexSlots].index = indexSlots
+
+        /* Get next slot name */
+        indexSlots++
+        if (indexSlots < scardReaderList.readers.size) {
+            beginWriteCommand(scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
+        }
+        else {
+            Log.d(TAG, "Reading readers name finished")
+
+            /* Go to authenticate state if necessary */
+            if(scardReaderList.ccidHandler.isSecure) {
+                currentState = State.Authenticate
+                process(ActionEvent.ActionAuthenticate())
+            }
+            else {
+                /* If there are one card present on one or more slot --> go to state ConnectingToCard */
+                processNextSlotConnection()
+            }
+        }
+    }
+
+    private fun interpretResponseConnectingToCard(value: ByteArray) {
+        /* Put data in ccid frame */
+        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(value)
+        val slot = scardReaderList.readers[ccidResponse.slotNumber.toInt()]
+
+        /* Update slot status (present, powered) */
+        interpretSlotsStatusInCcidHeader(
+            ccidResponse.slotStatus,
+            slot
+        )
+
+        /* Check slot error */
+        if (!interpretSlotsErrorInCcidHeader(
+                ccidResponse.slotError,
+                ccidResponse.slotStatus,
+                slot
+            )
+        ) {
+            Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
+            /* reset rxBuffer */
+            response.rxBuffer.clear()
+
+            /* Remove reader we just processed */
+            listReadersToConnect.remove(slot)
+            processNextSlotConnection()
+
+            /* Do not go further */
+            return
+        }
+
+        Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
+
+        /* reset rxBuffer */
+        response.rxBuffer.clear()
+        if (ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value) {
+
+            /* Remove reader we just processed */
+            listReadersToConnect.remove(slot)
+
+            /* save ATR */
+            slot.channel.atr = ccidResponse.payload
+
+            /* Change state if we are at the end of the list */
+            processNextSlotConnection()
+
+            /* Send callback AFTER checking state of the slots */
+            scardReaderList.postCallback({
+                callbacks.onReaderStatus(
+                    slot,
+                    slot.cardPresent,
+                    slot.cardConnected
+                )
+            })
+        }
+    }
+
+    private fun interpretResponseToCommand(value: ByteArray) {
+        /* Check if there are some cards to connect */
+        processNextSlotConnection()
+
+        /* Send callback AFTER checking state of the slots */
+        analyseResponse(value)
+
+        /* reset rxBuffer */
+        response.rxBuffer.clear()
     }
 }
