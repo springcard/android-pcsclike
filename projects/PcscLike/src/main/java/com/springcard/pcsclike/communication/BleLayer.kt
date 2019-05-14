@@ -572,7 +572,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                 }
                 else
                 {
-                    scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                    scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
                 }
 
                 // Reset all lists
