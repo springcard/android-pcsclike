@@ -40,7 +40,7 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
          *
          * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly.
          */
-        var communicationSupervisionTimeout: Long = 30_000
+        //var communicationSupervisionTimeout: Long = 30_000
 
 
         /**
@@ -50,6 +50,6 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
          *
          * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly
          */
-        var connexionSupervisionTimeout: Long = 30_000
+        //var connexionSupervisionTimeout: Long = 30_000
     }
 }

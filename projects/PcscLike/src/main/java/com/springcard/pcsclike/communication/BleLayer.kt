@@ -21,7 +21,7 @@ import kotlin.experimental.inv
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
+internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
 
     private val TAG = this::class.java.simpleName
     private val lowLayer: BleLowLevel =
@@ -290,17 +290,10 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                             ccidStatusData[i] = 0x00
                         }
 
+                        listReadersToConnect.clear()
+
                         /* Update readers status */
                         interpretSlotsStatus(event.characteristic.value)
-
-                        /* Check if there is some card already present and not connected on the slots */
-                        listReadersToConnect.clear()
-                        for (slot in scardReaderList.readers) {
-                            if(slot.cardPresent and !slot.cardConnected) {
-                                Log.d(TAG, "Slot ${slot.index}, card present and not connected, must connect to this card")
-                                listReadersToConnect.add(slot)
-                            }
-                        }
                     }
                     else -> {
                         Log.w(TAG, "Unhandled characteristic read : ${event.characteristic.uuid}")
@@ -350,8 +343,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                             process(ActionEvent.ActionAuthenticate())
                         }
                         else {
-                            /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                            processNextSlotConnection()
+                            /* If there are one card present on one or more slot, go to state ConnectingToCard */
+                            /* Otherwise we post the onReaderListCreated() callback */
+                            mayPostReaderListCreated()
                         }
                     }
                     else {
@@ -495,9 +489,6 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                 else {
                     currentState = State.Idle
 
-                    /* Check if there are some cards to connect*/
-                    processNextSlotConnection()
-
                     /* read done --> send callback */
                     scardReaderList.postCallback({
                         callbacks.onPowerInfo(
@@ -587,26 +578,18 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                     /* Update readers status */
                     interpretSlotsStatus(event.characteristic.value)
 
-                    if(!scardReaderList.isSleeping) {
-                        /* Update list of slots to connect (if there is no card error) */
-                        for (slot in scardReaderList.readers) {
-                            if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                                Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                                listReadersToConnect.remove(slot)
-                            } else if (slot.cardPresent && slot.channel.atr.isEmpty() &&
-                                !listReadersToConnect.contains(slot) && !slot.cardError) {
-                                Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                                listReadersToConnect.add(slot)
-                            }
-                        }
-                    }
-
                     /* If we are idle or already connecting to cards */
                     /* And if there is no pending command */
                     if((currentState == State.Idle || currentState == State.ConnectingToCard)
                         && !scardReaderList.ccidHandler.pendingCommand){
                         processNextSlotConnection()
                     }
+                    else {
+                        Log.w(TAG, "Could not call processNextSlotConnection()")
+                    }
+                }
+                else if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
+                    interpretResponseConnectingToCard(event.characteristic.value)
                 }
                 else {
                     Log.w(TAG,"Received notification/indication on an unexpected characteristic ${event.characteristic.uuid} (value: ${event.characteristic.value.toHexString()})")
@@ -619,7 +602,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
     /*********** Response handling **********/
 
     private fun handleResponseNotifyAndAck(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (handleResponseNotifyAndAck)")
         when (event) {
             is ActionEvent.EventCharacteristicChanged -> {
                 if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
@@ -705,7 +688,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
         else if(authenticateStep == 2) {
             if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep3(ccidResponse.payload)) {
                 scardReaderList.ccidHandler.authenticateOk = true
-                processNextSlotConnection()
+                mayPostReaderListCreated()
             }
             else {
                 postReaderListError(SCardError.ErrorCodes.AUTHENTICATION_ERROR, "Authentication failed at step 3")
@@ -737,7 +720,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             }
             else {
                 /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                processNextSlotConnection()
+                mayPostReaderListCreated()
             }
         }
     }
@@ -766,7 +749,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
 
             /* Remove reader we just processed */
             listReadersToConnect.remove(slot)
-            processNextSlotConnection()
+
+            mayPostReaderListCreated()
 
             /* Do not go further */
             return
@@ -784,10 +768,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
             /* save ATR */
             slot.channel.atr = ccidResponse.payload
 
-            /* Change state if we are at the end of the list */
-            processNextSlotConnection()
-
-            /* Send callback AFTER checking state of the slots */
+            /* Send callback */
             scardReaderList.postCallback({
                 callbacks.onReaderStatus(
                     slot,
@@ -795,17 +776,18 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, private v
                     slot.cardConnected
                 )
             })
+
+            mayPostReaderListCreated()
         }
     }
 
     private fun interpretResponseToCommand(value: ByteArray) {
-        /* Check if there are some cards to connect */
-        processNextSlotConnection()
 
-        /* Send callback AFTER checking state of the slots */
         analyseResponse(value)
 
         /* reset rxBuffer */
         response.rxBuffer.clear()
+
+        mayPostReaderListCreated()
     }
 }

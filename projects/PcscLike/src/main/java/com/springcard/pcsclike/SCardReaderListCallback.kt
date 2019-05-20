@@ -6,6 +6,103 @@
 
 package com.springcard.pcsclike
 
+import android.util.Log
+import com.springcard.pcsclike.communication.State
+
+
+/* This class call the methods provided by SCardReaderListCallback and overwritten by the user */
+/* But it also notify all thread waiting for the method to return */
+internal class SynchronizedSCardReaderListCallback(private var callbacks: SCardReaderListCallback, private var readerList: SCardReaderList) : SCardReaderListCallback() {
+
+    private val TAG = this::class.java.simpleName
+
+    /* TODO CRA: use it in AOP class*/
+    private fun logMethodName(name: String) {
+        Log.d(TAG, "<-- $name")
+    }
+
+    private fun mayConnectCard() {
+        if(readerList.commLayer.currentState == State.Idle || readerList.commLayer.currentState == State.ConnectingToCard) {
+            Log.w(TAG, "Idle or ConnectingToCard state, calling processNextSlotConnection()")
+            /* Check if there are some cards to connect */
+            readerList.commLayer.processNextSlotConnection()
+        }
+        else {
+            Log.w(TAG, "Not in Idle or ConnectingToCard state, could not call processNextSlotConnection()")
+        }
+    }
+
+    /* Methods overwritten */
+
+    override fun onReaderListCreated(readerList: SCardReaderList) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderListCreated(readerList)
+    }
+
+    override fun onReaderListClosed(readerList: SCardReaderList) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderListClosed(readerList)
+    }
+
+    override fun onControlResponse(readerList: SCardReaderList, response: ByteArray) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onControlResponse(readerList, response)
+        mayConnectCard()
+    }
+
+    override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderStatus(slot, cardPresent, cardConnected)
+        mayConnectCard()
+    }
+
+    override fun onCardConnected(channel: SCardChannel) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onCardConnected(channel)
+        mayConnectCard()
+    }
+
+    override fun onCardDisconnected(channel: SCardChannel) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onCardDisconnected(channel)
+        mayConnectCard()
+    }
+
+    override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onTransmitResponse(channel, response)
+        mayConnectCard()
+    }
+
+    override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onPowerInfo(readerList, powerState, batteryLevel)
+        mayConnectCard()
+    }
+
+    override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderListError(readerList, error)
+        mayConnectCard()
+    }
+
+    override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderOrCardError(readerOrCard, error)
+        mayConnectCard()
+    }
+
+    override fun onReaderListState(readerList: SCardReaderList, isInLowPowerMode: Boolean) {
+        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        callbacks.onReaderListState(readerList, isInLowPowerMode)
+        /* Do not try to connect to cards if device is going to sleep */
+        if(!isInLowPowerMode) {
+            mayConnectCard()
+        }
+    }
+}
+
+
 /**
  * This abstract class is used to implement [SCardReaderList] callbacks.
  */

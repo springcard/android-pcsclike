@@ -142,7 +142,7 @@ abstract class DeviceFragment : Fragment() {
             mainActivity.logInfo("onReaderStatus")
 
             if(slot != currentSlot) {
-                mainActivity.logInfo("Error: wrong slot")
+                mainActivity.logInfo("Wrong slot, do not update UI")
                 return
             }
 
@@ -379,7 +379,7 @@ abstract class DeviceFragment : Fragment() {
                         line2 = line2.replace(" ", "")
                         line2 = line2.toUpperCase()
 
-                        if (!line2.isEmpty()) {
+                        if (line2.isNotEmpty()) {
                             if (line2.isHex()) {
                                 cApdu.add(line2.hexStringToByteArray())
                             } else {

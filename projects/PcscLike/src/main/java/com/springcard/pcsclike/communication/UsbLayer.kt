@@ -13,7 +13,7 @@ import com.springcard.pcsclike.ccid.*
 import com.springcard.pcsclike.utils.*
 
 
-internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks: SCardReaderListCallback, internal var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
+internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReaderListCallback, internal var scardReaderList : SCardReaderList): CommunicationLayer(callbacks, scardReaderList) {
 
     private val TAG = this::class.java.simpleName
 
@@ -169,7 +169,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     }
                     else {
                         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                        processNextSlotConnection()
+                        mayPostReaderListCreated()
                     }
                 }
             }
@@ -209,7 +209,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     }
 
                     /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                    processNextSlotConnection()
+                    mayPostReaderListCreated()
                 }
             }
             else -> handleCommonActionEvents(event)
@@ -250,7 +250,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
 
-                    processNextSlotConnection()
+                    mayPostReaderListCreated()
                     /* Do not go further */
                     return
                 }
@@ -265,9 +265,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                     /* save ATR */
                     slot.channel.atr = ccidResponse.payload
 
-                    /* Change state if we are at the end of the list */
-                    processNextSlotConnection()
-
                     /* Send callback AFTER checking state of the slots */
                     scardReaderList.postCallback({
                         callbacks.onReaderStatus(
@@ -276,6 +273,8 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
                             slot.cardConnected
                         )
                     })
+
+                    mayPostReaderListCreated()
                 }
             }
             else -> handleCommonActionEvents(event)
@@ -305,11 +304,8 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
         Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
         when (event) {
             is ActionEvent.EventOnUsbDataIn -> {
-                /* Check if there are some cards to connect */
-                processNextSlotConnection()
-
-                /* Send callback AFTER checking state of the slots */
                 analyseResponse(event.data)
+                mayPostReaderListCreated()
             }
             else -> handleCommonActionEvents(event)
         }
@@ -320,9 +316,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
         when (event) {
             is ActionEvent.ActionReadPowerInfo -> {
                 currentState = State.Idle
-
-                /* If there are one card present on one or more slot --> go to state ConnectingToCard */
-                processNextSlotConnection()
 
                 /* TODO: create an entry point in FW to get this info */
                 /* Send callback AFTER checking state of the slots */
@@ -358,17 +351,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, private var callbacks
             is ActionEvent.EventOnUsbInterrupt -> {
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
-
-                /* Update list of slots to connect (if there is no card error)*/
-                for (slot in scardReaderList.readers) {
-                    if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                        Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                        listReadersToConnect.remove(slot)
-                    } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) && !slot.cardError) {
-                        Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                        listReadersToConnect.add(slot)
-                    }
-                }
 
                 /* If we are idle or already connecting to cards */
                 /* And if there is no pending command */

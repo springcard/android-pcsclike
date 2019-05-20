@@ -9,13 +9,12 @@ package com.springcard.pcsclike.communication
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
+import android.os.AsyncTask
+import android.os.Looper
 import android.util.Log
+import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
-import com.springcard.pcsclike.SCardError
-import com.springcard.pcsclike.SCardReader
-import com.springcard.pcsclike.SCardReaderList
-import com.springcard.pcsclike.SCardReaderList.Companion.getDeviceUniqueId
-import com.springcard.pcsclike.SCardReaderListCallback
+import kotlin.concurrent.thread
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
@@ -56,15 +55,16 @@ internal sealed class ActionEvent {
 }
 
 
-internal abstract class CommunicationLayer(private var callbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList) {
+internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList) {
 
     private val TAG = this::class.java.simpleName
-    protected var currentState = State.Disconnected
+    internal var currentState = State.Disconnected
     internal lateinit var context: Context
 
 
     protected var indexSlots: Int = 0
     protected var listReadersToConnect = mutableListOf<SCardReader>()
+    protected val callbacks = SynchronizedSCardReaderListCallback(userCallbacks, scardReaderList)
 
     abstract fun process(event: ActionEvent)
 
@@ -99,6 +99,36 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         scardReaderList.postCallback({ callbacks.onReaderOrCardError(reader,
             SCardError(code, detail)
         ) })
+    }
+
+    internal fun mayPostReaderListCreated() {
+
+       /* We we still are in the create() */
+        if(!scardReaderList.isAlreadyCreated) {
+
+            /* Cjeck if there are some slot to connect*/
+            processNextSlotConnection()
+
+            /* If there are no slot do connect */
+            if(currentState == State.Idle) {
+
+                /* Post callback and set variable only while creating the object */
+                scardReaderList.isCorrectlyKnown = true
+                scardReaderList.isAlreadyCreated = true
+
+                val uniqueId = SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice)
+                SCardReaderList.knownSCardReaderList[uniqueId] = scardReaderList.constants
+                SCardReaderList.connectedScardReaderList.add(uniqueId)
+
+                /* Retrieve readers name */
+                scardReaderList.constants.slotsName.clear()
+                for (i in 0 until scardReaderList.slotCount) {
+                    scardReaderList.constants.slotsName.add(scardReaderList.readers[i].name)
+                }
+
+                scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
+            }
+        }
     }
 
     protected fun interpretSlotsStatus(data: ByteArray) {
@@ -199,6 +229,18 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
                         val cardChanged =
                             (slotStatus == SCardReader.SlotStatus.Removed.code)
 
+                        /* Update list of slots to connect (if there is no card error) */
+                        for (slot in scardReaderList.readers) {
+                            if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                                Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                                listReadersToConnect.remove(slot)
+                            } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
+                                Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                                listReadersToConnect.add(slot)
+                            }
+                        }
+
+                        /* Send callback after updating listReadersToConnect */
                         if (cardChanged) {
                             /* Reset cardError flag */
                             scardReaderList.readers[slotNumber].cardError = false
@@ -462,13 +504,13 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         }
     }
 
-    protected fun processNextSlotConnection() {
+    internal fun processNextSlotConnection() {
         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
         if(listReadersToConnect.size > 0) {
             currentState = State.ConnectingToCard
             /* Call explicitly ccidHandler.scardConnect() instead of reader.scardConnect() */
             /* Because if the card is present and powered (in USB) the command will not be send */
-            /* In USB the card is auto powered if present and it's not the case in BLE*/
+            /* In USB the card is auto powered if present and it's not the case in BLE */
             process(
                 ActionEvent.ActionWriting(
                     scardReaderList.ccidHandler.scardConnect(
@@ -480,24 +522,6 @@ internal abstract class CommunicationLayer(private var callbacks: SCardReaderLis
         /* Otherwise go to idle state */
         else {
             currentState = State.Idle
-            /* Post callback and set variable only while creating the object*/
-            if(!scardReaderList.isAlreadyCreated) {
-
-                scardReaderList.isCorrectlyKnown = true
-                scardReaderList.isAlreadyCreated = true
-
-                val uniqueId = SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice)
-                SCardReaderList.knownSCardReaderList[uniqueId] = scardReaderList.constants
-                SCardReaderList.connectedScardReaderList.add(uniqueId)
-
-                /* Retrieve readers name */
-                scardReaderList.constants.slotsName.clear()
-                for (i in 0 until scardReaderList.slotCount) {
-                    scardReaderList.constants.slotsName.add(scardReaderList.readers[i].name)
-                }
-
-                scardReaderList.postCallback({ callbacks.onReaderListCreated(scardReaderList) }, true)
-            }
         }
     }
 

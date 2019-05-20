@@ -36,8 +36,12 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    //mBluetoothGatt.requestMtu(250)
+
+                    /* Ask to reduce interval timer to 7.5 ms (android 5) or 11.25 ms */
+                    /* But the Supervision Timeout will be set to 20s again (in android 9.0 and lower) */
+                    /* The device will reduce the supervision timeout itself */
                     mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+
                     highLayer.process(ActionEvent.EventConnected())
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     highLayer.process(ActionEvent.EventDisconnected())
@@ -130,9 +134,9 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
     fun connect() {
         Log.d(TAG, "Connect")
         mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(highLayer.context, false, mGattCallback)
-        beginTimer(object{}.javaClass.enclosingMethod!!.name,
+        /*beginTimer(object{}.javaClass.enclosingMethod!!.name,
             SCardReaderListBle.connexionSupervisionTimeout
-        )
+        )*/
     }
 
     fun disconnect() {
@@ -208,23 +212,23 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
 
     /* Timeout utilities */
 
-    private fun beginTimer(callingMethod: String = "", duration: Long = SCardReaderListBle.communicationSupervisionTimeout) {
-        Log.i(TAG, "Begin BLE timer ($callingMethod)")
+    private fun beginTimer(callingMethod: String = ""/*, duration: Long = SCardReaderListBle.communicationSupervisionTimeout*/) {
+        Log.i(TAG, "BLE action ($callingMethod)")
 
         /* Reset timeout if there is one already running */
-        if(currentTimeout != 0.toLong()) {
+        /*if(currentTimeout != 0.toLong()) {
             bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
         }
 
         currentTimeout = duration
-        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)
+        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)*/
     }
 
     private fun cancelTimer(callingMethod: String = "") {
-        Log.i(TAG, "Stop BLE timer ($callingMethod)")
-        bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
+        Log.i(TAG, "BLE event ($callingMethod)")
+        /*bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)*/
         /* Reset current timeout to indicate that there is no action running*/
-        currentTimeout = 0
+        /*currentTimeout = 0*/
     }
 
 }
