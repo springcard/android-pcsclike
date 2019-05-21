@@ -332,7 +332,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 currentState = State.Disconnected
                 lowLayer.disconnect()
                 scardReaderList.isAlreadyCreated = false
-                scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
@@ -351,13 +351,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
             is ActionEvent.EventOnUsbInterrupt -> {
                 /* Update readers status */
                 interpretSlotsStatus(event.data)
-
-                /* If we are idle or already connecting to cards */
-                /* And if there is no pending command */
-                if((currentState == State.Idle || currentState == State.ConnectingToCard)
-                    && !scardReaderList.ccidHandler.pendingCommand){
-                    processNextSlotConnection()
-                }
+                scardReaderList.mayConnectCard()
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
         }

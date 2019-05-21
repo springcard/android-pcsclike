@@ -230,6 +230,18 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         constants = const
     }
 
+    internal fun mayConnectCard() {
+        if((commLayer.currentState == State.Idle || commLayer.currentState == State.ConnectingToCard)
+            && !ccidHandler.pendingCommand) {
+            Log.w(TAG, "Idle or ConnectingToCard state, calling processNextSlotConnection()")
+            /* Check if there are some cards to connect */
+            commLayer.processNextSlotConnection()
+        }
+        else {
+            Log.w(TAG, "Not in Idle or ConnectingToCard state, could not call processNextSlotConnection()")
+        }
+    }
+
     companion object {
         /**
          * Instantiate a SpringCard PC/SC product (possibly including one or more reader a.k.a slot)

@@ -106,7 +106,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
        /* We we still are in the create() */
         if(!scardReaderList.isAlreadyCreated) {
 
-            /* Cjeck if there are some slot to connect*/
+            /* Check if there are some slot to connect*/
             processNextSlotConnection()
 
             /* If there are no slot do connect */

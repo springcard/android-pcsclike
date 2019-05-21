@@ -94,6 +94,7 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
         }
 
         pendingCommand = true
+        Log.d(TAG, "pendingCommand => true")
 
         return command.raw.toByteArray()
     }
@@ -101,6 +102,7 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
     fun getCcidResponse(frame: ByteArray): CcidResponse {
 
         pendingCommand = false
+        Log.d(TAG, "pendingCommand => false")
 
         var response = CcidResponse(frame)
 

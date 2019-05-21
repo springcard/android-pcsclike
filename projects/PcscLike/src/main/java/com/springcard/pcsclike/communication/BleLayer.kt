@@ -574,25 +574,14 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 lowLayer.close()
             }
             is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR) {
-                    /* Update readers status */
-                    interpretSlotsStatus(event.characteristic.value)
-
-                    /* If we are idle or already connecting to cards */
-                    /* And if there is no pending command */
-                    if((currentState == State.Idle || currentState == State.ConnectingToCard)
-                        && !scardReaderList.ccidHandler.pendingCommand){
-                        processNextSlotConnection()
+                when {
+                    event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
+                        /* Update readers status */
+                        interpretSlotsStatus(event.characteristic.value)
+                        scardReaderList.mayConnectCard()
                     }
-                    else {
-                        Log.w(TAG, "Could not call processNextSlotConnection()")
-                    }
-                }
-                else if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR) {
-                    interpretResponseConnectingToCard(event.characteristic.value)
-                }
-                else {
-                    Log.w(TAG,"Received notification/indication on an unexpected characteristic ${event.characteristic.uuid} (value: ${event.characteristic.value.toHexString()})")
+                    event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR -> interpretResponseConnectingToCard(event.characteristic.value)
+                    else -> Log.w(TAG,"Received notification/indication on an unexpected characteristic ${event.characteristic.uuid} (value: ${event.characteristic.value.toHexString()})")
                 }
             }
             else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
