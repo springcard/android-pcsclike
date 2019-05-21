@@ -445,6 +445,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 scardReaderList.isAlreadyCreated = false
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
+                scardReaderList.isSleeping = false
                 scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 // Reset all lists
