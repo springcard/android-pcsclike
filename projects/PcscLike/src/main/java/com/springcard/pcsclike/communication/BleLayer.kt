@@ -445,7 +445,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 scardReaderList.isAlreadyCreated = false
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0
@@ -527,7 +527,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 scardReaderList.isAlreadyCreated = false
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 // Reset all lists
                 indexCharToBeSubscribed = 0

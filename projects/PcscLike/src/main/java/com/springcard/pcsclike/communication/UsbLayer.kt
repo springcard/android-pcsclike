@@ -332,7 +332,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 currentState = State.Disconnected
                 lowLayer.disconnect()
                 scardReaderList.isAlreadyCreated = false
-                scardReaderList.postCallback({ scardReaderList.callbacks.onReaderListClosed(scardReaderList) }, true)
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
@@ -342,7 +342,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 scardReaderList.isAlreadyCreated = false
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
 
-                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) })
+                scardReaderList.postCallback({ callbacks.onReaderListClosed(scardReaderList) }, true)
 
                 // Reset all lists
                 indexSlots = 0
