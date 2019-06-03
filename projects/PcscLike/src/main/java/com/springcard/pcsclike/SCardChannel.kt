@@ -29,7 +29,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      */
     fun transmit(command: ByteArray) {
         val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index, command)
-        parent.parent.process(ActionEvent.ActionWriting(ccidCmd))
+        parent.parent.processAction(Action.Writing(ccidCmd))
     }
 
     /**
@@ -39,7 +39,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      */
     fun disconnect() {
         val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index)
-        parent.parent.process(ActionEvent.ActionWriting(ccidCmd))
+        parent.parent.processAction(Action.Writing(ccidCmd))
     }
 
     /**

@@ -103,8 +103,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal var readers: MutableList<SCardReader> = mutableListOf<SCardReader>()
 
-    internal fun process(event: ActionEvent) {
-        commLayer.process(event)
+    internal fun processAction(action: Action) {
+        commLayer.process(action)
     }
 
 
@@ -123,7 +123,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      */
     fun control(command: ByteArray) {
         val ccidCmd = ccidHandler.scardControl(command)
-        process(ActionEvent.ActionWriting(ccidCmd))
+        processAction(Action.Writing(ccidCmd))
     }
 
 
@@ -189,7 +189,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * callback when succeed : [SCardReaderListCallback.onReaderListClosed]
      */
     fun close() {
-        process(ActionEvent.ActionDisconnect())
+        processAction(Action.Disconnect())
     }
 
 
@@ -200,7 +200,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * @throws Exception if the device is sleeping
      */
     fun getPowerInfo() {
-        process(ActionEvent.ActionReadPowerInfo())
+        processAction(Action.ReadPowerInfo())
     }
 
 
@@ -222,7 +222,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep
      */
     fun wakeUp() {
-        process(ActionEvent.ActionWakeUp())
+        processAction(Action.WakeUp())
     }
 
     internal fun setKnownConstants(const: Constants) {

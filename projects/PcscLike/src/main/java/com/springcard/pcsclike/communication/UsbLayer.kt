@@ -24,38 +24,38 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
     private fun isSpringCardDevice() : Boolean = true // usbDevice.vendorId == SPRINGCARD_VID uncomment to support other products
 
 
-    override fun process(event: ActionEvent) {
+    override fun process(actionEvent: ActionEvent) {
         scardReaderList.callbacksHandler.post {
             Log.d(TAG, "Current state = ${currentState.name}")
+            Log.d(TAG, "Event ${actionEvent.javaClass.simpleName}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
 
             when (currentState) {
-                State.Disconnected -> handleStateDisconnected(event)
-                //State.Connecting -> handleStateConnecting(event)
-                State.ReadingInformation -> handleStateReadingInformation(event)
-                //State.DiscoveringGatt -> handleStateDiscovering(event)
-                //State.SubscribingNotifications -> handleStateSubscribingNotifications(event)
-                State.ReadingSlotsName -> handleStateReadingSlotsName(event)
-                //State.Authenticate -> handleStateAuthenticate(event)
-                State.ConnectingToCard -> handleStateConnectingToCard(event)
-                State.Idle ->  handleStateIdle(event)
-                State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
-                State.WritingCmdAndWaitingResp -> handleStateWaitingResponse(event)
-                //State.Disconnecting ->  handleStateDisconnecting(event)
+                State.Disconnected -> handleStateDisconnected(actionEvent)
+                //State.Connecting -> handleStateConnecting(actionEvent)
+                State.ReadingInformation -> handleStateReadingInformation(actionEvent)
+                //State.DiscoveringGatt -> handleStateDiscovering(actionEvent)
+                //State.SubscribingNotifications -> handleStateSubscribingNotifications(actionEvent)
+                State.ReadingSlotsName -> handleStateReadingSlotsName(actionEvent)
+                //State.Authenticate -> handleStateAuthenticate(actionEvent)
+                State.ConnectingToCard -> handleStateConnectingToCard(actionEvent)
+                State.Idle ->  handleStateIdle(actionEvent)
+                State.ReadingPowerInfo -> handleStateReadingPowerInfo(actionEvent)
+                State.WritingCmdAndWaitingResp -> handleStateWaitingResponse(actionEvent)
+                //State.Disconnecting ->  handleStateDisconnecting(actionEvent)
                 else -> Log.w(TAG, "Unhandled State : $currentState")
             }
         }
     }
 
     private var indexInfoCmd = 0
-    private fun handleStateDisconnected(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionCreate -> {
+    private fun handleStateDisconnected(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Create -> {
                 currentState = State.Connecting
 
                 /* Save context if we need to try to reconnect */
-                context = event.ctx
+                context = actionEvent.ctx
 
                 if (lowLayer.connect() && lowLayer.getSlotCount() != 0) {
 
@@ -103,17 +103,16 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 }
 
             }
-            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> Log.e(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")
         }
     }
 
 
-    private fun handleStateReadingInformation(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventOnUsbDataIn -> {
+    private fun handleStateReadingInformation(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.OnUsbDataIn -> {
 
-                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.data)
+                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(actionEvent.data)
 
                 when {
                     ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value -> when (scardReaderList.ccidHandler.commandSend) {
@@ -173,17 +172,16 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                     }
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
 
-    private fun handleStateReadingSlotsName(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventOnUsbDataIn -> {
+    private fun handleStateReadingSlotsName(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.OnUsbDataIn -> {
                 /* Response */
-                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.data)
+                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(actionEvent.data)
                 val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
                 Log.d(TAG, "Slot $indexSlots name : $slotName")
                 scardReaderList.readers[indexSlots].name = slotName
@@ -212,24 +210,23 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                     mayPostReaderListCreated()
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
 
-    private fun handleStateConnectingToCard(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionWriting -> {
-                Log.d(TAG, "Writing ${event.command.toHexString()}")
+    private fun handleStateConnectingToCard(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Writing -> {
+                Log.d(TAG, "Writing ${actionEvent.command.toHexString()}")
 
                 /* Trigger 1st write operation */
-                lowLayer.bulkOutTransfer(event.command)
+                lowLayer.bulkOutTransfer(actionEvent.command)
             }
-            is ActionEvent.EventOnUsbDataIn -> {
+            is Event.OnUsbDataIn -> {
 
                 /* Put data in ccid frame */
-                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(event.data)
+                val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(actionEvent.data)
                 val slot = scardReaderList.readers[ccidResponse.slotNumber.toInt()]
 
                 /* Update slot status (present, powered) */
@@ -277,58 +274,55 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                     mayPostReaderListCreated()
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
 
-    private fun handleStateIdle(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionWriting -> {
+    private fun handleStateIdle(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Writing -> {
                 currentState = State.WritingCmdAndWaitingResp
-                Log.d(TAG, "Writing ${event.command.toHexString()}")
+                Log.d(TAG, "Writing ${actionEvent.command.toHexString()}")
 
                 /* Trigger 1st write operation */
-                lowLayer.bulkOutTransfer(event.command)
+                lowLayer.bulkOutTransfer(actionEvent.command)
             }
-            is ActionEvent.ActionReadPowerInfo -> {
+            is Action.ReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
-                process(event)
+                process(actionEvent)
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateWaitingResponse(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventOnUsbDataIn -> {
-                analyseResponse(event.data)
+    private fun handleStateWaitingResponse(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.OnUsbDataIn -> {
+                analyseResponse(actionEvent.data)
                 mayPostReaderListCreated()
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateReadingPowerInfo(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionReadPowerInfo -> {
+    private fun handleStateReadingPowerInfo(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.ReadPowerInfo -> {
                 currentState = State.Idle
 
                 /* TODO: create an entry point in FW to get this info */
                 /* Send callback AFTER checking state of the slots */
                 scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleCommonActionEvents(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (Common)")
-        when (event) {
-            is ActionEvent.ActionDisconnect -> {
+    private fun handleCommonActionEvents(actionEvent: ActionEvent) {
+        Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName} (Common)")
+        when (actionEvent) {
+            is Action.Disconnect -> {
                 currentState = State.Disconnected
                 lowLayer.disconnect()
                 scardReaderList.isAlreadyCreated = false
@@ -336,7 +330,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
 
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
-            is ActionEvent.EventDisconnected -> {
+            is Event.Disconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.isAlreadyCreated = false
@@ -348,12 +342,12 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 indexSlots = 0
                 lowLayer.disconnect()
             }
-            is ActionEvent.EventOnUsbInterrupt -> {
+            is Event.OnUsbInterrupt -> {
                 /* Update readers status */
-                interpretSlotsStatus(event.data)
+                interpretSlotsStatus(actionEvent.data)
                 scardReaderList.mayConnectCard()
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> Log.w(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")
         }
     }
 

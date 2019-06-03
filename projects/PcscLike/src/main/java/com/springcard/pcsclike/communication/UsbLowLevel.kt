@@ -193,11 +193,11 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
     /* USB Entries / Outputs */
 
     private fun onInterruptIn(data: ByteArray) {
-        highLayer.process(ActionEvent.EventOnUsbInterrupt(data))
+        highLayer.process(Event.OnUsbInterrupt(data))
     }
 
     private fun onBulkIn(data: ByteArray) {
-        highLayer.process(ActionEvent.EventOnUsbDataIn(data))
+        highLayer.process(Event.OnUsbDataIn(data))
     }
 
     internal fun bulkOutTransfer(data: ByteArray) {
@@ -213,7 +213,7 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
 
                     if(device == highLayer.usbDevice) {
                         /* Method that cleans up and closes communication with the device */
-                        highLayer.process(ActionEvent.ActionDisconnect())
+                        highLayer.process(Action.Disconnect())
                     }
                 }
             }

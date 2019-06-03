@@ -17,7 +17,7 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
     override fun create(ctx : Context) {
         if(layerDevice is UsbDevice) {
             commLayer = UsbLayer(layerDevice, callbacks, this)
-            process(ActionEvent.ActionCreate(ctx))
+            processAction(Action.Create(ctx))
         }
     }
 

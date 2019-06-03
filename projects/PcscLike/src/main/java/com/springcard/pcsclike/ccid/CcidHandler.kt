@@ -10,6 +10,8 @@ import android.util.Log
 import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.utils.*
 import java.lang.Exception
+import java.util.concurrent.Semaphore
+import java.util.concurrent.locks.Lock
 
 internal class CcidHandler(private val scardDevice: SCardReaderList) {
 
@@ -70,6 +72,9 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
             throw Exception(msg)
         }
 
+        /* Acquires a permit from this semaphore, blocking until one is available, or the thread is Thread#interrupt. */
+        //lock.acquire()
+
         if(pendingCommand) {
             val msg = "A command is already processing, do not try to send another command"
             Log.e(TAG, msg)
@@ -103,6 +108,7 @@ internal class CcidHandler(private val scardDevice: SCardReaderList) {
 
         pendingCommand = false
         Log.d(TAG, "pendingCommand => false")
+        //lock.release()
 
         var response = CcidResponse(frame)
 

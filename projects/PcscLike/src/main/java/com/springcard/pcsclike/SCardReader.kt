@@ -68,12 +68,12 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     /* Deprecated */
     private fun getStatus() {
-        parent.process(ActionEvent.ActionWriting(parent.ccidHandler.scardStatus(index)))
+        parent.processAction(Action.Writing(parent.ccidHandler.scardStatus(index)))
     }
 
     /* Deprecated */
     private fun cardDisconnect() {
-        parent.process(ActionEvent.ActionWriting(parent.ccidHandler.scardDisconnect(index)))
+        parent.processAction(Action.Writing(parent.ccidHandler.scardDisconnect(index)))
     }
 
     /**
@@ -87,7 +87,7 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
             parent.postCallback({ parent.callbacks.onCardConnected(channel) })
         }
         else {
-            parent.process(ActionEvent.ActionWriting(parent.ccidHandler.scardConnect(index)))
+            parent.processAction(Action.Writing(parent.ccidHandler.scardConnect(index)))
         }
     }
 

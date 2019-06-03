@@ -42,9 +42,9 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                     /* The device will reduce the supervision timeout itself */
                     mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
 
-                    highLayer.process(ActionEvent.EventConnected())
+                    highLayer.process(Event.Connected())
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    highLayer.process(ActionEvent.EventDisconnected())
+                    highLayer.process(Event.Disconnected())
                 } else {
                     if (newState == BluetoothProfile.STATE_CONNECTING)
                         Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
@@ -59,7 +59,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 status: Int
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(ActionEvent.EventServicesDiscovered(status))
+                highLayer.process(Event.ServicesDiscovered(status))
             }
 
             override// Result of a characteristic read operation
@@ -71,7 +71,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 Log.d(TAG, "Read ${characteristic.value.toHexString()} on characteristic ${characteristic.uuid}")
                 highLayer.process(
-                    ActionEvent.EventCharacteristicRead(
+                    Event.CharacteristicRead(
                         characteristic,
                         status
                     )
@@ -85,7 +85,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 highLayer.process(
-                    ActionEvent.EventCharacteristicWritten(
+                    Event.CharacteristicWritten(
                         characteristic,
                         status
                     )
@@ -100,7 +100,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 Log.d(TAG, "Characteristic ${characteristic.uuid} changed, value : ${characteristic.value.toHexString()}")
                 highLayer.process(
-                    ActionEvent.EventCharacteristicChanged(
+                    Event.CharacteristicChanged(
                         characteristic
                     )
                 )
@@ -113,7 +113,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
             ) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 highLayer.process(
-                    ActionEvent.EventDescriptorWritten(
+                    Event.DescriptorWritten(
                         descriptor,
                         status
                     )
@@ -123,7 +123,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
             override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
                 cancelTimer(object{}.javaClass.enclosingMethod!!.name)
                 Log.d(TAG, "MTU size = $mtu")
-                highLayer.process(ActionEvent.EventConnected())
+                highLayer.process(Event.Connected())
                 super.onMtuChanged(gatt, mtu, status)
             }
         }

@@ -35,23 +35,28 @@ internal enum class State{
     Disconnecting
 }
 
+internal sealed class ActionEvent {}
 
-internal sealed class ActionEvent {
-    class EventConnected : ActionEvent()
-    class ActionCreate(val ctx: Context) : ActionEvent()
-    class EventServicesDiscovered(val status: Int) : ActionEvent()
-    class EventDescriptorWritten(val descriptor: BluetoothGattDescriptor, val status: Int) : ActionEvent()
-    class EventCharacteristicChanged(val characteristic: BluetoothGattCharacteristic) : ActionEvent()
-    class EventCharacteristicWritten(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
-    class EventCharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : ActionEvent()
-    class EventOnUsbInterrupt(val data: ByteArray) : ActionEvent()
-    class EventOnUsbDataIn(val data: ByteArray) : ActionEvent()
-    class ActionWriting(val command: ByteArray) : ActionEvent()
-    class ActionAuthenticate : ActionEvent()
-    class ActionDisconnect : ActionEvent()
-    class EventDisconnected : ActionEvent()
-    class ActionReadPowerInfo : ActionEvent()
-    class ActionWakeUp: ActionEvent()
+internal sealed class Action : ActionEvent() {
+    class Create(val ctx: Context) : Action()
+    class Writing(val command: ByteArray) : Action()
+    class Authenticate : Action()
+    class Disconnect : Action()
+    class ReadPowerInfo : Action()
+    class WakeUp: Action()
+}
+
+internal sealed class Event: ActionEvent() {
+    class Connected : Event()
+    class ServicesDiscovered(val status: Int) : Event()
+    class DescriptorWritten(val descriptor: BluetoothGattDescriptor, val status: Int) : Event()
+    class CharacteristicChanged(val characteristic: BluetoothGattCharacteristic) : Event()
+    class CharacteristicWritten(val characteristic: BluetoothGattCharacteristic, val status: Int) : Event()
+    class CharacteristicRead(val characteristic: BluetoothGattCharacteristic, val status: Int) : Event()
+    class OnUsbInterrupt(val data: ByteArray) : Event()
+    class OnUsbDataIn(val data: ByteArray) : Event()
+    class Disconnected : Event()
+
 }
 
 
@@ -66,7 +71,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
     protected var listReadersToConnect = mutableListOf<SCardReader>()
     protected val callbacks = SynchronizedSCardReaderListCallback(userCallbacks, scardReaderList)
 
-    abstract fun process(event: ActionEvent)
+    abstract fun process(actionEvent: ActionEvent)
 
     /* Post error callbacks */
 
@@ -85,7 +90,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
 
         /* irrecoverable error --> close */
         if (isFatal) {
-            process(ActionEvent.ActionDisconnect())
+            process(Action.Disconnect())
             /* If an error happened while creating the device */
             if(!scardReaderList.isAlreadyCreated) {
                 /* Remove it from the list of device known because we are not sure of anything about this one */
@@ -512,7 +517,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
             /* Because if the card is present and powered (in USB) the command will not be send */
             /* In USB the card is auto powered if present and it's not the case in BLE */
             process(
-                ActionEvent.ActionWriting(
+                Action.Writing(
                     scardReaderList.ccidHandler.scardConnect(
                         listReadersToConnect[0].index
                     )

@@ -105,47 +105,46 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
     /* State machine */
 
-    override fun process(event: ActionEvent) {
+    override fun process(actionEvent: ActionEvent) {
 
         Log.d(TAG, "Current state = ${currentState.name}")
+        Log.d(TAG, "Event ${actionEvent.javaClass.simpleName}")
         // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardReaderList).toString(16).toUpperCase()}
 
         when (currentState) {
-            State.Disconnected -> handleStateDisconnected(event)
-            State.Connecting -> handleStateConnecting(event)
-            State.DiscoveringGatt -> handleStateDiscovering(event)
-            State.ReadingInformation -> handleStateReadingInformation(event)
-            State.SubscribingNotifications -> handleStateSubscribingNotifications(event)
-            State.ReadingSlotsName ->  handleStateReadingSlotsName(event)
-            State.Authenticate -> handleStateAuthenticate(event)
-            State.ConnectingToCard -> handleStateConnectingToCard(event)
-            State.Idle ->  handleStateIdle(event)
-            State.Sleeping -> handleStateSleeping(event)
-            State.ReadingPowerInfo -> handleStateReadingPowerInfo(event)
-            State.WritingCmdAndWaitingResp -> handleStateWritingCmdAndWaitingResp(event)
-            State.Disconnecting ->  handleStateDisconnecting(event)
+            State.Disconnected -> handleStateDisconnected(actionEvent)
+            State.Connecting -> handleStateConnecting(actionEvent)
+            State.DiscoveringGatt -> handleStateDiscovering(actionEvent)
+            State.ReadingInformation -> handleStateReadingInformation(actionEvent)
+            State.SubscribingNotifications -> handleStateSubscribingNotifications(actionEvent)
+            State.ReadingSlotsName ->  handleStateReadingSlotsName(actionEvent)
+            State.Authenticate -> handleStateAuthenticate(actionEvent)
+            State.ConnectingToCard -> handleStateConnectingToCard(actionEvent)
+            State.Idle ->  handleStateIdle(actionEvent)
+            State.Sleeping -> handleStateSleeping(actionEvent)
+            State.ReadingPowerInfo -> handleStateReadingPowerInfo(actionEvent)
+            State.WritingCmdAndWaitingResp -> handleStateWritingCmdAndWaitingResp(actionEvent)
+            State.Disconnecting ->  handleStateDisconnecting(actionEvent)
             else -> Log.w(TAG,"Unhandled State : $currentState")
         }
     }
 
-    private fun handleStateDisconnected(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionCreate -> {
+    private fun handleStateDisconnected(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Create -> {
                 currentState = State.Connecting
                 /* save context if we need to try to reconnect */
-                context = event.ctx
+                context = actionEvent.ctx
                 lowLayer.connect()
             }
-            else -> Log.e(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> Log.e(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")
         }
     }
 
     private var cptConnectAttempts = 0
-    private fun handleStateConnecting(event: ActionEvent) {
-        when (event) {
-            is ActionEvent.EventConnected -> {
-                Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
+    private fun handleStateConnecting(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.Connected -> {
                 currentState = State.DiscoveringGatt
 
                 scardReaderList.isConnected = true
@@ -153,27 +152,26 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 lowLayer.discoverGatt()
                 Log.i(TAG, "Attempting to start service discovery")
             }
-            is ActionEvent.EventDisconnected -> {
+            is Event.Disconnected -> {
                 cptConnectAttempts++
                 if(cptConnectAttempts < 3) {
                     /* Retry connecting */
                     currentState = State.Disconnected
-                    process(ActionEvent.ActionCreate(context))
+                    process(Action.Create(context))
                 }
                 else {
                     cptConnectAttempts = 0
-                    handleCommonActionEvents(event)
+                    handleCommonActionEvents(actionEvent)
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateDiscovering(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventServicesDiscovered -> {
-                if (event.status == BluetoothGatt.GATT_SUCCESS) {
+    private fun handleStateDiscovering(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.ServicesDiscovered -> {
+                if (actionEvent.status == BluetoothGatt.GATT_SUCCESS) {
 
                     /* If device is already known, do not read any char except CCID status */
                     if(scardReaderList.isCorrectlyKnown) {
@@ -227,36 +225,35 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     lowLayer.readCharacteristic(chr)
 
                 } else {
-                    Log.w(TAG, "onServicesDiscovered received: ${event.status}")
+                    Log.w(TAG, "onServicesDiscovered received: ${actionEvent.status}")
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
     private var indexCharToBeRead: Int = 0
-    private fun handleStateReadingInformation(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicRead -> {
-                if(event.status != BluetoothGatt.GATT_SUCCESS) {
-                    postReaderListError(SCardError.ErrorCodes.READ_CHARACTERISTIC_FAILED, "Failed to subscribe to read characteristic ${event.characteristic}")
+    private fun handleStateReadingInformation(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.CharacteristicRead -> {
+                if(actionEvent.status != BluetoothGatt.GATT_SUCCESS) {
+                    postReaderListError(SCardError.ErrorCodes.READ_CHARACTERISTIC_FAILED, "Failed to subscribe to read characteristic ${actionEvent.characteristic}")
                     return
                 }
 
-                when(event.characteristic.uuid) {
-                    GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR -> scardReaderList.constants.productName = event.characteristic.value.toString(charset("ASCII"))
+                when(actionEvent.characteristic.uuid) {
+                    GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR -> scardReaderList.constants.productName = actionEvent.characteristic.value.toString(charset("ASCII"))
                     GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR -> {
-                        scardReaderList.constants.serialNumber = event.characteristic.value.toString(charset("ASCII"))
-                        scardReaderList.constants.serialNumberRaw = event.characteristic.value.toString(charset("ASCII")).hexStringToByteArray()
+                        scardReaderList.constants.serialNumber = actionEvent.characteristic.value.toString(charset("ASCII"))
+                        scardReaderList.constants.serialNumberRaw = actionEvent.characteristic.value.toString(charset("ASCII")).hexStringToByteArray()
                     }
-                    GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.constants.softwareVersion = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.constants.hardwareVersion = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> getVersionFromRevString(event.characteristic.value.toString(charset("ASCII")))
-                    GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.constants.vendorName = event.characteristic.value.toString(charset("ASCII"))
-                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.constants.pnpId = event.characteristic.value.toHexString()
+                    GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.constants.softwareVersion = actionEvent.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.constants.hardwareVersion = actionEvent.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> getVersionFromRevString(actionEvent.characteristic.value.toString(charset("ASCII")))
+                    GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.constants.vendorName = actionEvent.characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.constants.pnpId = actionEvent.characteristic.value.toHexString()
                     GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
-                        val slotCount = event.characteristic.value[0] and LOW_POWER_NOTIFICATION.inv()
+                        val slotCount = actionEvent.characteristic.value[0] and LOW_POWER_NOTIFICATION.inv()
 
                         if(slotCount.toInt() == 0) {
                             postReaderListError(SCardError.ErrorCodes.DUMMY_DEVICE, "This device has 0 slots")
@@ -284,19 +281,19 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                         }
 
                         /* Recreate dummy data with just slotCount and card absent on all slots */
-                        val ccidStatusData = ByteArray(event.characteristic.value.size)
-                        ccidStatusData[0] = event.characteristic.value[0]
-                        for (i in 1 until event.characteristic.value.size) {
+                        val ccidStatusData = ByteArray(actionEvent.characteristic.value.size)
+                        ccidStatusData[0] = actionEvent.characteristic.value[0]
+                        for (i in 1 until actionEvent.characteristic.value.size) {
                             ccidStatusData[i] = 0x00
                         }
 
                         listReadersToConnect.clear()
 
                         /* Update readers status */
-                        interpretSlotsStatus(event.characteristic.value)
+                        interpretSlotsStatus(actionEvent.characteristic.value)
                     }
                     else -> {
-                        Log.w(TAG, "Unhandled characteristic read : ${event.characteristic.uuid}")
+                        Log.w(TAG, "Unhandled characteristic read : ${actionEvent.characteristic.uuid}")
                     }
                 }
 
@@ -313,17 +310,16 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     lowLayer.enableNotifications(chr)
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
     private var indexCharToBeSubscribed: Int = 0
-    private fun handleStateSubscribingNotifications(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventDescriptorWritten -> {
-                if(event.status != BluetoothGatt.GATT_SUCCESS) {
-                    postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED, "Failed to subscribe to notification for characteristic ${event.descriptor.characteristic}")
+    private fun handleStateSubscribingNotifications(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.DescriptorWritten -> {
+                if(actionEvent.status != BluetoothGatt.GATT_SUCCESS) {
+                    postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED, "Failed to subscribe to notification for characteristic ${actionEvent.descriptor.characteristic}")
                     return
                 }
 
@@ -340,7 +336,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                         /* Go to authenticate state if necessary */
                         if(scardReaderList.ccidHandler.isSecure) {
                             currentState = State.Authenticate
-                            process(ActionEvent.ActionAuthenticate())
+                            process(Action.Authenticate())
                         }
                         else {
                             /* If there are one card present on one or more slot, go to state ConnectingToCard */
@@ -355,73 +351,68 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     }
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateReadingSlotsName(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicChanged,
-            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
-            else -> handleCommonActionEvents(event)
+    private fun handleStateReadingSlotsName(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.CharacteristicChanged,
+            is Event.CharacteristicWritten -> handleResponseNotifyAndAck(actionEvent)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
     private var authenticateStep = 0
-    private fun handleStateAuthenticate(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionAuthenticate -> {
+    private fun handleStateAuthenticate(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Authenticate -> {
                 beginWriteCommand(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
                 authenticateStep = 1
             }
-            is ActionEvent.EventCharacteristicChanged,
-            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
-            else -> handleCommonActionEvents(event)
+            is Event.CharacteristicChanged,
+            is Event.CharacteristicWritten -> handleResponseNotifyAndAck(actionEvent)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateConnectingToCard(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionWriting -> beginWriteCommand(event.command)
-            is ActionEvent.EventCharacteristicChanged,
-            is ActionEvent.EventCharacteristicWritten -> handleResponseNotifyAndAck(event)
-            else -> handleCommonActionEvents(event)
+    private fun handleStateConnectingToCard(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Writing -> beginWriteCommand(actionEvent.command)
+            is Event.CharacteristicChanged,
+            is Event.CharacteristicWritten -> handleResponseNotifyAndAck(actionEvent)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateIdle(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.ActionWriting -> {
+    private fun handleStateIdle(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Action.Writing -> {
                 currentState = State.WritingCmdAndWaitingResp
 
-                beginWriteCommand(event.command)
+                beginWriteCommand(actionEvent.command)
             }
-            is ActionEvent.ActionReadPowerInfo -> {
+            is Action.ReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
-                process(event)
+                process(actionEvent)
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateSleeping(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicChanged -> {
+    private fun handleStateSleeping(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.CharacteristicChanged -> {
                 /* Set var before sending callback */
                 scardReaderList.isSleeping = false
                 currentState = State.Idle
                 /* Send callback when device is waking-up */
                 scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
 
-                handleCommonActionEvents(event)
+                handleCommonActionEvents(actionEvent)
             }
-            is ActionEvent.EventCharacteristicWritten,
-            is ActionEvent.EventDescriptorWritten -> {
+            is Event.CharacteristicWritten,
+            is Event.DescriptorWritten -> {
                 /* Set var before sending callback */
                 scardReaderList.isSleeping = false
                 currentState = State.Idle
@@ -430,16 +421,16 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
 
             }
-            is ActionEvent.ActionWakeUp -> {
+            is Action.WakeUp -> {
                 /* Subscribe to Service changed to wake-up device */
                 lowLayer.enableNotifications(charCcidStatus)
             }
-            is ActionEvent.ActionDisconnect -> {
+            is Action.Disconnect -> {
                 currentState = State.Disconnecting
                 lowLayer.disconnect()
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
-            is ActionEvent.EventDisconnected -> {
+            is Event.Disconnected -> {
                 currentState = State.Disconnected
                 scardReaderList.isConnected = false
                 scardReaderList.isAlreadyCreated = false
@@ -462,18 +453,17 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
     private var indexCharToReadPower = 0
     private var batteryLevel = 0
     private var powerState = 0
-    private fun handleStateReadingPowerInfo(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicRead -> {
+    private fun handleStateReadingPowerInfo(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.CharacteristicRead -> {
 
-                when(event.characteristic.uuid) {
-                    GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR -> batteryLevel = event.characteristic.value[0].toInt()
+                when(actionEvent.characteristic.uuid) {
+                    GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR -> batteryLevel = actionEvent.characteristic.value[0].toInt()
                     GattAttributesSpringCore.UUID_BATTERY_POWER_STATE_CHAR -> {
                         /* cf https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.battery_power_state.xml*/
                         /* Check Charging (Chargeable) state */
                         val charging = 0b00110000.toByte()
-                        powerState = if(event.characteristic.value[0] and charging == charging) {
+                        powerState = if(actionEvent.characteristic.value[0] and charging == charging) {
                             1
                         } else {
                             2
@@ -500,29 +490,27 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     })
                 }
             }
-            is ActionEvent.ActionReadPowerInfo -> {
+            is Action.ReadPowerInfo -> {
                 /* Trigger 1st read */
                 indexCharToReadPower = 0
                 val chr = characteristicsToReadPower[indexCharToReadPower]
                 lowLayer.readCharacteristic(chr)
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateWritingCmdAndWaitingResp(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventCharacteristicWritten,
-            is ActionEvent.EventCharacteristicChanged -> handleResponseNotifyAndAck(event)
-            else -> handleCommonActionEvents(event)
+    private fun handleStateWritingCmdAndWaitingResp(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.CharacteristicWritten,
+            is Event.CharacteristicChanged -> handleResponseNotifyAndAck(actionEvent)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
-    private fun handleStateDisconnecting(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName}")
-        when (event) {
-            is ActionEvent.EventDisconnected -> {
+    private fun handleStateDisconnecting(actionEvent: ActionEvent) {
+        when (actionEvent) {
+            is Event.Disconnected -> {
                 scardReaderList.isConnected = false
                 currentState = State.Disconnected
                 scardReaderList.isAlreadyCreated = false
@@ -537,19 +525,19 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
                 lowLayer.close()
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> Log.w(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")
         }
     }
 
-    private fun handleCommonActionEvents(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (Common)")
-        when (event) {
-            is ActionEvent.ActionDisconnect -> {
+    private fun handleCommonActionEvents(actionEvent: ActionEvent) {
+        Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName} (Common)")
+        when (actionEvent) {
+            is Action.Disconnect -> {
                 currentState = State.Disconnecting
                 lowLayer.disconnect()
                 SCardReaderList.connectedScardReaderList.remove(SCardReaderList.getDeviceUniqueId(scardReaderList.layerDevice))
             }
-            is ActionEvent.EventDisconnected -> {
+            is Event.Disconnected -> {
                 val deviceNotCreated = !scardReaderList.isAlreadyCreated
 
                 currentState = State.Disconnected
@@ -574,32 +562,32 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
                 lowLayer.close()
             }
-            is ActionEvent.EventCharacteristicChanged -> {
+            is Event.CharacteristicChanged -> {
                 when {
-                    event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
+                    actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
                         /* Update readers status */
-                        interpretSlotsStatus(event.characteristic.value)
+                        interpretSlotsStatus(actionEvent.characteristic.value)
                         scardReaderList.mayConnectCard()
                     }
-                    event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR -> interpretResponseConnectingToCard(event.characteristic.value)
-                    else -> Log.w(TAG,"Received notification/indication on an unexpected characteristic ${event.characteristic.uuid} (value: ${event.characteristic.value.toHexString()})")
+                    actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR -> interpretResponseConnectingToCard(actionEvent.characteristic.value)
+                    else -> Log.w(TAG,"Received notification/indication on an unexpected characteristic ${actionEvent.characteristic.uuid} (value: ${actionEvent.characteristic.value.toHexString()})")
                 }
             }
-            else -> Log.w(TAG, "Unwanted ActionEvent ${event.javaClass.simpleName}")
+            else -> Log.w(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")
         }
     }
 
     /*********** Response handling **********/
 
-    private fun handleResponseNotifyAndAck(event: ActionEvent) {
-        Log.d(TAG, "ActionEvent ${event.javaClass.simpleName} (handleResponseNotifyAndAck)")
-        when (event) {
-            is ActionEvent.EventCharacteristicChanged -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
+    private fun handleResponseNotifyAndAck(actionEvent: ActionEvent) {
+        Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName} (handleResponseNotifyAndAck)")
+        when (actionEvent) {
+            is Event.CharacteristicChanged -> {
+                if(actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR)
                 {
                     /* If there is still something to write */
                     if(lowLayer.ccidWriteCharSequenced()) {
-                        response.rxBuffer.addAll(event.characteristic.value.toList())
+                        response.rxBuffer.addAll(actionEvent.characteristic.value.toList())
                         val ccidLength = scardReaderList.ccidHandler.getCcidLength(response.rxBuffer.toByteArray())
 
                         /* Check if the Response is compete or not */
@@ -618,12 +606,12 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     }
                 }
                 else {
-                    handleCommonActionEvents(event)
+                    handleCommonActionEvents(actionEvent)
                 }
             }
-            is ActionEvent.EventCharacteristicWritten -> {
-                if(event.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR) {
-                    if(event.status == BluetoothGatt.GATT_SUCCESS) {
+            is Event.CharacteristicWritten -> {
+                if(actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR) {
+                    if(actionEvent.status == BluetoothGatt.GATT_SUCCESS) {
                         /* If there is still something to write */
                         if (lowLayer.ccidWriteCharSequenced()) {
                             response.ackReceived = true
@@ -637,11 +625,11 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     }
                     else {
                         currentState = State.Idle
-                        postReaderListError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED,"Writing on characteristic ${event.characteristic.uuid} failed with status ${event.status} (BluetoothGatt constant)")
+                        postReaderListError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED,"Writing on characteristic ${actionEvent.characteristic.uuid} failed with status ${actionEvent.status} (BluetoothGatt constant)")
                     }
                 }
             }
-            else -> handleCommonActionEvents(event)
+            else -> handleCommonActionEvents(actionEvent)
         }
     }
 
@@ -706,7 +694,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
             /* Go to authenticate state if necessary */
             if(scardReaderList.ccidHandler.isSecure) {
                 currentState = State.Authenticate
-                process(ActionEvent.ActionAuthenticate())
+                process(Action.Authenticate())
             }
             else {
                 /* If there are one card present on one or more slot --> go to state ConnectingToCard */
