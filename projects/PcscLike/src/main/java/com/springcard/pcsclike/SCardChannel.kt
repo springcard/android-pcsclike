@@ -28,7 +28,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun transmit(command: ByteArray) {
-        val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index, command)
+        val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index.toByte(), command)
         parent.parent.processAction(Action.Writing(ccidCmd))
     }
 
@@ -38,7 +38,7 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun disconnect() {
-        val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index)
+        val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index.toByte())
         parent.parent.processAction(Action.Writing(ccidCmd))
     }
 

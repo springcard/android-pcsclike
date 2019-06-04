@@ -103,7 +103,7 @@ internal abstract class CcidFrame {
         get() {
             return raw[6]
         }
-         protected set(value) {
+        internal set(value) {
              raw[6] = value
         }
 
@@ -115,7 +115,7 @@ internal abstract class CcidFrame {
 
 }
 
-internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data: ByteArray) : CcidFrame() {
+internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, data: ByteArray) : CcidFrame() {
 
     enum class CommandCode(var value: Byte) {
         PC_To_RDR_IccPowerOn(0x62.toByte()),
@@ -129,7 +129,7 @@ internal class CcidCommand(cmdCode : CommandCode, slotNb: Byte, sqn: Byte, data:
         code = cmdCode.value
         slotNumber = slotNb
         payload = data
-        sequenceNumber = sqn
+        sequenceNumber = 0
     }
 
     val parameters: ByteArray

@@ -11,6 +11,7 @@ import android.content.*
 import android.hardware.usb.UsbDevice
 import android.os.Build
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.util.Log
 import com.springcard.pcsclike.ccid.*
@@ -103,10 +104,61 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal var readers: MutableList<SCardReader> = mutableListOf<SCardReader>()
 
-    internal fun processAction(action: Action) {
-        commLayer.process(action)
+    private val libThread = HandlerThread("LibThread")
+    private var libHandler: Handler
+    init {
+        libThread.start()
+        libHandler = Handler(libThread.looper)
     }
 
+    @Volatile var isLocked : Boolean = false
+    var locker : Object = Object()
+
+     fun lockMachineState() {
+         Log.d(TAG, "before lock")
+        synchronized(locker) {
+            while(isLocked) {
+
+                if(Thread.currentThread() == callbacksHandler.looper.thread)
+                {
+                    throw Exception("Could not process multiples actions from thread: ${Thread.currentThread().name}")
+                }
+                Log.d(TAG, "waiting...")
+                locker.wait()
+                Log.d(TAG, "wait done")
+            }
+            isLocked = true
+            Log.d(TAG, "after lock")
+       }
+     }
+     fun unlockMachineState() {
+         Log.d(TAG, "before unlock")
+        synchronized(locker) {
+            if(isLocked) {
+                Log.d(TAG, "unlocking...")
+                isLocked = false
+                try {
+                    locker.notifyAll()
+                }
+                catch(e:Exception)
+                {
+                    Log.e(TAG, "exception ${e.message}")
+                }
+            }
+        }
+         Log.d(TAG, "after unlock")
+    }
+
+    /* If the lock is already active (internal state like autoconnect to card while creating) , do not try to relock */
+    internal fun processAction(action: Action, useLock: Boolean = true) {
+        Log.d(TAG, "processAction thread = ${Thread.currentThread().name}")
+        if(useLock) {
+            lockMachineState()
+        }
+         libHandler.post {
+            commLayer.process(action)
+        }
+    }
 
     internal abstract fun create(ctx : Context)
     internal abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
@@ -231,14 +283,13 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     internal fun mayConnectCard() {
-        if((commLayer.currentState == State.Idle || commLayer.currentState == State.ConnectingToCard)
-            && !ccidHandler.pendingCommand) {
-            Log.w(TAG, "Idle or ConnectingToCard state, calling processNextSlotConnection()")
+        if(!isLocked) {
+            Log.w(TAG, "isLocked = false, calling processNextSlotConnection()")
             /* Check if there are some cards to connect */
             commLayer.processNextSlotConnection()
         }
         else {
-            Log.w(TAG, "Not in Idle or ConnectingToCard state, could not call processNextSlotConnection()")
+            Log.w(TAG, "isLocked = true, could not call processNextSlotConnection()")
         }
     }
 

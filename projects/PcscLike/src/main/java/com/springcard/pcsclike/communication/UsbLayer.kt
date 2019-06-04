@@ -27,7 +27,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
     override fun process(actionEvent: ActionEvent) {
         scardReaderList.callbacksHandler.post {
             Log.d(TAG, "Current state = ${currentState.name}")
-            Log.d(TAG, "Event ${actionEvent.javaClass.simpleName}")
+            Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
 
             when (currentState) {
@@ -92,7 +92,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                     /* Trigger 1st APDU to get 1st info */
                     indexInfoCmd = 1 // 1st command
                     indexSlots = 0   // reset indexSlot cpt
-                    lowLayer.bulkOutTransfer(getNextInfoCommand(indexInfoCmd))
+                    PC_to_RDR(getNextInfoCommand(indexInfoCmd)!!)
 
                 } else {
                     currentState = State.Disconnected
@@ -155,8 +155,8 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 indexInfoCmd++
                 val command = getNextInfoCommand(indexInfoCmd)
 
-                if(command.isNotEmpty()) {
-                    lowLayer.bulkOutTransfer(command)
+                if(command != null) {
+                    PC_to_RDR(command)
                 }
                 else {
                     /* Go to next step */
@@ -164,7 +164,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                         indexSlots = 0
                         currentState = State.ReadingSlotsName
                         /* Trigger 1st APDU to get slot name */
-                        lowLayer.bulkOutTransfer(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                        PC_to_RDR(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                     }
                     else {
                         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
@@ -190,7 +190,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 /* Get next slot name */
                 indexSlots++
                 if (indexSlots < scardReaderList.readers.size) {
-                    lowLayer.bulkOutTransfer(
+                    PC_to_RDR(
                         scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray())
                     )
                 } else {
@@ -218,10 +218,11 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
     private fun handleStateConnectingToCard(actionEvent: ActionEvent) {
         when (actionEvent) {
             is Action.Writing -> {
-                Log.d(TAG, "Writing ${actionEvent.command.toHexString()}")
+                val updatedCcidBuffer = scardReaderList.ccidHandler.updateCcidCommand(actionEvent.command)
+                Log.d(TAG, "Writing ${actionEvent.command.raw.toHexString()}")
 
                 /* Trigger 1st write operation */
-                lowLayer.bulkOutTransfer(actionEvent.command)
+                lowLayer.bulkOutTransfer(updatedCcidBuffer)
             }
             is Event.OnUsbDataIn -> {
 
@@ -283,10 +284,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
         when (actionEvent) {
             is Action.Writing -> {
                 currentState = State.WritingCmdAndWaitingResp
-                Log.d(TAG, "Writing ${actionEvent.command.toHexString()}")
-
-                /* Trigger 1st write operation */
-                lowLayer.bulkOutTransfer(actionEvent.command)
+                PC_to_RDR(actionEvent.command)
             }
             is Action.ReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
@@ -351,12 +349,12 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
         }
     }
 
-    private fun getNextInfoCommand(index: Int): ByteArray {
-        val res: ByteArray
+    private fun getNextInfoCommand(index: Int): CcidCommand? {
+        val res: CcidCommand?
         when(index) {
             1 -> {
                 /* Add get slot status for each slot */
-                res =  scardReaderList.ccidHandler.scardStatus(indexSlots)
+                res =  scardReaderList.ccidHandler.scardStatus(indexSlots.toByte())
                 indexSlots++
                 return res
             }
@@ -367,9 +365,13 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
             }
             else -> {
                 Log.d(TAG, "End of the list -> create empty ByteArray")
-                res = ByteArray(0)
+                res = null
             }
         }
         return res
+    }
+
+    override fun writePcToRdr(buffer: ByteArray) {
+        lowLayer.bulkOutTransfer(buffer)
     }
 }

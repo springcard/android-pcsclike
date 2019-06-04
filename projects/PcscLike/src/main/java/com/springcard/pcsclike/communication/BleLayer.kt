@@ -108,7 +108,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
     override fun process(actionEvent: ActionEvent) {
 
         Log.d(TAG, "Current state = ${currentState.name}")
-        Log.d(TAG, "Event ${actionEvent.javaClass.simpleName}")
+        Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName}")
         // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardReaderList).toString(16).toUpperCase()}
 
         when (currentState) {
@@ -347,7 +347,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                     else {
                         Log.d(TAG, "Device unknown: go to ReadingSlotsName")
                         currentState = State.ReadingSlotsName
-                        beginWriteCommand(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
+                        PC_to_RDR(scardReaderList.ccidHandler.scardControl("582100".hexStringToByteArray()))
                     }
                 }
             }
@@ -367,7 +367,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
     private fun handleStateAuthenticate(actionEvent: ActionEvent) {
         when (actionEvent) {
             is Action.Authenticate -> {
-                beginWriteCommand(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
+                PC_to_RDR(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
                 authenticateStep = 1
             }
             is Event.CharacteristicChanged,
@@ -378,7 +378,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
     private fun handleStateConnectingToCard(actionEvent: ActionEvent) {
         when (actionEvent) {
-            is Action.Writing -> beginWriteCommand(actionEvent.command)
+            is Action.Writing -> PC_to_RDR(actionEvent.command)
             is Event.CharacteristicChanged,
             is Event.CharacteristicWritten -> handleResponseNotifyAndAck(actionEvent)
             else -> handleCommonActionEvents(actionEvent)
@@ -389,8 +389,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
         when (actionEvent) {
             is Action.Writing -> {
                 currentState = State.WritingCmdAndWaitingResp
-
-                beginWriteCommand(actionEvent.command)
+                PC_to_RDR(actionEvent.command)
             }
             is Action.ReadPowerInfo -> {
                 currentState = State.ReadingPowerInfo
@@ -406,8 +405,6 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 /* Set var before sending callback */
                 scardReaderList.isSleeping = false
                 currentState = State.Idle
-                /* Send callback when device is waking-up */
-                scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, scardReaderList.isSleeping) })
 
                 handleCommonActionEvents(actionEvent)
             }
@@ -446,7 +443,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
                 lowLayer.close()
             }
-            else -> throw Exception("Forbidden to do anything when the device is sleeping (apart from waking-up)")
+            /* Post error callback */
+            else -> postReaderListError(SCardError.ErrorCodes.BUSY, "Forbidden to do anything when the device is sleeping (apart from waking-up)")
         }
     }
 
@@ -653,7 +651,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
         if(authenticateStep == 1) {
 
             if(scardReaderList.ccidHandler.ccidSecure.deviceRespStep1(ccidResponse.payload)) {
-                beginWriteCommand(scardReaderList.ccidHandler.scardControl(
+                PC_to_RDR(scardReaderList.ccidHandler.scardControl(
                     scardReaderList.ccidHandler.ccidSecure.hostCmdStep2(ccidResponse.payload.toMutableList())
                 ))
                 authenticateStep = 2
@@ -686,7 +684,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
         /* Get next slot name */
         indexSlots++
         if (indexSlots < scardReaderList.readers.size) {
-            beginWriteCommand(scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
+            PC_to_RDR(scardReaderList.ccidHandler.scardControl("58210$indexSlots".hexStringToByteArray()))
         }
         else {
             Log.d(TAG, "Reading readers name finished")
@@ -767,5 +765,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
         response.rxBuffer.clear()
 
         mayPostReaderListCreated()
+    }
+
+    override fun writePcToRdr(buffer: ByteArray) {
+        beginWriteCommand(buffer)
     }
 }

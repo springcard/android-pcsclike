@@ -494,8 +494,9 @@ abstract class DeviceFragment : Fragment() {
             scardDevice.control(cApdu[cptApdu])
         }
 
-        //testHandler.postDelayed ({scardDevice.control(capdu)}, 2000)
-
+        testHandler.postDelayed ({scardDevice.control(capdu)}, 1000)
+        testHandler.postDelayed ({scardDevice.control(capdu)}, 2000)
+        //scardDevice.control(capdu)
     }
 
     private fun handleRapdu(response: ByteArray) {

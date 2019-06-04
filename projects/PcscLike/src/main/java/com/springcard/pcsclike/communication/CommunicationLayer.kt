@@ -14,6 +14,7 @@ import android.os.Looper
 import android.util.Log
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
+import com.springcard.pcsclike.utils.toHexString
 import kotlin.concurrent.thread
 import kotlin.experimental.and
 import kotlin.experimental.inv
@@ -35,11 +36,11 @@ internal enum class State{
     Disconnecting
 }
 
-internal sealed class ActionEvent {}
+internal sealed class ActionEvent
 
 internal sealed class Action : ActionEvent() {
     class Create(val ctx: Context) : Action()
-    class Writing(val command: ByteArray) : Action()
+    class Writing(val command: CcidCommand) : Action()
     class Authenticate : Action()
     class Disconnect : Action()
     class ReadPowerInfo : Action()
@@ -112,7 +113,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         if(!scardReaderList.isAlreadyCreated) {
 
             /* Check if there are some slot to connect*/
-            processNextSlotConnection()
+            processNextSlotConnection(false)
 
             /* If there are no slot do connect */
             if(currentState == State.Idle) {
@@ -154,13 +155,13 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         if(scardReaderList.isSleeping && !isSleeping) {
             /* Set var before sending callback */
             scardReaderList.isSleeping = isSleeping
-            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
+            scardReaderList.postCallback({ callbacks.onReaderListStateWithoutUnlock(scardReaderList, isSleeping) })
         }
         /* Device going to sleep */
         else if(!scardReaderList.isSleeping && isSleeping) {
             /* Set var before sending callback */
             scardReaderList.isSleeping = isSleeping
-            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) })
+            scardReaderList.postCallback({ callbacks.onReaderListStateWithoutUnlock(scardReaderList, isSleeping) })
         }
         else if (scardReaderList.isSleeping && isSleeping) {
             Log.i(TAG, "Device is still sleeping...")
@@ -249,12 +250,12 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
                         if (cardChanged) {
                             /* Reset cardError flag */
                             scardReaderList.readers[slotNumber].cardError = false
+                            /* Post callback, but it's not a response, so we must not unlock unnecessarily */
                             scardReaderList.postCallback({
-                                callbacks.onReaderStatus(
+                                callbacks.onReaderStatusWithoutUnlock(
                                     scardReaderList.readers[slotNumber],
                                     scardReaderList.readers[slotNumber].cardPresent,
-                                    scardReaderList.readers[slotNumber].cardConnected
-                                )
+                                    scardReaderList.readers[slotNumber].cardConnected)
                             })
                         }
                     }
@@ -432,7 +433,6 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
 
         currentState = State.Idle
         Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
-
         when {
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
                 CcidCommand.CommandCode.PC_To_RDR_Escape -> scardReaderList.postCallback({
@@ -509,19 +509,21 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         }
     }
 
-    internal fun processNextSlotConnection() {
+    /* If the lock is already active (internal state like autoconnect to card while creating) , do not try to relock */
+    internal fun processNextSlotConnection(useLock: Boolean = true) {
         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
         if(listReadersToConnect.size > 0) {
             currentState = State.ConnectingToCard
             /* Call explicitly ccidHandler.scardConnect() instead of reader.scardConnect() */
             /* Because if the card is present and powered (in USB) the command will not be send */
             /* In USB the card is auto powered if present and it's not the case in BLE */
-            process(
+            scardReaderList.processAction(
                 Action.Writing(
                     scardReaderList.ccidHandler.scardConnect(
-                        listReadersToConnect[0].index
+                        listReadersToConnect[0].index.toByte()
                     )
-                )
+                ),
+                useLock
             )
         }
         /* Otherwise go to idle state */
@@ -536,6 +538,15 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         scardReaderList.constants.firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
         scardReaderList.constants.firmwareVersionBuild = revString.split("-")[1].toInt()
     }
+
+    protected fun PC_to_RDR(cmd: CcidCommand) {
+        /* Update sqn, save it and cipher */
+        val updatedCcidBuffer = scardReaderList.ccidHandler.updateCcidCommand(cmd)
+        Log.d(TAG, "Writing ${cmd.raw.toHexString()} in PC_to_RDR")
+        writePcToRdr(updatedCcidBuffer)
+    }
+
+    protected abstract fun writePcToRdr(buffer: ByteArray)
 
     companion object {
         const val LOW_POWER_NOTIFICATION: Byte = 0x80.toByte()
