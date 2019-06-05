@@ -271,10 +271,16 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     /**
-     * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep
+     * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep. 
+     * If the reader is already awake, the callback will not be called.
      */
     fun wakeUp() {
-        processAction(Action.WakeUp())
+        if(isSleeping) {
+            processAction(Action.WakeUp())
+        }
+        else {
+            Log.d(TAG, "Device is not sleeping, waking-up is useless")
+        }
     }
 
     internal fun setKnownConstants(const: Constants) {
