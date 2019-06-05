@@ -473,18 +473,9 @@ abstract class DeviceFragment : Fragment() {
     private var apduListStartTime: Long = 0
     private var apduListStopTime: Long = 0
 
-    private val testThread = HandlerThread("TestThread")
-    protected val testHandler by lazy {
-         testThread.start()
-         Handler(testThread.looper)
-     }
-
     private fun sendApdu() {
-
         mainActivity.logInfo("sendApdu")
         mainActivity.logInfo("<${cApdu[cptApdu].toHexString()}")
-
-        val capdu = cApdu[cptApdu]
 
         // TODO CRA create resource string
         if(spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
@@ -493,10 +484,6 @@ abstract class DeviceFragment : Fragment() {
         else if (spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Control")) {
             scardDevice.control(cApdu[cptApdu])
         }
-
-        testHandler.postDelayed ({scardDevice.control(capdu)}, 1000)
-        testHandler.postDelayed ({scardDevice.control(capdu)}, 2000)
-        //scardDevice.control(capdu)
     }
 
     private fun handleRapdu(response: ByteArray) {

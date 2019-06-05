@@ -444,7 +444,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 lowLayer.close()
             }
             /* Post error callback */
-            else -> postReaderListError(SCardError.ErrorCodes.BUSY, "Forbidden to do anything when the device is sleeping (apart from waking-up)")
+            else -> postReaderListError(SCardError.ErrorCodes.BUSY, "Forbidden to do anything when the device is sleeping (apart from waking-up)", isFatal = false)
         }
     }
 

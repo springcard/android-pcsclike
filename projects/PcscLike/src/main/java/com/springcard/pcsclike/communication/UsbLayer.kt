@@ -311,7 +311,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
 
                 /* TODO: create an entry point in FW to get this info */
                 /* Send callback AFTER checking state of the slots */
-                scardReaderList.postCallback({ scardReaderList.callbacks.onPowerInfo(scardReaderList, 1, 100) })
+                scardReaderList.postCallback({ callbacks.onPowerInfo(scardReaderList, 1, 100) })
             }
             else -> handleCommonActionEvents(actionEvent)
         }

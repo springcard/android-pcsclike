@@ -283,7 +283,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     internal fun mayConnectCard() {
-        if(!isLocked) {
+        if(!isLocked && !isSleeping) {
             Log.w(TAG, "isLocked = false, calling processNextSlotConnection()")
             /* Check if there are some cards to connect */
             commLayer.processNextSlotConnection()
