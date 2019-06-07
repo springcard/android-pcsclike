@@ -25,7 +25,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
 
 
     override fun process(actionEvent: ActionEvent) {
-        scardReaderList.callbacksHandler.post {
             Log.d(TAG, "Current state = ${currentState.name}")
             Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
@@ -45,7 +44,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 //State.Disconnecting ->  handleStateDisconnecting(actionEvent)
                 else -> Log.w(TAG, "Unhandled State : $currentState")
             }
-        }
     }
 
     private var indexInfoCmd = 0

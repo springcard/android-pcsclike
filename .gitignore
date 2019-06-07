@@ -171,3 +171,6 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
+
+#Copy to tests dirs
+copy_to_github.sh
