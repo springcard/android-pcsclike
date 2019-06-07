@@ -21,7 +21,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
         UsbLowLevel(this)
 
     private val SPRINGCARD_VID = 0x1C34
-    private fun isSpringCardDevice() : Boolean = true // usbDevice.vendorId == SPRINGCARD_VID uncomment to support other products
+    private fun isSpringCardDevice() : Boolean = true // usbDevice.vendorId == SPRINGCARD_VID uncomment or set to false to support other products
 
 
     override fun process(actionEvent: ActionEvent) {

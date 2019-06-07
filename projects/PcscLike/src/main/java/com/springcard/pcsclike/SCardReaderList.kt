@@ -111,16 +111,16 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         libHandler = Handler(libThread.looper)
     }
 
-    @Volatile var isLocked : Boolean = false
-    var locker : Object = Object()
+    @Volatile private var isLocked : Boolean = false
+    private var locker : Object = Object()
+    private var idThreadLocking = libThread.id
 
-     fun lockMachineState() {
-         Log.d(TAG, "before lock")
+    private fun lockMachineState() {
+        Log.d(TAG, "before lock")
         synchronized(locker) {
             while(isLocked) {
-
-                if(Thread.currentThread() == callbacksHandler.looper.thread)
-                {
+                /* If this thread already hold the lock */
+                if(Thread.currentThread().id == idThreadLocking) {
                     throw Exception("Could not process multiples actions from thread: ${Thread.currentThread().name}")
                 }
                 Log.d(TAG, "waiting...")
@@ -128,11 +128,12 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
                 Log.d(TAG, "wait done")
             }
             isLocked = true
+            idThreadLocking = Thread.currentThread().id
             Log.d(TAG, "after lock")
-       }
-     }
-     fun unlockMachineState() {
-         Log.d(TAG, "before unlock")
+        }
+    }
+    private fun unlockMachineState() {
+        Log.d(TAG, "before unlock")
         synchronized(locker) {
             if(isLocked) {
                 Log.d(TAG, "unlocking...")
@@ -142,11 +143,11 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
                 }
                 catch(e:Exception)
                 {
-                    Log.e(TAG, "exception ${e.message}")
+                    Log.e(TAG, "Could not notifyAll, Exception: ${e.message}")
                 }
             }
         }
-         Log.d(TAG, "after unlock")
+        Log.d(TAG, "after unlock")
     }
 
     /* If the lock is already active (internal state like autoconnect to card while creating) , do not try to relock */
@@ -155,7 +156,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         if(useLock) {
             lockMachineState()
         }
-         libHandler.post {
+        libHandler.post {
             commLayer.process(action)
         }
     }
@@ -223,13 +224,13 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     val slots : List<String>
-    get() {
-        val slotsName = mutableListOf<String>()
-        for (slot in readers) {
-            slotsName.add(slot.name)
+        get() {
+            val slotsName = mutableListOf<String>()
+            for (slot in readers) {
+                slotsName.add(slot.name)
+            }
+            return slotsName
         }
-        return slotsName
-    }
 
     val slotCount : Int
         get() {
@@ -261,17 +262,21 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * @param callback () -> Lambda to callback to be called
      * @param forceCallback force callback to be called even if device is not created yet
      */
-    internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false) {
+    internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false, unlockMachine: Boolean = true) {
         if(isAlreadyCreated || forceCallback) {
+            if(unlockMachine) {
+                unlockMachineState()
+            }
             callbacksHandler.post(Runnable(callback))
         }
         else {
             Log.d(TAG, "Device not created yet, do not post callback")
         }
+        mayConnectCard()
     }
 
     /**
-     * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep. 
+     * Wake-up ScardReaderList, [SCardReaderListCallback.onReaderListState] is called when the reader is exiting from sleep.
      * If the reader is already awake, the callback will not be called.
      */
     fun wakeUp() {
@@ -289,13 +294,14 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     internal fun mayConnectCard() {
-        if(!isLocked && !isSleeping) {
-            Log.w(TAG, "isLocked = false, calling processNextSlotConnection()")
-            /* Check if there are some cards to connect */
-            commLayer.processNextSlotConnection()
-        }
-        else {
-            Log.w(TAG, "isLocked = true, could not call processNextSlotConnection()")
+        synchronized(locker) {
+            if (!isLocked && !isSleeping && isAlreadyCreated) {
+                Log.w(TAG, "Calling processNextSlotConnection()")
+                /* Check if there are some cards to connect */
+                commLayer.processNextSlotConnection()
+            } else {
+                Log.w(TAG, "Could not call processNextSlotConnection()")
+            }
         }
     }
 
@@ -307,7 +313,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
          * @param ctx Application's context use to instantiate the object
          * @param device BLE device
          * @param callbacks list of callbacks
-         * 
+         *
          * @throws UnsupportedOperationException if the SDK version is too low
          * @throws Exception if the device is neither a BluetoothDevice nor a UsbDevice
          * @throws IllegalArgumentException if the device is already connected
@@ -367,7 +373,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
             /* Set constants previously retrieved */
             if(knownSCardReaderList.containsKey(deviceId)) {
-                    scardReaderList.setKnownConstants(knownSCardReaderList[deviceId]!!)
+                scardReaderList.setKnownConstants(knownSCardReaderList[deviceId]!!)
             }
 
             /* Exception if device already connected */

@@ -20,103 +20,61 @@ internal class SynchronizedSCardReaderListCallback(private var callbacks: SCardR
         Log.d(TAG, "<-- $name")
     }
 
-    private fun unlock() {
-        scardReaderList.unlockMachineState()
-    }
-
     /* Methods overwritten */
 
     override fun onReaderListCreated(readerList: SCardReaderList) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderListCreated(readerList)
     }
 
     override fun onReaderListClosed(readerList: SCardReaderList) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderListClosed(readerList)
     }
 
     override fun onControlResponse(readerList: SCardReaderList, response: ByteArray) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onControlResponse(readerList, response)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderStatus(slot, cardPresent, cardConnected)
-        scardReaderList.mayConnectCard()
-    }
-
-   fun onReaderStatusWithoutUnlock(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        callbacks.onReaderStatus(slot, cardPresent, cardConnected)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onCardConnected(channel: SCardChannel) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onCardConnected(channel)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onCardDisconnected(channel: SCardChannel) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onCardDisconnected(channel)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onTransmitResponse(channel, response)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onPowerInfo(readerList, powerState, batteryLevel)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderListError(readerList, error)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderOrCardError(readerOrCard, error)
-        scardReaderList.mayConnectCard()
     }
 
     override fun onReaderListState(readerList: SCardReaderList, isInLowPowerMode: Boolean) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        unlock()
         callbacks.onReaderListState(readerList, isInLowPowerMode)
-        /* Do not try to connect to cards if device is going to sleep */
-        if(!isInLowPowerMode) {
-            scardReaderList.mayConnectCard()
-        }
-    }
-
-    fun onReaderListStateWithoutUnlock(readerList: SCardReaderList, isInLowPowerMode: Boolean) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        callbacks.onReaderListState(readerList, isInLowPowerMode)
-        /* Do not try to connect to cards if device is going to sleep */
-        if(!isInLowPowerMode) {
-            scardReaderList.mayConnectCard()
-        }
     }
 }
 

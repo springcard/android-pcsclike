@@ -64,7 +64,7 @@ internal sealed class Event: ActionEvent() {
 internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList) {
 
     private val TAG = this::class.java.simpleName
-    internal var currentState = State.Disconnected
+    protected var currentState = State.Disconnected
     internal lateinit var context: Context
 
 
@@ -155,13 +155,15 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         if(scardReaderList.isSleeping && !isSleeping) {
             /* Set var before sending callback */
             scardReaderList.isSleeping = isSleeping
-            scardReaderList.postCallback({ callbacks.onReaderListStateWithoutUnlock(scardReaderList, isSleeping) })
+            /* Post callback, but it's not a response, so we must not unlock unnecessarily */
+            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping)}, scardReaderList.isAlreadyCreated, false)
         }
         /* Device going to sleep */
         else if(!scardReaderList.isSleeping && isSleeping) {
             /* Set var before sending callback */
             scardReaderList.isSleeping = isSleeping
-            scardReaderList.postCallback({ callbacks.onReaderListStateWithoutUnlock(scardReaderList, isSleeping) })
+            /* Post callback, but it's not a response, so we must not unlock unnecessarily */
+            scardReaderList.postCallback({ callbacks.onReaderListState(scardReaderList, isSleeping) }, scardReaderList.isAlreadyCreated, false)
         }
         else if (scardReaderList.isSleeping && isSleeping) {
             Log.i(TAG, "Device is still sleeping...")
@@ -252,11 +254,11 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
                             scardReaderList.readers[slotNumber].cardError = false
                             /* Post callback, but it's not a response, so we must not unlock unnecessarily */
                             scardReaderList.postCallback({
-                                callbacks.onReaderStatusWithoutUnlock(
+                                callbacks.onReaderStatus(
                                     scardReaderList.readers[slotNumber],
                                     scardReaderList.readers[slotNumber].cardPresent,
                                     scardReaderList.readers[slotNumber].cardConnected)
-                            })
+                            }, scardReaderList.isAlreadyCreated, false)
                         }
                     }
                 }
@@ -513,6 +515,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
     internal fun processNextSlotConnection(useLock: Boolean = true) {
         /* If there are one card present on one or more slot --> go to state ConnectingToCard */
         if(listReadersToConnect.size > 0) {
+            Log.d(TAG, "There is ${listReadersToConnect.size} card(s) to connect")
             currentState = State.ConnectingToCard
             /* Call explicitly ccidHandler.scardConnect() instead of reader.scardConnect() */
             /* Because if the card is present and powered (in USB) the command will not be send */
@@ -528,6 +531,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         }
         /* Otherwise go to idle state */
         else {
+            Log.d(TAG, "There is no cards to connect")
             currentState = State.Idle
         }
     }
