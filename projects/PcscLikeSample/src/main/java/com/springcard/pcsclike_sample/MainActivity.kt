@@ -168,7 +168,8 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.fragment_container, deviceFragment)
         transaction.addToBackStack(null)
-        transaction.commit()
+        /* TODO CRA: cf https://medium.com/@elye.project/handling-illegalstateexception-can-not-perform-this-action-after-onsaveinstancestate-d4ee8b630066 */
+        transaction.commitAllowingStateLoss()
     }
 
     fun backToScanFragment() {
