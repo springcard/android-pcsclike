@@ -137,7 +137,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         usbDeviceList.clear()
         adapter?.notifyDataSetChanged()
 
-        /* Scan USB de vices already present */
+        /* Scan USB devices already present */
         val usbManager = mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
         val deviceList: HashMap<String, UsbDevice> = usbManager.deviceList
         deviceList.values.forEach { device ->
@@ -155,7 +155,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             deviceList.add(newItem)
             usbDeviceList.add(device)
             adapter?.notifyDataSetChanged()
-            mainActivity.logInfo("New device found: ${newItem.name}")
+            mainActivity.logInfo("New device found: ${device.manufacturerName} ${device.productName} ${getDeviceExtraInfo(device)} (Thread = ${Thread.currentThread().name})")
         }
     }
 
@@ -166,7 +166,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             deviceList.remove(item)
             usbDeviceList.remove(device)
             adapter?.notifyDataSetChanged()
-            mainActivity.logInfo("Device removed: ${item.name}")
+            mainActivity.logInfo("Device removed: ${device.manufacturerName} ${device.productName} ${getDeviceExtraInfo(device)}")
         }
     }
 

@@ -130,7 +130,7 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                     }
                     ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
                         CcidCommand.CommandCode.PC_To_RDR_Escape -> {
-                            if(indexInfoCmd == 2 && isSpringCardDevice()) {
+                            if(indexInfoCmd == 1 && isSpringCardDevice()) {
                                 getVersionFromRevString(ccidResponse.payload.drop(1).toByteArray().toString(charset("ASCII")))
                             }
                             Log.d(TAG, " ${ccidResponse.payload.toHexString()}")
@@ -351,19 +351,19 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
         val res: CcidCommand?
         when(index) {
             1 -> {
-                /* Add get slot status for each slot */
-                res =  scardReaderList.ccidHandler.scardStatus(indexSlots.toByte())
-                indexSlots++
-                return res
-            }
-            2 -> {
                 /* Firmware revision string */
                 res =  scardReaderList.ccidHandler.scardControl("582006".hexStringToByteArray())
-
             }
             else -> {
-                Log.d(TAG, "End of the list -> create empty ByteArray")
-                res = null
+                if(indexSlots < scardReaderList.slotCount) {
+                    /* Add get slot status for each slot */
+                    res =  scardReaderList.ccidHandler.scardStatus(indexSlots.toByte())
+                    indexSlots++
+                }
+                else {
+                    Log.d(TAG, "End of the list -> create empty ByteArray")
+                    res = null
+                }
             }
         }
         return res
