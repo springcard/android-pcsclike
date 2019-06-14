@@ -106,8 +106,6 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
     /* State machine */
 
     override fun process(actionEvent: ActionEvent) {
-
-        Log.d(TAG, "Current state = ${currentState.name}")
         Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName}")
         // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardReaderList).toString(16).toUpperCase()}
 
@@ -402,10 +400,7 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
     private fun handleStateSleeping(actionEvent: ActionEvent) {
         when (actionEvent) {
             is Event.CharacteristicChanged -> {
-                /* Set var before sending callback */
-                scardReaderList.isSleeping = false
-                currentState = State.Idle
-
+                /* handleCommonActionEvents() will call onReaderListState() if necessary */
                 handleCommonActionEvents(actionEvent)
             }
             is Event.CharacteristicWritten,
@@ -726,6 +721,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
             /* Remove reader we just processed */
             listReadersToConnect.remove(slot)
 
+            currentState = State.Idle
+            
             mayPostReaderListCreated()
 
             /* Do not go further */
@@ -743,6 +740,9 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
 
             /* save ATR */
             slot.channel.atr = ccidResponse.payload
+
+            currentState = State.Idle
+
 
             /* Send callback */
             scardReaderList.postCallback({

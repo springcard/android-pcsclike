@@ -25,7 +25,6 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
 
 
     override fun process(actionEvent: ActionEvent) {
-            Log.d(TAG, "Current state = ${currentState.name}")
             Log.d(TAG, "Action/Event ${actionEvent.javaClass.simpleName}")
             // Memo CRA : SCardDevice instance = 0x${System.identityHashCode(scardDevice).toString(16).toUpperCase()}
 

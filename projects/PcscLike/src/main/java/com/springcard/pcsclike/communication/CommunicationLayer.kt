@@ -64,7 +64,19 @@ internal sealed class Event: ActionEvent() {
 internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallback, private var scardReaderList : SCardReaderList) {
 
     private val TAG = this::class.java.simpleName
-    protected var currentState = State.Disconnected
+    @Volatile protected var currentState = State.Disconnected
+        get() {
+            synchronized(field) {
+                Log.d(TAG, "currentState = ${field.name}")
+                return field
+            }
+        }
+        set(value) {
+            synchronized(field) {
+                Log.d(TAG, "New currentState = ${value.name}")
+                field = value
+            }
+        }
     internal lateinit var context: Context
 
 
@@ -238,14 +250,13 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
                             (slotStatus == SCardReader.SlotStatus.Removed.code)
 
                         /* Update list of slots to connect (if there is no card error) */
-                        for (slot in scardReaderList.readers) {
-                            if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
-                                Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
-                                listReadersToConnect.remove(slot)
-                            } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
-                                Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
-                                listReadersToConnect.add(slot)
-                            }
+                        val slot = scardReaderList.readers[slotNumber]
+                        if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                            Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
+                            listReadersToConnect.remove(slot)
+                        } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
+                            Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
+                            listReadersToConnect.add(slot)
                         }
 
                         /* Send callback after updating listReadersToConnect */
@@ -405,6 +416,8 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
             }
         }
 
+        currentState = State.Idle
+
         if(scardReaderList.isAlreadyCreated) {
             postCardOrReaderError(errorCode, detail, slot)
         }
@@ -429,7 +442,6 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         /* Check slot error */
         if(!interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)) {
             Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
-            currentState = State.Idle
             return
         }
 

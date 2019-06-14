@@ -121,7 +121,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             while(isLocked) {
                 /* If this thread already hold the lock */
                 if(Thread.currentThread().id == idThreadLocking) {
-                    throw Exception("Could not process multiples actions from thread: ${Thread.currentThread().name}")
+                    throw Exception("Could not process multiples actions from same thread: ${Thread.currentThread().name}")
                 }
                 Log.d(TAG, "waiting...")
                 locker.wait()
@@ -267,7 +267,9 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             if(unlockMachine) {
                 unlockMachineState()
             }
-            callbacksHandler.post(Runnable(callback))
+            callbacksHandler.post {
+                callback()
+            }
         }
         else {
             Log.d(TAG, "Device not created yet, do not post callback")

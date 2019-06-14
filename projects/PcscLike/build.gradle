@@ -42,9 +42,9 @@ android {
     task publishDoc(type: Copy) {
         from "$buildDir/javadoc"
         into 'V:\\Dossiers\\SpringCard\\A-Online\\apis\\Android\\PCSC-Like'
-        exec {
+        /*exec {
             commandLine 'V:\\Dossiers\\SpringCard\\A-Online\\publier-api-android.cmd'
-        }
+        }*/
     }
 
     dokka {

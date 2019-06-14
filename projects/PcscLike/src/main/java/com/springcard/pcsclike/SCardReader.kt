@@ -84,7 +84,7 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
     fun cardConnect() {
         if(channel.atr.isNotEmpty() && cardPresent) {
             cardConnected = true
-            parent.postCallback({ parent.callbacks.onCardConnected(channel) })
+            parent.postCallback({ parent.callbacks.onCardConnected(channel) }, parent.isAlreadyCreated, false)
         }
         else {
             parent.processAction(Action.Writing(parent.ccidHandler.scardConnect(index.toByte())))
