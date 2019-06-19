@@ -338,8 +338,8 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 lowLayer.disconnect()
             }
             is Event.OnUsbInterrupt -> {
-                /* Update readers status */
-                interpretSlotsStatus(actionEvent.data)
+                /* Set isNotification = true, because we got the CCID status from a notification */
+                interpretSlotsStatus(actionEvent.data, isNotification = true)
                 scardReaderList.mayConnectCard()
             }
             else -> Log.w(TAG, "Unwanted Action/Event ${actionEvent.javaClass.simpleName}")

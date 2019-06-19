@@ -288,7 +288,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                         listReadersToConnect.clear()
 
                         /* Update readers status */
-                        interpretSlotsStatus(actionEvent.characteristic.value)
+                        /* Set isNotification = false, because we read the CCID status */
+                        interpretSlotsStatus(actionEvent.characteristic.value, isNotification = false)
                     }
                     else -> {
                         Log.w(TAG, "Unhandled characteristic read : ${actionEvent.characteristic.uuid}")
@@ -559,7 +560,8 @@ internal class BleLayer(internal var bluetoothDevice: BluetoothDevice, callbacks
                 when {
                     actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
                         /* Update readers status */
-                        interpretSlotsStatus(actionEvent.characteristic.value)
+                        /* Set isNotification = true, because we got the CCID status from a notification */
+                        interpretSlotsStatus(actionEvent.characteristic.value, isNotification = true)
                         scardReaderList.mayConnectCard()
                     }
                     actionEvent.characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR -> interpretResponseConnectingToCard(actionEvent.characteristic.value)

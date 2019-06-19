@@ -149,7 +149,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         }
     }
 
-    protected fun interpretSlotsStatus(data: ByteArray) {
+    protected fun interpretSlotsStatus(data: ByteArray, isNotification:Boolean ) {
 
         /* If reader is being created, do not post callbacks neither return to Idle state */
 
@@ -218,14 +218,16 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
                         val slotStatus = (data[i].toInt() shr j * 2) and 0x03
                         Log.i(TAG, "Slot $slotNumber")
 
+                        val slot = scardReaderList.readers[slotNumber]
+
                         /* Update SCardReadList slot status */
-                        scardReaderList.readers[slotNumber].cardPresent =
+                        slot.cardPresent =
                             !(slotStatus == SCardReader.SlotStatus.Absent.code || slotStatus == SCardReader.SlotStatus.Removed.code)
 
                         /* If card is not present, it can not be powered */
-                        if (!scardReaderList.readers[slotNumber].cardPresent) {
-                            scardReaderList.readers[slotNumber].cardConnected = false
-                            scardReaderList.readers[slotNumber].channel.atr = ByteArray(0)
+                        if (!slot.cardPresent) {
+                            slot.cardConnected = false
+                            slot.channel.atr = ByteArray(0)
                         }
 
                         when (slotStatus) {
@@ -244,33 +246,38 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
                             }
                         }
 
-                        /* Send callback only if card removed, when the card is inserted */
-                        /* the callback will be send after the connection to the card  */
-                        val cardChanged =
-                            (slotStatus == SCardReader.SlotStatus.Removed.code)
+                       /* Card considered remove if we read the CCID status and card is absent */
+                        val cardRemoved =
+                            (slotStatus == SCardReader.SlotStatus.Removed.code) || (!isNotification && !slot.cardPresent)
+                        /* Card considered inserted if we read the CCID status and card is present */
+                        val cardInserted =
+                            (slotStatus == SCardReader.SlotStatus.Inserted.code) || (!isNotification && slot.cardPresent)
 
                         /* Update list of slots to connect (if there is no card error) */
-                        val slot = scardReaderList.readers[slotNumber]
-                        if (!slot.cardPresent && listReadersToConnect.contains(slot)) {
+                        if (cardRemoved && listReadersToConnect.contains(slot)) {
                             Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
                             listReadersToConnect.remove(slot)
-                        } else if (slot.cardPresent && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
+                        } else if (cardInserted && slot.channel.atr.isEmpty() && !listReadersToConnect.contains(slot) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
                             Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
                             listReadersToConnect.add(slot)
                         }
 
-                        /* Send callback after updating listReadersToConnect */
-                        if (cardChanged) {
+                        /* Send callback only if card removed, when the card is inserted */
+                        /* the callback will be send after the connection to the card  */
+                        if (cardRemoved) {
                             /* Reset cardError flag */
-                            scardReaderList.readers[slotNumber].cardError = false
+                            slot.cardError = false
                             /* Post callback, but it's not a response, so we must not unlock unnecessarily */
                             scardReaderList.postCallback({
                                 callbacks.onReaderStatus(
-                                    scardReaderList.readers[slotNumber],
-                                    scardReaderList.readers[slotNumber].cardPresent,
-                                    scardReaderList.readers[slotNumber].cardConnected)
+                                    slot,
+                                    slot.cardPresent,
+                                    slot.cardConnected)
                             }, scardReaderList.isAlreadyCreated, false)
                         }
+
+                        /* This line may be optional since slot is a reference on scardReaderList.readers[slotNumber] and not a copy */
+                        scardReaderList.readers[slotNumber] = slot
                     }
                 }
             }
