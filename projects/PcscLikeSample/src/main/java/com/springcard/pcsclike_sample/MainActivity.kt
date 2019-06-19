@@ -98,23 +98,21 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     }
 
     fun setDrawerState(isEnabled: Boolean) {
+
+        drawerToggle = ActionBarDrawerToggle(
+            this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        )
+        drawer_layout.addDrawerListener(drawerToggle)
+
         if (isEnabled) {
-
-            drawerToggle = ActionBarDrawerToggle(
-                this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
-            )
-            drawer_layout.addDrawerListener(drawerToggle)
-
             drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
             drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_UNLOCKED)
             drawerToggle.syncState()
-
 
             supportActionBar?.setHomeButtonEnabled(true)
             nav_view.setNavigationItemSelectedListener(this)
 
         } else {
-
             drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
             drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
             drawerToggle.syncState()
