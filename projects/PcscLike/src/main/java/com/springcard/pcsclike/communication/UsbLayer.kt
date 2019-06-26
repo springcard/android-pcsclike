@@ -234,18 +234,37 @@ internal class UsbLayer(internal var usbDevice: UsbDevice, callbacks: SCardReade
                 )
 
                 /* Check slot error */
-                if (!interpretSlotsErrorInCcidHeader(
-                        ccidResponse.slotError,
-                        ccidResponse.slotStatus,
-                        slot
-                    )
-                ) {
+                val error = interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)
+                if (error != null) {
                     Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
 
                     /* Remove reader we just processed */
                     listReadersToConnect.remove(slot)
 
+                    if(scardReaderList.isAlreadyCreated) {
+                        if(currentState == State.ConnectingToCard) {
+                            currentState = State.Idle
+                            scardReaderList.postCallback({
+                                callbacks.onReaderStatus(
+                                    slot,
+                                    slot.cardPresent,
+                                    slot.cardConnected
+                                )
+                            })
+
+                        }
+                        else {
+                            currentState = State.Idle
+                            postCardOrReaderError(error, slot)
+                        }
+                    }
+                    else {
+                        currentState = State.Idle
+                        Log.e(TAG, "Error reader or card: ${error.code.name}, ${error.detail}")
+                    }
+
                     mayPostReaderListCreated()
+
                     /* Do not go further */
                     return
                 }

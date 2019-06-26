@@ -118,6 +118,11 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
             SCardError(code, detail)
         ) })
     }
+    internal fun postCardOrReaderError(error: SCardError, reader: SCardReader) {
+        Log.e(TAG, "Error reader or card: ${error.code.name}, ${error.detail}")
+        scardReaderList.postCallback({ callbacks.onReaderOrCardError(reader, error) })
+    }
+
 
     internal fun mayPostReaderListCreated() {
 
@@ -335,16 +340,16 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
      * @param slotError Byte
      * @param slotStatus Byte
      * @param slot SCardReader
-     * @return true if there is no error, false otherwise
+     * @return null if there is no error, [SCardError] otherwise
      */
-    protected fun interpretSlotsErrorInCcidHeader(slotError: Byte, slotStatus: Byte, slot: SCardReader): Boolean {
+    protected fun interpretSlotsErrorInCcidHeader(slotError: Byte, slotStatus: Byte, slot: SCardReader): SCardError? {
 
         val commandStatus = (slotStatus.toInt() and 0b11000000) shr 6
 
         when (commandStatus) {
             0b00 -> {
                 Log.i(TAG, "Command processed without error")
-                return true
+                return null
             }
             0b01 -> {
                 Log.i(TAG, "Command failed (error code is provided in the SlotError field)")
@@ -414,7 +419,7 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
             }
             SCardReader.SlotError.CMD_NOT_SUPPORTED.code -> {
                 // TODO CRA do something in springcore fw ??
-                return true
+                return null
             }
             else -> {
                 Log.w(TAG, "CCID Error code not handled")
@@ -423,18 +428,9 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
             }
         }
 
-        currentState = State.Idle
-
-        if(scardReaderList.isAlreadyCreated) {
-            postCardOrReaderError(errorCode, detail, slot)
-        }
-        else {
-            Log.e(TAG, "Error reader or card: ${errorCode.name}, $detail")
-        }
-
         slot.cardError = true
 
-        return false
+        return SCardError(errorCode, detail)
     }
 
 
@@ -447,8 +443,10 @@ internal abstract class CommunicationLayer(userCallbacks: SCardReaderListCallbac
         interpretSlotsStatusInCcidHeader(ccidResponse.slotStatus, slot)
 
         /* Check slot error */
-        if(!interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)) {
+        val error = interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)
+        if(error != null) {
             Log.d(TAG, "Error, do not process CCID packet, returning to Idle state")
+            postCardOrReaderError(error, slot)
             return
         }
 
