@@ -28,8 +28,16 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun transmit(command: ByteArray) {
+
+        /* Update to new state and lock machine state if necessary */
+        parent.parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
+        /* Build the frame */
         val ccidCmd = parent.parent.ccidHandler.scardTransmit(parent.index.toByte(), command)
-        parent.parent.processAction(Action.Writing(ccidCmd))
+
+        /* Send the frame */
+        parent.parent.commLayer.writeCommand(ccidCmd)
+
+        /* NB: The lock will be exited when the response will arrive */
     }
 
     /**
@@ -38,8 +46,9 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun disconnect() {
+        parent.parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index.toByte())
-        parent.parent.processAction(Action.Writing(ccidCmd))
+        parent.parent.commLayer.writeCommand(ccidCmd)
     }
 
     /**

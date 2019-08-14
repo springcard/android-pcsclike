@@ -68,12 +68,16 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     /* Deprecated */
     private fun getStatus() {
-        parent.processAction(Action.Writing(parent.ccidHandler.scardStatus(index.toByte())))
+        parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
+        val ccidCmd = parent.ccidHandler.scardStatus(index.toByte())
+        parent.commLayer.writeCommand(ccidCmd)
     }
 
     /* Deprecated */
     private fun cardDisconnect() {
-        parent.processAction(Action.Writing(parent.ccidHandler.scardDisconnect(index.toByte())))
+        parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
+        val ccidCmd = parent.ccidHandler.scardDisconnect(index.toByte())
+        parent.commLayer.writeCommand(ccidCmd)
     }
 
     /**
@@ -84,10 +88,12 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
     fun cardConnect() {
         if(channel.atr.isNotEmpty() && cardPresent) {
             cardConnected = true
-            parent.postCallback({ parent.callbacks.onCardConnected(channel) }, parent.isAlreadyCreated, false)
+            parent.postCallback { parent.callbacks.onCardConnected(channel) }
         }
         else {
-            parent.processAction(Action.Writing(parent.ccidHandler.scardConnect(index.toByte())))
+            parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
+            val ccidCmd = parent.ccidHandler.scardConnect(index.toByte())
+            parent.commLayer.writeCommand(ccidCmd)
         }
     }
 

@@ -19,37 +19,16 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
 
     override fun create(ctx : Context) {
         if(layerDevice is BluetoothDevice) {
-            commLayer = BleLayer(layerDevice, callbacks, this)
-            processAction(Action.Create(ctx))
+            commLayer = BleLayer(this, layerDevice)
+            commLayer.connect(ctx)
         }
     }
 
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         if(layerDevice is BluetoothDevice) {
-            commLayer = BleLayer(layerDevice, callbacks, this)
+            commLayer = BleLayer(this, layerDevice)
             ccidHandler = CcidHandler(this, secureConnexionParameters)
-            processAction(Action.Create(ctx))
+            commLayer.connect(ctx)
         }
-    }
-
-    companion object {
-        /**
-         * Communication supervision timeout in ms (30s by default).
-         *
-         * If a communication takes too much time it will disconnect the device.
-         *
-         * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly.
-         */
-        //var communicationSupervisionTimeout: Long = 30_000
-
-
-        /**
-         * Connexion supervision timeout in ms (30s by default)
-         *
-         * If the device is not powered or is too long to respond to the connect action, it will not connect and the error callback.
-         *
-         * A small value will increase the reactivity but if it's too short it will disconnect unexpectedly
-         */
-        //var connexionSupervisionTimeout: Long = 30_000
     }
 }

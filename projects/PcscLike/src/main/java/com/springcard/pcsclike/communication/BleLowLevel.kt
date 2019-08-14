@@ -1,30 +1,76 @@
+/**
+ * Copyright (c) 2018-2019 SpringCard - www.springcard.com
+ * All right reserved
+ * This software is covered by the SpringCard SDK License Agreement - see LICENSE.txt
+ */
+
 package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
+import android.content.Context
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.support.annotation.RequiresApi
 import android.util.Log
 import com.springcard.pcsclike.SCardError
-import com.springcard.pcsclike.SCardReaderListBle
+import com.springcard.pcsclike.SCardReader
+import com.springcard.pcsclike.SCardReaderList
+import com.springcard.pcsclike.ccid.CcidFrame
+import com.springcard.pcsclike.ccid.CcidHandler
 import com.springcard.pcsclike.utils.*
+import java.lang.Exception
+import java.util.*
+import kotlin.experimental.and
+import kotlin.experimental.inv
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-internal class BleLowLevel(private val highLayer: BleLayer) {
+internal class BleLowLevel(private val scardReaderList: SCardReaderList, private val bluetoothDevice: BluetoothDevice): LowLevelLayer {
+
+    private val uuidCharacteristicsToReadPower by lazy {
+        mutableListOf<UUID>(
+            GattAttributesSpringCore.UUID_BATTERY_POWER_STATE_CHAR,
+            GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR
+        )
+    }
+
+    private val uuidCharacteristicsToRead by lazy {
+        mutableListOf<UUID>(
+            GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR,
+            GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR,
+            GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR,
+            GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR,
+            GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR,
+            GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR,
+            GattAttributesSpringCore.UUID_PNP_ID_CHAR,
+            GattAttributesSpringCore.UUID_CCID_STATUS_CHAR
+        )
+    }
+
+    private val uuidCharacteristicsCanIndicate by lazy {
+        mutableListOf<UUID>(
+            GattAttributesSpringCore.UUID_CCID_STATUS_CHAR,
+            GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR
+        )
+    }
+
+    private var characteristicsToRead : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
+    private var characteristicsCanIndicate : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
+    private var characteristicsToReadPower : MutableList<BluetoothGattCharacteristic> = mutableListOf<BluetoothGattCharacteristic>()
+    internal lateinit var charCcidPcToRdr : BluetoothGattCharacteristic
+    private lateinit var charCcidStatus : BluetoothGattCharacteristic
 
     private val TAG = this::class.java.simpleName
     private lateinit var mBluetoothGatt: BluetoothGatt
-    private var currentTimeout: Long = 0 // 0 means that there is no pending timeout operations
-    private var bleSupervisionTimeoutCallback: Runnable = Runnable {
-        Log.e(TAG, "Timeout BLE after ${currentTimeout}ms")
-        /* Post callback, but set isFatal to false, because device already disconnected */
-        highLayer.postReaderListError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED,"The device may be disconnected or powered off", false)
-        mBluetoothGatt.close()
-    }
-    private val bleSupervisionTimeout: Handler by lazy {
-        Handler(Looper.getMainLooper())
-    }
+
+    private var cptConnectAttempts: Int = 0
+    private var indexCharToBeRead: Int = 0
+    private var indexCharToBeSubscribed: Int = 0
+
+    /* Write/Read pointers */
+    private var txBuffer = mutableListOf<Byte>()
+    private var txBufferCursorBegin = 0
+    private var txBufferCursorEnd = 0
+    private var rxBuffer = mutableListOf<Byte>()
+
 
     /* Various callback methods defined by the BLE API */
     private val mGattCallback =
@@ -34,7 +80,7 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 status: Int,
                 newState: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                     /* Ask to reduce interval timer to 7.5 ms (android 5) or 11.25 ms */
@@ -42,9 +88,10 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                     /* The device will reduce the supervision timeout itself */
                     mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
 
-                    highLayer.process(Event.Connected())
+                    Log.i(TAG, "Attempting to start service discovery")
+                    mBluetoothGatt.discoverServices()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    highLayer.process(Event.Disconnected())
+                    scardReaderList.commLayer.onDisconnected()
                 } else {
                     if (newState == BluetoothProfile.STATE_CONNECTING)
                         Log.i(TAG, "BLE state changed, unhandled STATE_CONNECTING")
@@ -58,8 +105,60 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 gatt: BluetoothGatt,
                 status: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(Event.ServicesDiscovered(status))
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DIALOG_ERROR, "Unable to discover GATT, onServicesDiscovered returned: $status"))
+                    return
+                }
+
+                val services = mBluetoothGatt.services
+                Log.d(TAG, services.toString())
+
+                if(services.isEmpty()) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.MISSING_SERVICE, "Android thinks that the GATT of the device is empty"))
+                    return
+                }
+
+                /* If device is already known, do not read any char except CCID status */
+                if(scardReaderList.isCorrectlyKnown) {
+                    uuidCharacteristicsToRead.clear()
+                    uuidCharacteristicsToRead.add(GattAttributesSpringCore.UUID_CCID_STATUS_CHAR)
+                }
+
+                for (srv in services) {
+                    Log.d(TAG, "Service = " + srv.uuid.toString())
+                    for (chr in srv.characteristics) {
+                        Log.d(TAG, "    Characteristic = ${chr.uuid}")
+
+                        if(uuidCharacteristicsCanIndicate.contains(chr.uuid)) {
+                            characteristicsCanIndicate.add(chr)
+                        }
+                        if(uuidCharacteristicsToRead.contains(chr.uuid)){
+                            characteristicsToRead.add(chr)
+                        }
+                        if(uuidCharacteristicsToReadPower.contains(chr.uuid)) {
+                            characteristicsToReadPower.add(chr)
+                        }
+                        if(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR == chr.uuid) {
+                            charCcidPcToRdr = chr
+                        }
+
+                        if((GattAttributesSpringCore.UUID_CCID_STATUS_CHAR == chr.uuid)) {
+                            charCcidStatus = chr
+                        }
+                    }
+                }
+
+                if(uuidCharacteristicsCanIndicate.size != characteristicsCanIndicate.size
+                    || uuidCharacteristicsToRead.size != characteristicsToRead.size
+                    || uuidCharacteristicsToReadPower.size != characteristicsToReadPower.size) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.MISSING_CHARACTERISTIC, "One or more characteristic are missing in the GATT"))
+                    return
+                }
+
+                Log.d(TAG, "Go to ReadingInformation")
+                /* Trigger 1st read */
+                mBluetoothGatt.readCharacteristic(characteristicsToRead[0])
             }
 
             override// Result of a characteristic read operation
@@ -68,14 +167,97 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 characteristic: BluetoothGattCharacteristic,
                 status: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                Log.i(TAG, "BLE event (${object {}.javaClass.enclosingMethod!!.name})")
                 Log.d(TAG, "Read ${characteristic.value.toHexString()} on characteristic ${characteristic.uuid}")
-                highLayer.process(
-                    Event.CharacteristicRead(
-                        characteristic,
-                        status
-                    )
-                )
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(
+                        SCardError.ErrorCodes.READ_CHARACTERISTIC_FAILED,
+                        "Failed to subscribe to read characteristic $characteristic"
+                    ))
+                    return
+                }
+
+                val error: SCardError
+
+                when (characteristic.uuid) {
+                    GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR -> scardReaderList.constants.productName =
+                        characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_SERIAL_NUMBER_STRING_CHAR -> {
+                        scardReaderList.constants.serialNumber = characteristic.value.toString(charset("ASCII"))
+                        scardReaderList.constants.serialNumberRaw =
+                            characteristic.value.toString(charset("ASCII")).hexStringToByteArray()
+                    }
+                    GattAttributesSpringCore.UUID_FIRMWARE_REVISION_STRING_CHAR -> scardReaderList.constants.softwareVersion =
+                        characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_HARDWARE_REVISION_STRING_CHAR -> scardReaderList.constants.hardwareVersion =
+                        characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_SOFTWARE_REVISION_STRING_CHAR -> {
+                        try {
+                            scardReaderList.constants.setVersionFromRevString(
+                                characteristic.value.toString(charset("ASCII"))
+                            )
+                        }
+                        catch (e: Exception) {
+                            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Incorrect firmware revision: ${characteristic.value.toString(charset("ASCII"))}"))
+                        }
+                    }
+                    GattAttributesSpringCore.UUID_MANUFACTURER_NAME_STRING_CHAR -> scardReaderList.constants.vendorName =
+                        characteristic.value.toString(charset("ASCII"))
+                    GattAttributesSpringCore.UUID_PNP_ID_CHAR -> scardReaderList.constants.pnpId =
+                        characteristic.value.toHexString()
+                    GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
+
+                        val slotCount = characteristic.value[0] and CcidHandler.LOW_POWER_NOTIFICATION.inv()
+
+                        if (slotCount.toInt() == 0) {
+                            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "This device has 0 slots"))
+                            return
+                        }
+
+                        /* Add n new readers */
+                        for (i in 0 until slotCount) {
+                            scardReaderList.readers.add(SCardReader(scardReaderList))
+                        }
+
+                        /* Retrieve readers name */
+                        if (scardReaderList.isCorrectlyKnown) {
+                            for (i in 0 until slotCount) {
+                                scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
+                                scardReaderList.readers[i].index = i
+                            }
+                        } else {
+                            /* Otherwise set temporary names and add to list */
+                            for (i in 0 until slotCount) {
+                                scardReaderList.readers[i].name = "Slot $i"
+                                scardReaderList.readers[i].index = i
+                                scardReaderList.slotsNameToRead.add(i)
+                            }
+                        }
+
+                        /* Update readers status */
+                        /* Set isNotification = false, because we read the CCID status */
+                        val listSlotsUpdated = mutableListOf<SCardReader>()
+                        val readCcidStatus = characteristic.value.drop(1).toByteArray()
+                        error  = scardReaderList.ccidHandler.interpretCcidStatus(readCcidStatus, listSlotsUpdated, isNotification = false)
+
+                        if(error.code != SCardError.ErrorCodes.NO_ERROR) {
+                            scardReaderList.commLayer.onCommunicationError(error)
+                        }
+                    }
+                    else -> {
+                        Log.w(TAG, "Unhandled characteristic read : ${characteristic.uuid}")
+                    }
+                }
+
+                indexCharToBeRead++
+                if (indexCharToBeRead < characteristicsToRead.size) {
+                    mBluetoothGatt.readCharacteristic(characteristicsToRead[indexCharToBeRead])
+                }
+                else {
+                    Log.d(TAG, "Reading Information finished")
+                    /* Trigger 1st subscribing */
+                    enableNotifications(characteristicsCanIndicate[0])
+                }
             }
 
             override fun onCharacteristicWrite(
@@ -83,13 +265,15 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 characteristic: BluetoothGattCharacteristic,
                 status: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(
-                    Event.CharacteristicWritten(
-                        characteristic,
-                        status
-                    )
-                )
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
+                if(status != BluetoothGatt.GATT_SUCCESS) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED, "Failed to write on characteristic $characteristic"))
+                    return
+                }
+
+                if (!ccidWriteCharSequenced()) {
+                    Log.d(TAG, "There is still data to write")
+                }
             }
 
             override// Characteristic notification
@@ -97,13 +281,40 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
                 Log.d(TAG, "Characteristic ${characteristic.uuid} changed, value : ${characteristic.value.toHexString()}")
-                highLayer.process(
-                    Event.CharacteristicChanged(
-                        characteristic
-                    )
-                )
+
+                when {
+                    characteristic.uuid == GattAttributesSpringCore.UUID_CCID_STATUS_CHAR -> {
+
+                        /* Update Device state */
+                        val error = interpretFirstByteCcidStatusBle(characteristic.value[0])
+                        if(error.code != SCardError.ErrorCodes.NO_ERROR) {
+                            scardReaderList.commLayer.onCommunicationError(error)
+                            return
+                        }
+
+                        /* Update readers status */
+                        val readCcidStatus = characteristic.value.drop(1).toByteArray()
+                        scardReaderList.commLayer.onStatusReceived(readCcidStatus)
+                    }
+                    characteristic.uuid == GattAttributesSpringCore.UUID_CCID_RDR_TO_PC_CHAR -> {
+
+                        rxBuffer.addAll(characteristic.value.toList())
+                        val ccidLength = scardReaderList.ccidHandler.getCcidLength(rxBuffer.toByteArray())
+
+                        /* Check if the Response is compete or not */
+                        if(rxBuffer.size - CcidFrame.HEADER_SIZE != ccidLength) {
+                            Log.d(TAG, "Frame not complete, excepted length = $ccidLength")
+                        }
+                        else {
+                            Log.d(TAG, "Write finished")
+                            scardReaderList.commLayer.onResponseReceived(rxBuffer.toByteArray())
+                            rxBuffer.clear()
+                        }
+                    }
+                    else -> Log.w(TAG, "Notification arrived on wrong characteristic ${characteristic.uuid}")
+                }
             }
 
             override fun onDescriptorWrite(
@@ -111,88 +322,82 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
                 descriptor: BluetoothGattDescriptor,
                 status: Int
             ) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-                highLayer.process(
-                    Event.DescriptorWritten(
-                        descriptor,
-                        status
-                    )
-                )
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
+                if(status != BluetoothGatt.GATT_SUCCESS) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED, "Failed to subscribe to notification for characteristic ${descriptor.characteristic}"))
+                    return
+                }
+
+                indexCharToBeSubscribed++
+                if (indexCharToBeSubscribed < characteristicsCanIndicate.size) {
+                    val chr = characteristicsCanIndicate[indexCharToBeSubscribed]
+                    enableNotifications(chr)
+                }
+                else {
+                    Log.d(TAG, "Subscribing finished")
+                    scardReaderList.commLayer.onCreateFinished()
+                }
             }
 
             override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
-                cancelTimer(object{}.javaClass.enclosingMethod!!.name)
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
                 Log.d(TAG, "MTU size = $mtu")
-                highLayer.process(Event.Connected())
                 super.onMtuChanged(gatt, mtu, status)
             }
         }
 
-
     /* Utilities methods */
 
-    fun connect() {
+    override fun connect(ctx: Context) {
         Log.d(TAG, "Connect")
-        mBluetoothGatt = highLayer.bluetoothDevice.connectGatt(highLayer.context, false, mGattCallback)
-        /*beginTimer(object{}.javaClass.enclosingMethod!!.name,
-            SCardReaderListBle.connexionSupervisionTimeout
-        )*/
+        /* Context is useless and could be set to null */
+        /* cf https://stackoverflow.com/questions/56642912/why-android-bluetoothdevice-conenctgatt-require-context-if-it-not-use-it */
+        mBluetoothGatt = bluetoothDevice.connectGatt(ctx, false, mGattCallback)
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         Log.d(TAG, "Disconnect")
         mBluetoothGatt.disconnect()
-        beginTimer(object{}.javaClass.enclosingMethod!!.name)
+        Log.i(TAG, "BLE action (${object{}.javaClass.enclosingMethod!!.name})")
     }
 
-    fun close() {
+    override fun close() {
         Log.d(TAG, "Close")
         mBluetoothGatt.close()
-        /* Last timer canceled */
-        cancelTimer(object{}.javaClass.enclosingMethod!!.name)
-    }
-
-    fun discoverGatt() {
-        mBluetoothGatt.discoverServices()
-        beginTimer(object{}.javaClass.enclosingMethod!!.name)
-    }
-
-    fun getServices(): List<BluetoothGattService> {
-        return mBluetoothGatt.services
-    }
-
-    fun readCharacteristic(chr: BluetoothGattCharacteristic) {
-        mBluetoothGatt.readCharacteristic(chr)
-        beginTimer(object{}.javaClass.enclosingMethod!!.name)
     }
 
 
-    private var dataToWrite = mutableListOf<Byte>()
-    private var dataToWriteCursorBegin = 0
-    private var dataToWriteCursorEnd = 0
+    override fun write(data: List<Byte>) {
+        putDataToBeWrittenSequenced(data)
+        /* Trigger 1st write */
+        ccidWriteCharSequenced()
+    }
 
-
-    fun putDataToBeWrittenSequenced(data: List<Byte>) {
-        dataToWrite.clear()
-        dataToWrite.addAll(data)
-        dataToWriteCursorBegin = 0
-        dataToWriteCursorEnd = 0
+    private fun putDataToBeWrittenSequenced(data: List<Byte>) {
+        txBuffer.clear()
+        txBuffer.addAll(data)
+        txBufferCursorBegin = 0
+        txBufferCursorEnd = 0
     }
 
     /* return Boolean true if finished */
-    fun ccidWriteCharSequenced(): Boolean {
+    private fun ccidWriteCharSequenced(): Boolean {
         /* Temporary workaround: we can not send to much data in one write */
         /* (we can write more than MTU but less than ~512 bytes) */
         val maxSize = 512
-        return if(dataToWriteCursorBegin < dataToWrite.size) {
-            dataToWriteCursorEnd =  minOf(dataToWriteCursorBegin+maxSize, dataToWrite.size)
-            highLayer.charCcidPcToRdr.value = dataToWrite.toByteArray().sliceArray(dataToWriteCursorBegin until dataToWriteCursorEnd)
+        return if(txBufferCursorBegin < txBuffer.size) {
+            txBufferCursorEnd =  minOf(txBufferCursorBegin+maxSize, txBuffer.size)
+            charCcidPcToRdr.value = txBuffer.toByteArray().sliceArray(txBufferCursorBegin until txBufferCursorEnd)
             /* If the data length is greater than MTU, Android will automatically send multiple packets */
             /* There is no need to split the data ourself  */
-            mBluetoothGatt.writeCharacteristic(highLayer.charCcidPcToRdr)
-            Log.d(TAG, "Writing ${highLayer.charCcidPcToRdr.value.toHexString()}")
-            dataToWriteCursorBegin = dataToWriteCursorEnd
-            beginTimer(object{}.javaClass.enclosingMethod!!.name)
+            Log.d(TAG, "Writing ${charCcidPcToRdr.value.toHexString()}")
+            if(!mBluetoothGatt.writeCharacteristic(charCcidPcToRdr)) {
+                scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.WRITE_CHARACTERISTIC_FAILED, "Failed to write in characteristic ${charCcidPcToRdr.uuid}"))
+                return true
+            }
+
+            txBufferCursorBegin = txBufferCursorEnd
+            Log.i(TAG, "BLE action (${object{}.javaClass.enclosingMethod!!.name})")
             false
         } else {
             true
@@ -204,31 +409,55 @@ internal class BleLowLevel(private val highLayer: BleLayer) {
         val descriptor = chr.descriptors[0]
         descriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
         if (!mBluetoothGatt.writeDescriptor(descriptor)) {
-            highLayer.postReaderListError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED,"Failed to write in descriptor, to enable notification on characteristic ${chr.uuid}")
+            scardReaderList.commLayer.onCommunicationError(
+                SCardError(SCardError.ErrorCodes.ENABLE_CHARACTERISTIC_EVENTS_FAILED,
+                    "Failed to write in descriptor, to enable notification on characteristic ${chr.uuid}"))
             return
         }
     }
 
+    fun interpretFirstByteCcidStatusBle(data: Byte): SCardError {
 
-    /* Timeout utilities */
+        val slotCount = data and CcidHandler.LOW_POWER_NOTIFICATION.inv()
 
-    private fun beginTimer(callingMethod: String = ""/*, duration: Long = SCardReaderListBle.communicationSupervisionTimeout*/) {
-        Log.i(TAG, "BLE action ($callingMethod)")
-
-        /* Reset timeout if there is one already running */
-        /*if(currentTimeout != 0.toLong()) {
-            bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)
+        if(slotCount.toInt() != scardReaderList.readers.size) {
+            return SCardError(
+                SCardError.ErrorCodes.PROTOCOL_ERROR,
+                "Error, the number of slots in the CCID Status ($slotCount) does not match the number of slots of the device (${scardReaderList.readers.size})"
+            )
         }
 
-        currentTimeout = duration
-        bleSupervisionTimeout.postDelayed(bleSupervisionTimeoutCallback, duration)*/
-    }
+        /* Is slot count matching nb of readers in scardReaderList obj */
+        if (slotCount.toInt() != scardReaderList.readers.size) {
+            return SCardError(
+                SCardError.ErrorCodes.PROTOCOL_ERROR,
+                "Error, slotCount in frame ($slotCount) does not match slotCount in scardReaderList (${scardReaderList.readers.size})"
+            )
+        }
 
-    private fun cancelTimer(callingMethod: String = "") {
-        Log.i(TAG, "BLE event ($callingMethod)")
-        /*bleSupervisionTimeout.removeCallbacks(bleSupervisionTimeoutCallback)*/
-        /* Reset current timeout to indicate that there is no action running*/
-        /*currentTimeout = 0*/
-    }
+        /* If msb is set the device is gone to sleep, otherwise it is awake */
+        val isSleeping = data and CcidHandler.LOW_POWER_NOTIFICATION == CcidHandler.LOW_POWER_NOTIFICATION
 
+        /* Product waking-up */
+        if (scardReaderList.isSleeping && !isSleeping) {
+            /* Set var before sending callback */
+            scardReaderList.isSleeping = isSleeping
+            scardReaderList.commLayer.onDeviceState(isSleeping)
+        }
+        /* Device going to sleep */
+        else if (!scardReaderList.isSleeping && isSleeping) {
+            /* Set var before sending callback */
+            scardReaderList.isSleeping = isSleeping
+            scardReaderList.commLayer.onDeviceState(isSleeping)
+        } else if (scardReaderList.isSleeping && isSleeping) {
+            Log.i(TAG, "Device is still sleeping...")
+        } else if (!scardReaderList.isSleeping && !isSleeping) {
+            Log.i(TAG, "Device is still awake...")
+        }
+
+        /* Update device state */
+        scardReaderList.isSleeping = isSleeping
+
+        return SCardError(SCardError.ErrorCodes.NO_ERROR)
+    }
 }

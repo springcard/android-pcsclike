@@ -8,12 +8,11 @@ package com.springcard.pcsclike_sample
 
 import android.app.ProgressDialog
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.os.SystemClock
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.AlertDialog
+import android.util.Log
 import android.view.*
 import android.widget.*
 import com.springcard.pcsclike.*
@@ -22,6 +21,10 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_device.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.lang.Exception
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.experimental.and
+import kotlin.experimental.inv
 
 
 abstract class DeviceFragment : Fragment() {
@@ -45,6 +48,7 @@ abstract class DeviceFragment : Fragment() {
     protected lateinit var  mainActivity: MainActivity
     private var isUInitialized = false
     private var isDeviceInitialized = false
+    private var readingPower = false
 
 
     /* Various callback methods defined by the ScardReaderLis */
@@ -69,10 +73,10 @@ abstract class DeviceFragment : Fragment() {
             loadDefaultApdus()
         }
 
-        override fun onReaderListClosed(readerList: SCardReaderList) {
+        override fun onReaderListClosed(readerList: SCardReaderList?) {
             mainActivity.logInfo("onReaderListClosed")
 
-            if(!isDeviceInitialized) {
+            if(readerList == null || !isDeviceInitialized) {
                 mainActivity.logInfo("SCardReaderList not initialized")
                 progressDialog.dismiss()
                 mainActivity.backToScanFragment()
@@ -97,47 +101,6 @@ abstract class DeviceFragment : Fragment() {
                 return
             }
             handleRapdu(response)
-        }
-
-        override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
-            mainActivity.logInfo("onPowerInfo")
-
-            if(readerList != scardDevice) {
-                mainActivity.logInfo("Error: wrong SCardReaderList")
-                return
-            }
-
-            /* Info dialog */
-            val builder = AlertDialog.Builder(activity!!)
-
-            builder.setTitle(deviceName)
-
-            var deviceInfo = "Vendor: ${scardDevice.vendorName}\n" +
-                    "Product: ${scardDevice.productName}\n" +
-                    "Serial Number: ${scardDevice.serialNumber}\n" +
-                    "FW Version: ${scardDevice.firmwareVersion}\n" +
-                    "FW Version Major: ${scardDevice.firmwareVersionMajor}\n" +
-                    "FW Version Minor: ${scardDevice.firmwareVersionMinor}\n" +
-                    "FW Version Build: ${scardDevice.firmwareVersionBuild}\n" +
-                    "Battery Level: $batteryLevel%\n"
-
-            when (powerState) {
-                0 -> deviceInfo += "Unknown source of power"
-                1 -> deviceInfo += "External power supply present"
-                2 -> deviceInfo += "Running on battery"
-            }
-
-            // Do something when user press the positive button
-            builder.setMessage(deviceInfo)
-
-            // Set a positive button and its click listener on alert dialog
-            builder.setPositiveButton("OK") { _, _ ->
-                // Do something when user press the positive button
-            }
-
-            // Finally, make the alert dialog using builder
-            val dialog: AlertDialog = builder.create()
-            dialog.show()
         }
 
         override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
@@ -201,7 +164,7 @@ abstract class DeviceFragment : Fragment() {
                 mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName } (z)")
 
                 /* Disable all UI */
-                updateCardStatus(currentSlot!!, false, false)
+                updateCardStatus(currentSlot!!, cardPresent = false, cardConnected = false)
                 disconnectCardButton.isEnabled = false
                 connectCardButton.isEnabled = false
                 transmitButton.isEnabled = false
@@ -217,10 +180,8 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
 
-            if(readerList == null) {
+            if(readerList == null || !isDeviceInitialized) {
                 mainActivity.logInfo("SCardReaderList not initialized")
-                progressDialog.dismiss()
-                mainActivity.backToScanFragment()
                 return
             }
 
@@ -277,8 +238,8 @@ abstract class DeviceFragment : Fragment() {
             // handle item selection
             when (item.itemId) {
                 R.id.action_info -> {
-
-                    scardDevice.getPowerInfo()
+                    readingPower = true
+                    scardDevice.control("5820BC".hexStringToByteArray())
                     return true
                 }
                 R.id.action_shutdown -> {
@@ -310,14 +271,6 @@ abstract class DeviceFragment : Fragment() {
 
             quitAndDisconnect()
             mainActivity.drawer_layout.closeDrawer(GravityCompat.START)
-        }
-
-        nextButton.setOnClickListener {
-            goToNextCommand()
-        }
-
-        prevButton.setOnClickListener {
-            goToPreviousCommand()
         }
 
         if(!isUInitialized && ::scardDevice.isInitialized) {
@@ -487,6 +440,12 @@ abstract class DeviceFragment : Fragment() {
     }
 
     private fun handleRapdu(response: ByteArray) {
+
+        if(readingPower) {
+            onPowerInfo(response)
+            return
+        }
+
         val responseString = response.toHexString()
         mainActivity.logInfo(">$responseString")
         rapduTextBox.text.append(responseString + "\n")
@@ -515,63 +474,61 @@ abstract class DeviceFragment : Fragment() {
     }
 
 
-    /* handle Prev/next Apdu list history */
+    private fun onPowerInfo(data: ByteArray) {
 
-    private var apduSend = mutableListOf<String>()
-    private var indexCommand = 0
+        mainActivity.logInfo("onPowerInfo")
+        readingPower = false
 
-    private fun addExecutedApdu(commandExecuted: String) {
-        /* Add command if the previous one is not the same */
-        if(apduSend.size > 0) {
-            if (apduSend[apduSend.size - 1] != commandExecuted) {
-                apduSend.add(commandExecuted)
-                indexCommand = apduSend.size-1
+        var batteryLevel = "Unknown"
+        var powerState = "Unknown"
+
+        /* Remove 00 */
+        val batteryData = data.drop(1).toByteArray()
+
+        if(batteryData.size != 9) {
+            mainActivity.logInfo("Wrong size : ${batteryData.size}")
+        }
+        else {
+            batteryLevel = "${batteryData[0]}%"
+
+            val batteryCurrentArray =  batteryData.slice(7 .. 8).toByteArray()
+            val buffer = ByteBuffer.wrap(batteryCurrentArray)
+            val batteryCurrent = buffer.short
+
+            powerState = if(batteryCurrent > 0) {
+                "Charging"
+            } else {
+                "Discharging"
             }
         }
-        else {
-            /* 1st element */
-            apduSend.add(commandExecuted)
-            indexCommand = apduSend.size-1
-        }
 
-        enableButton(prevButton, true)
-        enableButton(nextButton, false)
-    }
+        /* Info dialog */
+        val builder = AlertDialog.Builder(activity!!)
 
-    private fun goToPreviousCommand() {
-        enableButton(nextButton, true)
+        builder.setTitle(deviceName)
 
-        if(indexCommand == 0) {
-            enableButton(prevButton, false)
-        }
-        else {
-            indexCommand--
-            capduTextBox.setText(apduSend[indexCommand])
-        }
-    }
-
-    private fun goToNextCommand() {
-        enableButton(prevButton, true)
-
-        if(indexCommand == apduSend.size-1) {
-            enableButton(nextButton, false)
-        }
-        else {
-            indexCommand++
-            capduTextBox.setText(apduSend[indexCommand])
-        }
-    }
+        val deviceInfo = "Vendor: ${scardDevice.vendorName}\n" +
+                "Product: ${scardDevice.productName}\n" +
+                "Serial Number: ${scardDevice.serialNumber}\n" +
+                "FW Version: ${scardDevice.firmwareVersion}\n" +
+                "FW Version Major: ${scardDevice.firmwareVersionMajor}\n" +
+                "FW Version Minor: ${scardDevice.firmwareVersionMinor}\n" +
+                "FW Version Build: ${scardDevice.firmwareVersionBuild}\n" +
+                "Battery Level: $batteryLevel\n" +
+                "Current: $powerState"
 
 
-    private fun enableButton(button: ImageButton, enable: Boolean) {
-        if(enable) {
-            button.isClickable = true
-            button.visibility = Button.VISIBLE
+        // Do something when user press the positive button
+        builder.setMessage(deviceInfo)
+
+        // Set a positive button and its click listener on alert dialog
+        builder.setPositiveButton("OK") { _, _ ->
+            // Do something when user press the positive button
         }
-        else {
-            button.isClickable = false
-            button.visibility = Button.INVISIBLE
-        }
+
+        // Finally, make the alert dialog using builder
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 
     private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {

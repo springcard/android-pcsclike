@@ -9,12 +9,13 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.utils.*
 import com.springcard.pcsclike.ccid.CcidFrame
 import java.nio.ByteBuffer
 
 
-internal class UsbLowLevel(private val highLayer: UsbLayer) {
+internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private val usbDevice: UsbDevice): LowLevelLayer {
 
     private val TAG = this::class.java.simpleName
 
@@ -35,9 +36,7 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
     private lateinit var usbDeviceConnection: UsbDeviceConnection
     private lateinit var descriptors : ByteArray
 
-    private val usbManager: UsbManager by lazy {
-        highLayer.context.getSystemService(Context.USB_SERVICE) as UsbManager
-    }
+    private lateinit var context: Context
 
 
     private val mWaiterThread by lazy {
@@ -54,28 +53,31 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
 
     /* Utilities func */
 
-    internal fun connect(): Boolean {
+    override fun connect(ctx: Context) {
+
+        context = ctx
 
         /* query for interface */
-        if (highLayer.usbDevice.interfaceCount == 0) {
+        if (usbDevice.interfaceCount == 0) {
             Log.e(TAG, "Could not find interface ")
-            return false
+            return
         }
-        val usbInterface = highLayer.usbDevice.getInterface(0)
+        val usbInterface = usbDevice.getInterface(0)
 
         /* check for endpoint */
         if (usbInterface.endpointCount == 0) {
             Log.e(TAG, "could not find endpoint")
-            return false
+            return
         }
 
         /* connect to device */
+        val usbManager: UsbManager = ctx.getSystemService(Context.USB_SERVICE) as UsbManager
         try {
-            usbDeviceConnection = usbManager.openDevice(highLayer.usbDevice)
+            usbDeviceConnection = usbManager.openDevice(usbDevice)
             descriptors = usbDeviceConnection.rawDescriptors
         } catch (e: IllegalArgumentException) {
-            Log.e(TAG, "Could not open device ${highLayer.usbDevice}")
-            return false
+            Log.e(TAG, "Could not open device $usbDevice")
+            return
         }
 
         /* grab endpoints */
@@ -100,20 +102,18 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
                 }
             }
 
-            highLayer.context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
+            context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
         }
 
         if (!::interruptIn.isInitialized || !::bulkOut.isInitialized || !::bulkIn.isInitialized) {
-            Log.e(TAG, "Device ${highLayer.usbDevice} miss on or more endpoint")
-            return false
+            Log.e(TAG, "Device $usbDevice miss on or more endpoint")
+            return
         }
 
         mWaiterThread.start()
 
         /* are those endpoints valid ? */
         //TODO
-
-        return true
     }
 
     internal fun getSlotCount(): Int {
@@ -144,9 +144,9 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
         val productName: String
         val serialNumber: String
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            manufacturerName = highLayer.usbDevice.manufacturerName ?: ""
-            productName = highLayer.usbDevice.productName ?: ""
-            serialNumber = highLayer.usbDevice.serialNumber ?: ""
+            manufacturerName = usbDevice.manufacturerName ?: ""
+            productName = usbDevice.productName ?: ""
+            serialNumber = usbDevice.serialNumber ?: ""
         } else {
             val buffer = ByteArray(255)
             manufacturerName = usbDeviceConnection.getString(descriptors, 14 /* iManufacturer */, buffer)
@@ -179,28 +179,37 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
         }
     }
 
-
-    internal fun disconnect() {
-        usbDeviceConnection.releaseInterface(highLayer.usbDevice.getInterface(0))
+    override fun disconnect() {
+        usbDeviceConnection.releaseInterface(usbDevice.getInterface(0))
         usbDeviceConnection.close()
         stop()
-        highLayer.context.unregisterReceiver(mUsbReceiver)
+        context.unregisterReceiver(mUsbReceiver)
+    }
+
+    override fun close() {
+        Log.d(TAG, "Close")
+        // TODO CRA close USB
     }
 
 
+    override fun write(data: List<Byte>) {
+        bulkOutTransfer(data.toByteArray())
+    }
 
 
     /* USB Entries / Outputs */
 
     private fun onInterruptIn(data: ByteArray) {
-        highLayer.process(Event.OnUsbInterrupt(data))
+        /* Update readers status */
+        val readCcidStatus = data.drop(1).toByteArray()
+        scardReaderList.commLayer.onStatusReceived(readCcidStatus)
     }
 
     private fun onBulkIn(data: ByteArray) {
-        highLayer.process(Event.OnUsbDataIn(data))
+        scardReaderList.commLayer.onResponseReceived(data)
     }
 
-    internal fun bulkOutTransfer(data: ByteArray) {
+    private fun bulkOutTransfer(data: ByteArray) {
         usbDeviceConnection.bulkTransfer(bulkOut, data, data.size, BULK_TIMEOUT_MS)
     }
 
@@ -211,9 +220,9 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
                 val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
                 device?.apply {
 
-                    if(device == highLayer.usbDevice) {
+                    if(device == usbDevice) {
                         /* Method that cleans up and closes communication with the device */
-                        highLayer.process(Action.Disconnect())
+                        disconnect()
                     }
                 }
             }
@@ -255,7 +264,7 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
                         val recvSize = interruptBuffer.position()
 
                         /* Compute size expected */
-                        val size = (highLayer.scardReaderList.slotCount/4) + 1
+                        val size = (scardReaderList.slotCount/4) + 1
 
                         /* Check if we received expected size */
                         if(recvSize < size +1) {
@@ -270,7 +279,7 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
 
                         /* Recompute CCID Slot Status like in BLE */
                         val ccidStatus = mutableListOf<Byte>()
-                        ccidStatus.add(highLayer.scardReaderList.slotCount.toByte())
+                        ccidStatus.add(scardReaderList.slotCount.toByte())
                         ccidStatus.addAll(data.toMutableList())
 
                         Log.d(TAG, "Received data on interruptIn, value : ${ccidStatus.toHexString()}")
@@ -297,7 +306,7 @@ internal class UsbLowLevel(private val highLayer: UsbLayer) {
                     inBuffer.get(rxBuffer, 0, recvSize)
 
                     /* Compute expected size */
-                    val ccidSize =  highLayer.scardReaderList.ccidHandler.getCcidLength(rxBuffer)
+                    val ccidSize =  scardReaderList.ccidHandler.getCcidLength(rxBuffer)
 
 
                     /* Check if we received expected size */

@@ -27,7 +27,7 @@ internal class SynchronizedSCardReaderListCallback(private var callbacks: SCardR
         callbacks.onReaderListCreated(readerList)
     }
 
-    override fun onReaderListClosed(readerList: SCardReaderList) {
+    override fun onReaderListClosed(readerList: SCardReaderList?) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
         callbacks.onReaderListClosed(readerList)
     }
@@ -55,11 +55,6 @@ internal class SynchronizedSCardReaderListCallback(private var callbacks: SCardR
     override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
         logMethodName(object{}.javaClass.enclosingMethod!!.name)
         callbacks.onTransmitResponse(channel, response)
-    }
-
-    override fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
-        callbacks.onPowerInfo(readerList, powerState, batteryLevel)
     }
 
     override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
@@ -94,7 +89,7 @@ abstract class SCardReaderListCallback {
      * When a disconnection from the current connected readerList is asked or when the readerList itself close
      * @param readerList SCardReaderList
      */
-    abstract fun onReaderListClosed(readerList: SCardReaderList)
+    abstract fun onReaderListClosed(readerList: SCardReaderList?)
 
     /**
      * When a response is received after a call to [SCardReaderList.control]
@@ -130,14 +125,6 @@ abstract class SCardReaderListCallback {
      * @param response a byte array if everything went well (empty in case of problem)
      */
     abstract fun onTransmitResponse(channel: SCardChannel, response: ByteArray)
-
-    /**
-     * Response to [SCardReaderList.getPowerInfo]
-     * @param readerList SCardReaderList
-     * @param powerState 0 : unknown, 1 : USB/5V power supply, 2 : on battery
-     * @param batteryLevel 0-100%
-     */
-    abstract fun onPowerInfo(readerList: SCardReaderList, powerState: Int, batteryLevel: Int)
 
     /* Error callbacks */
 

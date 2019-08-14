@@ -13,11 +13,10 @@ import com.springcard.pcsclike.communication.*
 
 class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks: SCardReaderListCallback): SCardReaderList(layerDevice as Any, callbacks) {
 
-
     override fun create(ctx : Context) {
         if(layerDevice is UsbDevice) {
-            commLayer = UsbLayer(layerDevice, callbacks, this)
-            processAction(Action.Create(ctx))
+            commLayer = UsbLayer(this, layerDevice)
+            commLayer.connect(ctx)
         }
     }
 

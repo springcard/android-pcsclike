@@ -16,7 +16,7 @@ package com.springcard.pcsclike
  * @property message Message corresponding to the ErrorCodes
  *
  */
-class SCardError(val code: ErrorCodes, val detail : String, val isFatal: Boolean = false) {
+class SCardError(val code: ErrorCodes, val detail : String = "", val isFatal: Boolean = false) {
 
     val message : String
     get() {
@@ -30,6 +30,10 @@ class SCardError(val code: ErrorCodes, val detail : String, val isFatal: Boolean
      */
     enum class ErrorCodes(val value: Int){
 
+        /**
+         * No Error, everything is OK
+         */
+        NO_ERROR(0x0000),
         /**
          * Invalid parameter
          */

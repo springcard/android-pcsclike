@@ -51,7 +51,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler(this)
-    internal var callbacksHandler  =  Handler(Looper.getMainLooper())
+    private var callbacksHandler  =  Handler(Looper.getMainLooper())
 
     internal inner class Constants {
         var vendorName: String = ""
@@ -68,8 +68,23 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         internal var pnpId: String = ""
 
         var slotsName = mutableListOf<String>()
+
+        fun setVersionFromRevString(revString: String) {
+            firmwareVersion = revString
+            firmwareVersionMajor = revString.split("-")[0].split(".")[0].toInt()
+            firmwareVersionMinor = revString.split("-")[0].split(".")[1].toInt()
+            constants.firmwareVersionBuild = revString.split("-")[1].toInt()
+        }
     }
     internal var constants = Constants()
+
+    /* List of data to read */
+    var slotsNameToRead = mutableListOf<Int>()
+    var slotsToConnect = mutableListOf<SCardReader>()
+
+    init {
+        Constants::class.java.declaredFields
+    }
 
     /* Keep old syntax */
     val vendorName: String
@@ -99,10 +114,18 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         internal set
     var isCorrectlyKnown = false
         internal set
-    internal var isAlreadyCreated = false
-
 
     internal var readers: MutableList<SCardReader> = mutableListOf<SCardReader>()
+
+    internal var powerState: Int  = 0
+        private set
+
+    internal var batterylevel: Int  = 0
+        private set
+
+    internal var lastError = SCardError(SCardError.ErrorCodes.NO_ERROR)
+
+    internal val machineState by lazy { DeviceMachineState(this) }
 
     private val libThread = HandlerThread("LibThread")
     private var libHandler: Handler
@@ -115,13 +138,13 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     private var locker : Object = Object()
     private var idThreadLocking = libThread.id
 
-    private fun lockMachineState() {
+    internal fun enterExclusive() {
         Log.d(TAG, "before lock")
         synchronized(locker) {
             while(isLocked) {
                 /* If this thread already hold the lock */
                 if(Thread.currentThread().id == idThreadLocking) {
-                    throw Exception("Could not process multiples actions from same thread: ${Thread.currentThread().name}")
+                    throw Exception("Could not setNewState multiples actions from same thread: ${Thread.currentThread().name}")
                 }
                 Log.d(TAG, "waiting...")
                 locker.wait()
@@ -132,7 +155,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             Log.d(TAG, "after lock")
         }
     }
-    private fun unlockMachineState() {
+
+    internal fun exitExclusive() {
         Log.d(TAG, "before unlock")
         synchronized(locker) {
             if(isLocked) {
@@ -150,20 +174,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         Log.d(TAG, "after unlock")
     }
 
-    /* If the lock is already active (internal state like autoconnect to card while creating) , do not try to relock */
-    internal fun processAction(action: Action, useLock: Boolean = true) {
-        Log.d(TAG, "processAction thread = ${Thread.currentThread().name}")
-        if(useLock) {
-            lockMachineState()
-        }
-        libHandler.post {
-            commLayer.process(action)
-        }
-    }
-
     internal abstract fun create(ctx : Context)
     internal abstract fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters)
-
 
     /**
      * The control function gives you direct control on the reader (even when there’s no card in it).
@@ -176,7 +188,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      */
     fun control(command: ByteArray) {
         val ccidCmd = ccidHandler.scardControl(command)
-        processAction(Action.Writing(ccidCmd))
+        commLayer.writeCommand(ccidCmd)
     }
 
 
@@ -193,7 +205,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         if(slotIndex >= readers.size)
         {
             /* error is not fatal --> do not close product */
-            commLayer.postReaderListError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: slotIndex $slotIndex is greater than number of slot ${readers.size}", false)
+            postCallback {callbacks.onReaderListError (this, SCardError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: slotIndex $slotIndex is greater than number of slot ${readers.size}"))}
             return null
         }
 
@@ -219,7 +231,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
             }
         }
         /* Error is not fatal --> do not close product */
-        commLayer.postReaderListError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: No slot with name $slotName found", false)
+        postCallback {callbacks.onReaderListError (this, SCardError(SCardError.ErrorCodes.NO_SUCH_SLOT, "Error: No slot with name $slotName found"))}
         return null
     }
 
@@ -242,39 +254,15 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * callback when succeed : [SCardReaderListCallback.onReaderListClosed]
      */
     fun close() {
-        processAction(Action.Disconnect())
+        commLayer.disconnect()
     }
-
-
-    /**
-     * Get battery level and power state from the device.
-     * callback: [SCardReaderListCallback.onPowerInfo]
-     *
-     * @throws Exception if the device is sleeping
-     */
-    fun getPowerInfo() {
-        processAction(Action.ReadPowerInfo())
-    }
-
 
     /**
      * Post a callback to the main thread if the device is created
      * @param callback () -> Lambda to callback to be called
-     * @param forceCallback force callback to be called even if device is not created yet
      */
-    internal fun postCallback(callback: () -> Unit, forceCallback: Boolean = false, unlockMachine: Boolean = true) {
-        if(isAlreadyCreated || forceCallback) {
-            if(unlockMachine) {
-                unlockMachineState()
-            }
-            callbacksHandler.post {
-                callback()
-            }
-        }
-        else {
-            Log.d(TAG, "Device not created yet, do not post callback")
-        }
-        mayConnectCard()
+    internal fun postCallback(callback: () -> Unit) {
+        callbacksHandler.post { callback() }
     }
 
     /**
@@ -283,7 +271,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      */
     fun wakeUp() {
         if(isSleeping) {
-            processAction(Action.WakeUp())
+            commLayer.wakeUp()
         }
         else {
             Log.d(TAG, "Device is not sleeping, waking-up is useless")
@@ -291,18 +279,26 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     }
 
     internal fun setKnownConstants(const: Constants) {
-        this.isCorrectlyKnown = true
+        isCorrectlyKnown = true
         constants = const
     }
 
     internal fun mayConnectCard() {
         synchronized(locker) {
-            if (!isLocked && !isSleeping && isAlreadyCreated) {
-                Log.w(TAG, "Calling processNextSlotConnection()")
+            if (!isLocked && !isSleeping && machineState.getCurrentState() == State.Idle) {
                 /* Check if there are some cards to connect */
-                commLayer.processNextSlotConnection()
+                Log.d(TAG, "There is ${slotsToConnect.size} card(s) to connect")
+
+                if(slotsToConnect.size > 0) {
+                    val ccidCommand = ccidHandler.scardConnect(slotsToConnect[0].index.toByte())
+                    machineState.setNewState(State.WritingCmdAndWaitingResp)
+                    commLayer.writeCommand(ccidCommand)
+                }
+                else {
+                    Log.w(TAG, "slotsToConnect list is empty")
+                }
             } else {
-                Log.w(TAG, "Could not call processNextSlotConnection()")
+                Log.w(TAG, "Could not call connecting to card")
             }
         }
     }
