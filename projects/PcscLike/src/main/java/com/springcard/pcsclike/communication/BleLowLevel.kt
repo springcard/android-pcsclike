@@ -333,9 +333,19 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                     val chr = characteristicsCanIndicate[indexCharToBeSubscribed]
                     enableNotifications(chr)
                 }
-                else {
+                else if(indexCharToBeSubscribed == characteristicsCanIndicate.size) {
                     Log.d(TAG, "Subscribing finished")
                     scardReaderList.commLayer.onCreateFinished()
+                }
+                else if(indexCharToBeSubscribed > characteristicsCanIndicate.size) {
+                    /* We subscribe again on CCID status*/
+                    if(descriptor.uuid == charCcidStatus.uuid) {
+                        scardReaderList.commLayer.onDeviceState(false)
+                    }
+                    else {
+                        Log.w(TAG, "Useless subscribing (again) on characteristic ${descriptor.uuid }")
+                    }
+
                 }
             }
 
@@ -404,7 +414,7 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
         }
     }
 
-    fun enableNotifications(chr : BluetoothGattCharacteristic) {
+    private fun enableNotifications(chr : BluetoothGattCharacteristic) {
         mBluetoothGatt.setCharacteristicNotification(chr, true)
         val descriptor = chr.descriptors[0]
         descriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
@@ -459,5 +469,9 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
         scardReaderList.isSleeping = isSleeping
 
         return SCardError(SCardError.ErrorCodes.NO_ERROR)
+    }
+
+    fun enableNotifOnCcidStatus() {
+        enableNotifications(charCcidStatus)
     }
 }

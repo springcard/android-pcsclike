@@ -290,9 +290,15 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
                 Log.d(TAG, "There is ${slotsToConnect.size} card(s) to connect")
 
                 if(slotsToConnect.size > 0) {
-                    val ccidCommand = ccidHandler.scardConnect(slotsToConnect[0].index.toByte())
-                    machineState.setNewState(State.WritingCmdAndWaitingResp)
-                    commLayer.writeCommand(ccidCommand)
+                    if(!slotsToConnect[0].cardError) {
+                        val ccidCommand = ccidHandler.scardConnect(slotsToConnect[0].index.toByte())
+                        machineState.setNewState(State.WritingCmdAndWaitingResp)
+                        commLayer.writeCommand(ccidCommand)
+                    }
+                    else {
+                        Log.w(TAG, "Error on slot ${slotsToConnect[0].name}, do not try to connect on card")
+                        slotsToConnect.removeAt(0)
+                    }
                 }
                 else {
                     Log.w(TAG, "slotsToConnect list is empty")

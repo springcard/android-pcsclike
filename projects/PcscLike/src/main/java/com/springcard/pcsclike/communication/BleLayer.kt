@@ -20,6 +20,7 @@ internal class BleLayer(scardReaderList : SCardReaderList, bluetoothDevice: Blue
     override var lowLayer = BleLowLevel(scardReaderList, bluetoothDevice) as LowLevelLayer
 
     override fun wakeUp() {
-
+        /* Subscribe to Service changed to wake-up device */
+        (lowLayer as BleLowLevel).enableNotifOnCcidStatus()
     }
 }

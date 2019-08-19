@@ -161,6 +161,10 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         /* Check slot error */
         val error = scardReaderList.ccidHandler.interpretSlotsErrorInCcidHeader(ccidResponse.slotError, ccidResponse.slotStatus, slot)
         if(error.code != SCardError.ErrorCodes.NO_ERROR) {
+            if(ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_DataBlock.value ||
+                ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_SlotStatus.value) {
+                scardReaderList.readers[ccidResponse.slotNumber.toInt()].cardError = true
+            }
             Log.d(TAG, "Error, do not process CCID packet")
             scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
             scardReaderList.machineState.setNewState(State.Idle)
@@ -228,11 +232,11 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
                     if(slot.cardPresent && !slot.cardPowered) {
-                        val scardError = SCardError(
+                        val error = SCardError(
                             SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR,
                             "Transmit invoked, but card not powered"
                         )
-                        scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, scardError)}
+                        scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
                     }
                     // TODO CRA else ...
                 }

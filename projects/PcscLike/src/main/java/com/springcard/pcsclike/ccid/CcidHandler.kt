@@ -205,18 +205,19 @@ internal class CcidHandler(private val scardReaderList: SCardReaderList) {
                     if (cardRemoved && scardReaderList.slotsToConnect.contains(slot)) {
                         Log.d(TAG, "Card gone on slot ${slot.index}, removing slot from listReadersToConnect")
                         scardReaderList.slotsToConnect.remove(slot)
+                        /* Reset cardError flag */
+                        slot.cardError = false
                     } else if (cardInserted && slot.channel.atr.isEmpty() && !scardReaderList.slotsToConnect.contains(
-                            slot
-                        ) /*&& !slot.cardError*/) { // TODO CRA sse if cardError is useful
+                            slot)) {
                         Log.d(TAG, "Card arrived on slot ${slot.index}, adding slot to listReadersToConnect")
                         scardReaderList.slotsToConnect.add(slot)
+                        /* Reset cardError flag */
+                        slot.cardError = false
                     }
 
                     /* Send callback only if card removed, when the card is inserted */
                     /* the callback will be send after the connection to the card  */
                     if (cardRemoved) {
-                        /* Reset cardError flag */
-                        slot.cardError = false
                         /* Add slot to the list of the ones updated  */
                         updatedReaders.add(slot)
                     }
@@ -295,66 +296,66 @@ internal class CcidHandler(private val scardReaderList: SCardReaderList) {
         var detail = ""
 
         when (slotError) {
-            SCardReader.SlotError.CMD_ABORTED.code -> {
+            SCardReader.SlotError.CCID_ERR_CMD_ABORTED.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "The PC has sent an ABORT command"
             }
-            SCardReader.SlotError.ICC_MUTE.code -> {
+            SCardReader.SlotError.CCID_ERR_ICC_MUTE.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_MUTE
                 detail = "CCID slot error: Time out in Card communication"
             }
-            SCardReader.SlotError.XFR_PARITY_ERROR.code -> {
+            SCardReader.SlotError.CCID_ERR_XFR_PARITY_ERROR.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Parity error in Card communication"
             }
-            SCardReader.SlotError.XFR_OVERRUN.code -> {
+            SCardReader.SlotError.CCID_ERR_XFR_OVERRUN.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Overrun error in Card communication"
             }
-            SCardReader.SlotError.HW_ERROR.code -> {
+            SCardReader.SlotError.CCID_ERR_HW_ERROR.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Hardware error on Card side (over-current?)"
             }
-            SCardReader.SlotError.BAD_ATR_TS.code -> {
+            SCardReader.SlotError.CCID_ERR_BAD_ATR_TS.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Invalid ATR format"
             }
-            SCardReader.SlotError.BAD_ATR_TCK.code -> {
+            SCardReader.SlotError.CCID_ERR_BAD_ATR_TCK.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Invalid ATR checksum"
             }
-            SCardReader.SlotError.ICC_PROTOCOL_NOT_SUPPORTED.code -> {
+            SCardReader.SlotError.CCID_ERR_ICC_PROTOCOL_NOT_SUPPORTED.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Card's protocol is not supported"
             }
-            SCardReader.SlotError.ICC_CLASS_NOT_SUPPORTED.code -> {
+            SCardReader.SlotError.CCID_ERR_ICC_CLASS_NOT_SUPPORTED.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Card's power class is not supported"
             }
-            SCardReader.SlotError.PROCEDURE_BYTE_CONFLICT.code -> {
+            SCardReader.SlotError.CCID_ERR_PROCEDURE_BYTE_CONFLICT.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Error in T=0 protocol"
             }
-            SCardReader.SlotError.DEACTIVATED_PROTOCOL.code -> {
+            SCardReader.SlotError.CCID_ERR_DEACTIVATED_PROTOCOL.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "Specified protocol is not allowed"
             }
-            SCardReader.SlotError.BUSY_WITH_AUTO_SEQUENCE.code -> {
+            SCardReader.SlotError.CCID_ERR_BUSY_WITH_AUTO_SEQUENCE.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "RDR is currently busy activating a Card"
             }
-            SCardReader.SlotError.CMD_SLOT_BUSY.code -> {
+            SCardReader.SlotError.CCID_ERR_CMD_SLOT_BUSY.code -> {
                 errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
                 detail = "RDR is already running a command)}"
             }
-            SCardReader.SlotError.CMD_NOT_SUPPORTED.code -> {
-                // TODO CRA do something in springcore fw ??
-                return SCardError(SCardError.ErrorCodes.NO_ERROR)
+            SCardReader.SlotError.CCID_ERR_CMD_NOT_SUPPORTED.code -> {
+                errorCode = SCardError.ErrorCodes.OTHER_ERROR
+                detail = "Command not supported "
             }
             else -> {
                 Log.w(TAG, "CCID Error code not handled")
-                errorCode = SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR
-                detail = "CCID slot error: 0x${String.format("%02X", slotError)}"
+                errorCode = SCardError.ErrorCodes.OTHER_ERROR
+                detail = "SpringCore specific CCID error: 0x${String.format("%02X", slotError)}"
             }
         }
 
