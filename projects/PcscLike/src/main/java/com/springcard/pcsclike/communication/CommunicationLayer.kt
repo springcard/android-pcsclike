@@ -10,13 +10,13 @@ import android.content.Context
 import android.util.Log
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
-import com.springcard.pcsclike.utils.hexStringToByteArray
 import com.springcard.pcsclike.utils.toHexString
+import java.lang.Exception
 
 internal enum class SubState {
     Idle,
     Authenticate,
-    ReadingSlotsName,
+    ReadingInfo,
     ConnectingToCards
 }
 
@@ -32,7 +32,9 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
 
     fun connect(ctx : Context) {
         scardReaderList.machineState.setNewState(State.Creating)
-        lowLayer.connect(ctx)
+        scardReaderList.libHandler.post {
+            lowLayer.connect(ctx)
+        }
     }
 
     fun disconnect() {
@@ -59,10 +61,16 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
             authenticateStep = 1
             writeCommand(scardReaderList.ccidHandler.scardControl(scardReaderList.ccidHandler.ccidSecure.hostAuthCmd()))
         }
-        else if(scardReaderList.slotsNameToRead.size > 0) {
-            creatingSubState = SubState.ReadingSlotsName
+        else if(scardReaderList.infoToRead.size > 0) {
+            creatingSubState = SubState.ReadingInfo
             /* Trigger 1st read command */
-            writeCommand(scardReaderList.ccidHandler.scardControl("58210${scardReaderList.slotsNameToRead[0]}".hexStringToByteArray()))
+            if(scardReaderList.infoToRead[0].size == 1) {
+                /* If the array is just one byte, it is the index of the slot we want to know the status */
+                writeCommand(scardReaderList.ccidHandler.scardStatus(scardReaderList.infoToRead[0][0]))
+            }
+            else {
+                writeCommand(scardReaderList.ccidHandler.scardControl(scardReaderList.infoToRead[0]))
+            }
         }
         else if(scardReaderList.slotsToConnect.size > 0) {
             creatingSubState = SubState.ConnectingToCards
@@ -121,7 +129,7 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         when(creatingSubState) {
             SubState.Idle -> interpretResponse(ccidResponse)
             SubState.Authenticate -> interpretResponseAuthenticate(ccidResponse)
-            SubState.ReadingSlotsName ->  interpretResponseSlotName(ccidResponse)
+            SubState.ReadingInfo ->  interpretResponseInfo(ccidResponse)
             SubState.ConnectingToCards -> interpretResponseConnectingToCard(ccidResponse)
             else -> Log.w(TAG,"Impossible SubState: $creatingSubState")
         }
@@ -269,30 +277,90 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         }
     }
 
-    private fun interpretResponseSlotName(ccidResponse: CcidResponse) {
-        /* Response */
-        val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
-        /* Get index of slot being processed */
-        val slotIndex = scardReaderList.slotsNameToRead[0]
-        Log.d(TAG, "Slot $slotIndex name : $slotName")
-        scardReaderList.readers[slotIndex].name = slotName
-        scardReaderList.readers[slotIndex].index = slotIndex
+    private fun interpretResponseInfo(ccidResponse: CcidResponse) {
 
-        if(!scardReaderList.constants.slotsName.contains(slotName)) {
-            scardReaderList.constants.slotsName.add(slotName)
+        /* Remove command we just processed */
+        val commandSend = scardReaderList.infoToRead[0].clone()
+        scardReaderList.infoToRead.removeAt(0)
+
+        /* Check if it was a Scard Control command*/
+        when {
+            scardReaderList.ccidHandler.commandSend == CcidCommand.CommandCode.PC_To_RDR_Escape -> {
+
+                val cla = commandSend[0].toInt()
+                val ins = commandSend[1].toInt()
+
+                /* cf https://docs.springcard.com/books/SpringCore/Host_interfaces/Logical/Direct_Protocol/CONTROL_class/index */
+
+                if(cla != 0x58) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong CLA in infoToRead list ${cla.toString(16)}"))
+                    return
+                }
+
+                when(ins) {
+                    /* GET_DATA */
+                    0x20 -> {
+                        val identifier = commandSend[2].toInt()
+                        when(identifier) {
+                            /* Firmware revision string */
+                            0x06 -> {
+                                try {
+                                    scardReaderList.constants.setVersionFromRevString(
+                                        ccidResponse.payload.drop(1).toByteArray().toString(charset("ASCII"))
+                                    )
+                                }
+                                catch (e: Exception) {
+                                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Incorrect firmware revision: ${ccidResponse.payload.toString(charset("ASCII"))}"))
+                                    return
+                                }
+                            }
+                            else -> {
+                                scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong Identifier in infoToRead list ${identifier.toString(16)}"))
+                                return
+                            }
+                        }
+                    }
+                    /* CCID_GET_SLOT_NAME */
+                    0x21 -> {
+                        /* Get index of slot being processed */
+                        val slotIndex = commandSend[2].toInt()
+
+                        if(slotIndex > scardReaderList.readers.size) {
+                            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Slot number is too much: $slotIndex"))
+                            return
+                        }
+
+                        /* Response */
+                        val slotName = ccidResponse.payload.slice(1 until ccidResponse.payload.size).toByteArray().toString(charset("ASCII"))
+                        Log.d(TAG, "Slot $slotIndex name : $slotName")
+                        scardReaderList.readers[slotIndex].name = slotName
+                        scardReaderList.readers[slotIndex].index = slotIndex
+
+                        if(!scardReaderList.constants.slotsName.contains(slotName)) {
+                            scardReaderList.constants.slotsName.add(slotName)
+                        }
+                    }
+                    else -> {
+                        scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong INS in infoToRead list ${cla.toString(16)}"))
+                        return
+                    }
+                }
+            }
+            scardReaderList.ccidHandler.commandSend == CcidCommand.CommandCode.PC_To_RDR_GetSlotStatus -> {
+                /* Update slot concerned */
+                scardReaderList.ccidHandler.interpretSlotsStatusInCcidHeader(
+                    ccidResponse.slotStatus,
+                    scardReaderList.readers[ccidResponse.slotNumber.toInt()]
+                )
+            }
+            else -> {
+                scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong Command code ins response: ${scardReaderList.ccidHandler.commandSend}"))
+                return
+            }
         }
 
-        /* Remove slot we just processed */
-        scardReaderList.slotsNameToRead.removeAt(0)
-
-        /* Get next slot name */
-        if(scardReaderList.slotsNameToRead.size > 0) {
-            writeCommand(scardReaderList.ccidHandler.scardControl("58210${scardReaderList.slotsNameToRead[0]}".hexStringToByteArray()))
-        }
-        else {
-            Log.d(TAG, "ReadingSlotsName succeed")
-            onCreateFinished()
-        }
+        /* Get next info */
+        onCreateFinished()
     }
 
     private fun interpretResponseConnectingToCard(ccidResponse: CcidResponse) {

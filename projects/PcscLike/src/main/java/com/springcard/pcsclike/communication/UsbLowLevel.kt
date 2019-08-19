@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import com.springcard.pcsclike.SCardReader
 import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.utils.*
 import com.springcard.pcsclike.ccid.CcidFrame
@@ -49,7 +50,6 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
         handlerThread.start()
         Handler(handlerThread.looper)
     }
-
 
     /* Utilities func */
 
@@ -114,9 +114,56 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
 
         /* are those endpoints valid ? */
         //TODO
+
+        //************************************************
+
+        if(getSlotCount() != 0) {
+            val slotCount = getSlotCount()
+            /* Add n new readers */
+            for (i in 0 until slotCount) {
+                scardReaderList.readers.add(SCardReader(scardReaderList))
+            }
+
+            /* Retrieve readers name */
+            if(scardReaderList.isCorrectlyKnown) {
+                for (i in 0 until slotCount) {
+                    scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
+                    scardReaderList.readers[i].index = i
+                }
+            }
+            else {
+                /* Otherwise set temporary names */
+                for (i in 0 until slotCount) {
+                    scardReaderList.readers[i].name =  "Slot $i"
+                    scardReaderList.readers[i].index = i
+                    /* Get slot name */
+                    scardReaderList.infoToRead.add("58210$i".hexStringToByteArray())
+                    /* Get slot status */
+                    scardReaderList.infoToRead.add("0$i".hexStringToByteArray())
+                }
+            }
+        }
+        else {
+            // TODO
+        }
+
+
+        val infoArray = getDeviceInfo()
+
+        scardReaderList.constants.vendorName = infoArray[0]
+        scardReaderList.constants.productName = infoArray[1]
+        scardReaderList.constants.serialNumber = infoArray[2]
+        scardReaderList.constants.serialNumberRaw = infoArray[2].hexStringToByteArray()
+
+
+        /* Firmware revision string */
+        scardReaderList.infoToRead.add("582006".hexStringToByteArray())
+
+        scardReaderList.commLayer.onCreateFinished()
+
     }
 
-    internal fun getSlotCount(): Int {
+    private fun getSlotCount(): Int {
         /* find number of slot present in this reader */
         var curPos = 0
 
@@ -137,7 +184,7 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
         return 0
     }
 
-    internal fun getDeviceInfo(): Array<String> {
+    private fun getDeviceInfo(): Array<String> {
 
         /* Get info directly from USB */
         val manufacturerName: String
@@ -184,6 +231,7 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
         usbDeviceConnection.close()
         stop()
         context.unregisterReceiver(mUsbReceiver)
+        scardReaderList.commLayer.onDisconnected()
     }
 
     override fun close() {

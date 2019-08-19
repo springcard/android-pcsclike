@@ -79,7 +79,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     internal var constants = Constants()
 
     /* List of data to read */
-    var slotsNameToRead = mutableListOf<Int>()
+    var infoToRead = mutableListOf<ByteArray>()
     var slotsToConnect = mutableListOf<SCardReader>()
 
     init {
@@ -128,7 +128,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     internal val machineState by lazy { DeviceMachineState(this) }
 
     private val libThread = HandlerThread("LibThread")
-    private var libHandler: Handler
+    internal var libHandler: Handler
     init {
         libThread.start()
         libHandler = Handler(libThread.looper)

@@ -230,7 +230,7 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                             for (i in 0 until slotCount) {
                                 scardReaderList.readers[i].name = "Slot $i"
                                 scardReaderList.readers[i].index = i
-                                scardReaderList.slotsNameToRead.add(i)
+                                scardReaderList.infoToRead.add("58210$i".hexStringToByteArray())
                             }
                         }
 
