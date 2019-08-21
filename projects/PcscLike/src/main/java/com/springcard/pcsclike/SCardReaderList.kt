@@ -45,13 +45,14 @@ import java.lang.Exception
  * @constructor Instantiate an new SpringCard PC/SC device
  *
  */
-abstract class SCardReaderList internal constructor(internal val layerDevice: Any, internal val callbacks: SCardReaderListCallback) {
+abstract class SCardReaderList internal constructor(internal val layerDevice: Any, userCallbacks: SCardReaderListCallback) {
 
     private val TAG = this::class.java.simpleName
 
     internal lateinit var commLayer: CommunicationLayer
     internal var ccidHandler = CcidHandler(this)
     private var callbacksHandler  =  Handler(Looper.getMainLooper())
+    internal val callbacks = LoggedSCardReaderListCallback(userCallbacks)
 
     internal inner class Constants {
         var vendorName: String = ""

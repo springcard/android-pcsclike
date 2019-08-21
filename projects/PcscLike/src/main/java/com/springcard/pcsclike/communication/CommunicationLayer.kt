@@ -399,8 +399,6 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         if(error.code != SCardError.ErrorCodes.NO_ERROR) {
             Log.w(TAG, "Error, do not process CCID packet")
             Log.w(TAG, "Error: ${error.code.name}, ${error.detail}")
-            /* Do not send callback because we are not connected */
-            //scardReaderList.postCallback({scardReaderList.callbacks.onReaderOrCardError(slot, error)})
 
             /* Connect next card */
             if(scardReaderList.slotsToConnect.size > 0) {

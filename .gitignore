@@ -174,3 +174,7 @@ fastlane/readme.md
 
 #Copy to tests dirs
 copy_to_github.sh
+
+
+#AspcetJ class
+!projects/PcscLike/src/debug

@@ -8,16 +8,14 @@ package com.springcard.pcsclike
 
 import android.util.Log
 
-
 /* This class call the methods provided by SCardReaderListCallback and overwritten by the user */
-/* But it also notify all thread waiting for the method to return */
-internal class SynchronizedSCardReaderListCallback(private var callbacks: SCardReaderListCallback, private var scardReaderList: SCardReaderList) : SCardReaderListCallback() {
+internal class LoggedSCardReaderListCallback(private var callbacks: SCardReaderListCallback) : SCardReaderListCallback() {
 
     private val TAG = this::class.java.simpleName
 
     /* TODO CRA: use it in AOP class*/
     private fun logMethodName(name: String) {
-        Log.d(TAG, "<-- $name")
+        Log.d(TAG, "<-- $name()")
     }
 
     /* Methods overwritten */
