@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.springcard.pcsclike_sample_usb">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-feature android:name="android.hardware.usb.host" />
 
     <application
             android:allowBackup="true"
@@ -16,14 +17,12 @@
                 android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-                <!--<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />-->
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!--<meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-                       android:resource="@xml/device_filter" />
-            <meta-data android:name="android.hardware.usb.action.USB_DEVICE_DETACHED"
-                       android:resource="@xml/device_filter" />-->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+            </intent-filter>
         </activity>
     </application>
 

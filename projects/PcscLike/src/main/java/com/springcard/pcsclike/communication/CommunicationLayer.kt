@@ -32,9 +32,9 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
 
     fun connect(ctx : Context) {
         scardReaderList.machineState.setNewState(State.Creating)
-        scardReaderList.libHandler.post {
+        //scardReaderList.libHandler.post {
             lowLayer.connect(ctx)
-        }
+        //}
     }
 
     fun disconnect() {
@@ -174,10 +174,15 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         Log.d(TAG, "Frame complete, length = ${ccidResponse.length}")
         when {
             ccidResponse.code == CcidResponse.ResponseCode.RDR_To_PC_Escape.value -> when (scardReaderList.ccidHandler.commandSend) {
-                CcidCommand.CommandCode.PC_To_RDR_Escape -> scardReaderList.postCallback {scardReaderList.callbacks.onControlResponse(
-                    scardReaderList,
-                    ccidResponse.payload)
+                CcidCommand.CommandCode.PC_To_RDR_Escape -> {
+                    /* call setNewState before processing because it will unlock the state machine */
+                    scardReaderList.machineState.setNewState(State.Idle)
+                    scardReaderList.postCallback {scardReaderList.callbacks.onControlResponse(
+                        scardReaderList,
+                        ccidResponse.payload)
+                    }
                 }
+
                 else -> onCommunicationError(SCardError(SCardError.ErrorCodes.DIALOG_ERROR,
                     "Unexpected CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}"))
             }
@@ -188,6 +193,8 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                             SCardError.ErrorCodes.PROTOCOL_ERROR,
                             "Error, slot number specified (${ccidResponse.slotNumber}) greater than maximum slot (${scardReaderList.readers.size - 1}), maybe the packet is incorrect"))
                     } else {
+                        /* call setNewState before processing because it will unlock the state machine */
+                        scardReaderList.machineState.setNewState(State.Idle)
                         scardReaderList.postCallback {scardReaderList.callbacks.onTransmitResponse(
                             slot.channel,
                             ccidResponse.payload
@@ -205,11 +212,15 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                     /* Eventually remove slot in list if auto-connect */
                     if(scardReaderList.slotsToConnect.size > 0 && scardReaderList.slotsToConnect[0].index.toByte() == ccidResponse.slotNumber) {
                         scardReaderList.slotsToConnect.removeAt(0)
+                        /* call setNewState before processing because it will unlock the state machine */
+                        scardReaderList.machineState.setNewState(State.Idle)
                         scardReaderList.postCallback { scardReaderList.callbacks.onReaderStatus(slot, slot.cardPresent, slot.cardConnected) }
                     }
                     else {
                         /* set cardConnected flag */
                         slot.cardConnected = true
+                        /* call setNewState before processing because it will unlock the state machine */
+                        scardReaderList.machineState.setNewState(State.Idle)
                         scardReaderList.postCallback {scardReaderList.callbacks.onCardConnected(slot.channel)}
                     }
                 }
@@ -228,6 +239,8 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                 CcidCommand.CommandCode.PC_To_RDR_IccPowerOff -> {
                     slot.cardConnected = false
                     slot.channel.atr = ByteArray(0)
+                    /* call setNewState before processing because it will unlock the state machine */
+                    scardReaderList.machineState.setNewState(State.Idle)
                     scardReaderList.postCallback {scardReaderList.callbacks.onCardDisconnected(slot.channel)}
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
@@ -236,6 +249,8 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                             SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR,
                             "Transmit invoked, but card not powered"
                         )
+                        /* call setNewState before processing because it will unlock the state machine */
+                        scardReaderList.machineState.setNewState(State.Idle)
                         scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
                     }
                     // TODO CRA else ...
@@ -244,6 +259,8 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                     val channel = slot.channel
                     slot.channel.atr = ccidResponse.payload
                     slot.cardConnected = true
+                    /* call setNewState before processing because it will unlock the state machine */
+                    scardReaderList.machineState.setNewState(State.Idle)
                     scardReaderList.postCallback {scardReaderList.callbacks.onCardConnected(channel)}
                     // TODO onReaderOrCardError
                 }
@@ -291,23 +308,23 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
         when {
             scardReaderList.ccidHandler.commandSend == CcidCommand.CommandCode.PC_To_RDR_Escape -> {
 
-                val cla = commandSend[0].toInt()
-                val ins = commandSend[1].toInt()
+                val cla = commandSend[0]
+                val ins = commandSend[1]
 
                 /* cf https://docs.springcard.com/books/SpringCore/Host_interfaces/Logical/Direct_Protocol/CONTROL_class/index */
 
-                if(cla != 0x58) {
-                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong CLA in infoToRead list ${cla.toString(16)}"))
+                if(cla != 0x58.toByte()) {
+                    scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong CLA in infoToRead list ${cla.toHexString()}"))
                     return
                 }
 
                 when(ins) {
                     /* GET_DATA */
-                    0x20 -> {
-                        val identifier = commandSend[2].toInt()
+                    0x20.toByte() -> {
+                        val identifier = commandSend[2]
                         when(identifier) {
                             /* Firmware revision string */
-                            0x06 -> {
+                            0x06.toByte() -> {
                                 try {
                                     scardReaderList.constants.setVersionFromRevString(
                                         ccidResponse.payload.drop(1).toByteArray().toString(charset("ASCII"))
@@ -319,13 +336,13 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                                 }
                             }
                             else -> {
-                                scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong Identifier in infoToRead list ${identifier.toString(16)}"))
+                                scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong Identifier in infoToRead list ${identifier.toHexString()}"))
                                 return
                             }
                         }
                     }
                     /* CCID_GET_SLOT_NAME */
-                    0x21 -> {
+                    0x21.toByte() -> {
                         /* Get index of slot being processed */
                         val slotIndex = commandSend[2].toInt()
 
@@ -345,7 +362,7 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                         }
                     }
                     else -> {
-                        scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong INS in infoToRead list ${cla.toString(16)}"))
+                        scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong INS in infoToRead list ${cla.toHexString()}"))
                         return
                     }
                 }

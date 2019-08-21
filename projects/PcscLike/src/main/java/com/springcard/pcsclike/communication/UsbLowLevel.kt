@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReader
 import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.utils.*
@@ -39,13 +40,14 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
 
     private lateinit var context: Context
 
+    private val SPRINGCARD_VID = 0x1C34
+    private fun isSpringCardDevice() : Boolean =  usbDevice.vendorId == SPRINGCARD_VID // uncomment or set to false to support other products
 
     private val mWaiterThread by lazy {
         WaiterThread()
     }
-    private val handlerThread by lazy {
-        HandlerThread("usbHandlerThread")
-    }
+    private val handlerThread = HandlerThread("usbHandlerThread")
+
     private val handler by lazy {
         handlerThread.start()
         Handler(handlerThread.looper)
@@ -57,20 +59,10 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
 
         context = ctx
 
-        /* query for interface */
-        if (usbDevice.interfaceCount == 0) {
-            Log.e(TAG, "Could not find interface ")
-            return
-        }
-        val usbInterface = usbDevice.getInterface(0)
+        /* register to be notified when the device is unplugged */
+        context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
 
-        /* check for endpoint */
-        if (usbInterface.endpointCount == 0) {
-            Log.e(TAG, "could not find endpoint")
-            return
-        }
-
-        /* connect to device */
+        /* Connect to device */
         val usbManager: UsbManager = ctx.getSystemService(Context.USB_SERVICE) as UsbManager
         try {
             usbDeviceConnection = usbManager.openDevice(usbDevice)
@@ -80,45 +72,76 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
             return
         }
 
-        /* grab endpoints */
-        if (usbInterface.endpointCount > 3) {
-            Log.d(TAG, "Found extra endpoints ! ")
+        /* Check interface and device class */
+        if(usbDevice.deviceClass != 0x0B && usbDevice.deviceClass != 0x00) {
+            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Wrong device class: ${usbDevice.deviceClass.toByte().toHexString()}"))
+            return
         }
-        for (i in 0 until usbInterface.endpointCount) {
-            val epCheck = usbInterface.getEndpoint(i)
-            /* look for BULK type */
-            if (epCheck.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                if (epCheck.direction == UsbConstants.USB_DIR_OUT) {
-                    this.bulkOut = epCheck
-                } else {
-                    this.bulkIn = epCheck
-                }
+
+        /* Query for interface */
+        if (usbDevice.interfaceCount == 0) {
+            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "There is no USB interface on this device"))
+            return
+        }
+
+        /* Try to find the CCID interface */
+        for(indexInterface in 0 until usbDevice.interfaceCount) {
+
+            Log.d(TAG, "Interface $indexInterface")
+
+            val usbInterface = usbDevice.getInterface(indexInterface)
+
+            /* Check for endpoint */
+            if (usbInterface.endpointCount == 0) {
+                Log.w(TAG, "Could not find endpoint")
+                break
             }
 
-            /* look for BULK type */
-            if (epCheck.type == UsbConstants.USB_ENDPOINT_XFER_INT) {
-                if (epCheck.direction == UsbConstants.USB_DIR_IN) {
-                    this.interruptIn = epCheck
-                }
+            /* Grab endpoints */
+            if (usbInterface.endpointCount != 3) {
+                Log.w(TAG, "CCID interface must only have 3 endpoints")
+                break
             }
 
-            context.registerReceiver(mUsbReceiver, IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED))
+            /* Check interface and device class */
+            if((usbInterface.interfaceClass == 0x0B || usbInterface.interfaceClass == 0x00)) {
+                Log.w(TAG, "CCID interface found")
+                for (i in 0 until usbInterface.endpointCount) {
+                    val epCheck = usbInterface.getEndpoint(i)
+                    /* look for BULK type */
+                    if (epCheck.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
+                        if (epCheck.direction == UsbConstants.USB_DIR_OUT) {
+                            this.bulkOut = epCheck
+                        } else {
+                            this.bulkIn = epCheck
+                        }
+                    }
+
+                    /* look for BULK type */
+                    if (epCheck.type == UsbConstants.USB_ENDPOINT_XFER_INT) {
+                        if (epCheck.direction == UsbConstants.USB_DIR_IN) {
+                            this.interruptIn = epCheck
+                        }
+                    }
+                }
+            }
+            else {
+                Log.w(TAG, "Wrong interface class: ${usbInterface.interfaceClass.toUByte().toHexString()}")
+                break
+            }
         }
 
         if (!::interruptIn.isInitialized || !::bulkOut.isInitialized || !::bulkIn.isInitialized) {
-            Log.e(TAG, "Device $usbDevice miss on or more endpoint")
+            Log.e(TAG, "Device $usbDevice miss one or more endpoint")
             return
         }
 
         mWaiterThread.start()
 
-        /* are those endpoints valid ? */
-        //TODO
-
         //************************************************
 
-        if(getSlotCount() != 0) {
-            val slotCount = getSlotCount()
+        val slotCount = getSlotCount()
+        if(slotCount != 0) {
             /* Add n new readers */
             for (i in 0 until slotCount) {
                 scardReaderList.readers.add(SCardReader(scardReaderList))
@@ -129,27 +152,37 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
                 for (i in 0 until slotCount) {
                     scardReaderList.readers[i].name = scardReaderList.constants.slotsName[i]
                     scardReaderList.readers[i].index = i
+                    /* Get slot status */
+                    scardReaderList.infoToRead.add("0$i".hexStringToByteArray())
                 }
             }
             else {
                 /* Otherwise set temporary names */
                 for (i in 0 until slotCount) {
-                    scardReaderList.readers[i].name =  "Slot $i"
+                    val tempName = "Slot $i"
+                    scardReaderList.readers[i].name =  tempName
                     scardReaderList.readers[i].index = i
-                    /* Get slot name */
-                    scardReaderList.infoToRead.add("58210$i".hexStringToByteArray())
+                    if(isSpringCardDevice()) {
+                        /* Get slot name */
+                        scardReaderList.infoToRead.add("58210$i".hexStringToByteArray())
+                    }
+                    else {
+                        /* Set dummy values */
+                        if(!scardReaderList.constants.slotsName.contains(tempName)) {
+                            scardReaderList.constants.slotsName.add(tempName)
+                        }
+                    }
                     /* Get slot status */
                     scardReaderList.infoToRead.add("0$i".hexStringToByteArray())
                 }
             }
         }
         else {
-            // TODO
+            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.MISSING_SERVICE, "Slot count is 0"))
+            return
         }
 
-
         val infoArray = getDeviceInfo()
-
         scardReaderList.constants.vendorName = infoArray[0]
         scardReaderList.constants.productName = infoArray[1]
         scardReaderList.constants.serialNumber = infoArray[2]
@@ -157,10 +190,17 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
 
 
         /* Firmware revision string */
-        scardReaderList.infoToRead.add("582006".hexStringToByteArray())
-
+        if(isSpringCardDevice()) {
+            scardReaderList.infoToRead.add("582006".hexStringToByteArray())
+        }
+        else {
+            /* Set dummy values */
+            scardReaderList.constants.firmwareVersion = ""
+            scardReaderList.constants.firmwareVersionMajor = 0
+            scardReaderList.constants.firmwareVersionMinor = 0
+            scardReaderList.constants.firmwareVersionBuild = 0
+        }
         scardReaderList.commLayer.onCreateFinished()
-
     }
 
     private fun getSlotCount(): Int {
@@ -248,16 +288,19 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
     /* USB Entries / Outputs */
 
     private fun onInterruptIn(data: ByteArray) {
+        Log.d(TAG, "Received data on interruptIn, value : ${data.toHexString()}")
         /* Update readers status */
         val readCcidStatus = data.drop(1).toByteArray()
         scardReaderList.commLayer.onStatusReceived(readCcidStatus)
     }
 
     private fun onBulkIn(data: ByteArray) {
+        Log.d(TAG, "Read ${data.toHexString()} on bulkIn")
         scardReaderList.commLayer.onResponseReceived(data)
     }
 
     private fun bulkOutTransfer(data: ByteArray) {
+        Log.d(TAG, "Write ${data.toHexString()} on bulkOut")
         usbDeviceConnection.bulkTransfer(bulkOut, data, data.size, BULK_TIMEOUT_MS)
     }
 
@@ -330,7 +373,7 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
                         ccidStatus.add(scardReaderList.slotCount.toByte())
                         ccidStatus.addAll(data.toMutableList())
 
-                        Log.d(TAG, "Received data on interruptIn, value : ${ccidStatus.toHexString()}")
+
 
                         /* Post message to USB layer thread */
                         handler.post {
@@ -362,8 +405,6 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
                         Log.d(TAG, "Buffer not complete, expected ${ccidSize + CcidFrame.HEADER_SIZE} bytes, received $recvSize byte")
                         break
                     }
-
-                    Log.d(TAG, "Read ${rxBuffer.toHexString()} on bulkIn")
 
                     /* Post message to USB layer thread */
                     handler.post {
