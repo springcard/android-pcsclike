@@ -254,7 +254,8 @@ abstract class DeviceFragment : Fragment() {
             }
         }
         catch (e: Exception) {
-            mainActivity.logInfo("Impossible to send APDU (maybe the device is sleeping?)")
+            readingPower = false
+            mainActivity.logInfo("Impossible to send APDU (maybe the device is busy or sleeping)")
             return false
         }
     }
@@ -318,6 +319,8 @@ abstract class DeviceFragment : Fragment() {
                     rapduTextBox.text.append(getString(R.string.no_card))
                 }
                 else {
+                    disconnectCardButton.isEnabled = false
+                    connectCardButton.isEnabled = false
                     transmitButton.isEnabled = false
                     /* save command */
                     /* TODO CRA */
@@ -348,6 +351,8 @@ abstract class DeviceFragment : Fragment() {
 
                     if(cApdu.size == 0) {
                         rapduTextBox.text.append(getString(R.string.no_capdu))
+                        disconnectCardButton.isEnabled = true
+                        connectCardButton.isEnabled = true
                         transmitButton.isEnabled = true
                     }
                     else {
@@ -464,6 +469,8 @@ abstract class DeviceFragment : Fragment() {
                     val elapsedTime = apduListStopTime - apduListStartTime
                     Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                 }
+                disconnectCardButton.isEnabled = true
+                connectCardButton.isEnabled = true
                 transmitButton.isEnabled = true
             }
         }

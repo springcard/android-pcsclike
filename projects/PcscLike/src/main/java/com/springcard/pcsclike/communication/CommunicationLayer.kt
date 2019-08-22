@@ -20,7 +20,7 @@ internal enum class SubState {
     ConnectingToCards
 }
 
-internal abstract class CommunicationLayer(private var scardReaderList : SCardReaderList) {
+internal abstract class CommunicationLayer(protected var scardReaderList : SCardReaderList) {
 
     private val TAG = this::class.java.simpleName
     protected abstract var lowLayer: LowLevelLayer
@@ -31,6 +31,7 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
     /* Actions */
 
     fun connect(ctx : Context) {
+        scardReaderList.enterExclusive()
         scardReaderList.machineState.setNewState(State.Creating)
         //scardReaderList.libHandler.post {
             lowLayer.connect(ctx)
@@ -38,11 +39,12 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
     }
 
     fun disconnect() {
+        scardReaderList.enterExclusive()
         scardReaderList.machineState.setNewState(State.Closing)
         lowLayer.disconnect()
     }
 
-    fun writeCommand(ccidCommand: CcidCommand) {
+    internal fun writeCommand(ccidCommand: CcidCommand) {
         /* Update sqn, save it and cipher */
         val updatedCcidBuffer = scardReaderList.ccidHandler.updateCcidCommand(ccidCommand)
         Log.d(TAG, "Writing ${ccidCommand.raw.toHexString()} in PC_to_RDR")
@@ -89,8 +91,15 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
             State.Closed -> {
                 Log.w(TAG, "Impossible to close device if it's already closed")
             }
-            State.Creating, State.Idle, State.Sleeping,
+            State.Idle, State.Sleeping -> {
+                scardReaderList.enterExclusive()
+                scardReaderList.machineState.setNewState(State.Closing)
+                lowLayer.close()
+                scardReaderList.machineState.setNewState(State.Closed)
+            }
+            State.Creating,
             State.WakingUp, State.WritingCmdAndWaitingResp -> {
+                scardReaderList.lastError = SCardError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED, "Device disconnected while processing command")
                 scardReaderList.machineState.setNewState(State.Closing)
                 lowLayer.close()
                 scardReaderList.machineState.setNewState(State.Closed)
@@ -122,7 +131,14 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
     }
 
     fun onResponseReceived(data: ByteArray) {
-        val ccidResponse = scardReaderList.ccidHandler.getCcidResponse(data)
+        val ccidResponse: CcidResponse
+        try {
+            ccidResponse = scardReaderList.ccidHandler.getCcidResponse(data)
+        }
+        catch (e: Exception) {
+            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.OTHER_ERROR, "Error while decode CCID response"))
+            return
+        }
 
         Log.d(TAG, "Received ${ccidResponse.raw.toHexString()} in RDR_to_PC")
 
@@ -136,7 +152,9 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
     }
 
     fun onCommunicationError(error: SCardError) {
+        Log.e(TAG, "${error.code.name}: ${error.detail}")
         scardReaderList.lastError = error
+        scardReaderList.exitExclusive()
         disconnect()
     }
 
@@ -166,8 +184,8 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
                 scardReaderList.readers[ccidResponse.slotNumber.toInt()].cardError = true
             }
             Log.d(TAG, "Error, do not process CCID packet")
-            scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
             scardReaderList.machineState.setNewState(State.Idle)
+            scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
             return
         }
 
@@ -270,7 +288,6 @@ internal abstract class CommunicationLayer(private var scardReaderList : SCardRe
             else -> onCommunicationError(SCardError(SCardError.ErrorCodes.DIALOG_ERROR,
                 "Unknown CCID response (${String.format("%02X", ccidResponse.code)}) for command : ${scardReaderList.ccidHandler.commandSend}"))
         }
-        scardReaderList.machineState.setNewState(State.Idle)
     }
 
     private fun interpretResponseAuthenticate(ccidResponse: CcidResponse) {

@@ -188,6 +188,8 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun control(command: ByteArray) {
+        enterExclusive()
+        machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = ccidHandler.scardControl(command)
         commLayer.writeCommand(ccidCmd)
     }
@@ -263,6 +265,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * @param callback () -> Lambda to callback to be called
      */
     internal fun postCallback(callback: () -> Unit) {
+        Log.d(TAG, "Post callback")
         callbacksHandler.post { callback() }
     }
 
@@ -292,6 +295,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
                 if(slotsToConnect.size > 0) {
                     if(!slotsToConnect[0].cardError) {
+                        enterExclusive()
                         val ccidCommand = ccidHandler.scardConnect(slotsToConnect[0].index.toByte())
                         machineState.setNewState(State.WritingCmdAndWaitingResp)
                         commLayer.writeCommand(ccidCommand)

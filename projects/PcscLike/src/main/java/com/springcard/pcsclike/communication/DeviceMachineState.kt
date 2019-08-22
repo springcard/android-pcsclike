@@ -58,17 +58,18 @@ internal class DeviceMachineState(private val scardReaderList: SCardReaderList) 
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
             State.Creating -> {
                 when(oldState) {
                     State.Closed -> {
-                        scardReaderList.enterExclusive()
                         /* No callback */
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
@@ -102,6 +103,7 @@ internal class DeviceMachineState(private val scardReaderList: SCardReaderList) 
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
                 scardReaderList.mayConnectCard()
@@ -113,28 +115,30 @@ internal class DeviceMachineState(private val scardReaderList: SCardReaderList) 
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
             State.WakingUp -> {
                 when(oldState) {
                     State.Sleeping -> {
-                        scardReaderList.enterExclusive()
                         /* No callback */
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
             State.WritingCmdAndWaitingResp -> {
                 when(oldState) {
                     State.Idle -> {
-                        scardReaderList.enterExclusive()
+
                         /* No callback */
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
@@ -150,20 +154,20 @@ internal class DeviceMachineState(private val scardReaderList: SCardReaderList) 
                         }
                     }
                     State.Sleeping -> {
-                        scardReaderList.enterExclusive()
                         callback = {scardReaderList.callbacks.onReaderListError(scardReaderList, scardReaderList.lastError)}
                     }
                     State.Idle -> {
-                        scardReaderList.enterExclusive()
                         /* No callback */
                     }
                     else -> {
                         Log.w(TAG, "Transition should not happen")
+                        currentState = oldState
                     }
                 }
             }
             else -> {
                 Log.w(TAG, "Impossible new state: $newState")
+                currentState = oldState
             }
         }
 

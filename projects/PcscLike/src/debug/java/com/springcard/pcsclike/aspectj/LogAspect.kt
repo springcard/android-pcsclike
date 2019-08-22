@@ -37,11 +37,11 @@ class LogAscpect {
             Log.d(className, "--> $methodName()")
     }
 
-    @Before("methodAnnotatedWithDebugTrace() && excludedMethodAnnotatedWithDebugTrace()")
+   /*@Before("methodAnnotatedWithDebugTrace() && excludedMethodAnnotatedWithDebugTrace()")
     fun internalCall(joinPoint: JoinPoint) {
         val methodSignature = joinPoint.signature as MethodSignature
         val className = methodSignature.declaringType.simpleName
         val methodName = methodSignature.method.name
         Log.d(className, "$methodName()")
-    }
+    }*/
 }
