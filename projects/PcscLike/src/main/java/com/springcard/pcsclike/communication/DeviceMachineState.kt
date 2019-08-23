@@ -24,12 +24,16 @@ internal enum class State {
 internal class DeviceMachineState(private val scardReaderList: SCardReaderList) {
 
     private val TAG = this::class.java.simpleName
-    private var currentState: State = State.Closed
+    @Volatile internal var currentState = State.Closed
+        get() {
+            Log.d(TAG, "currentState = ${field.name}")
+            return field
+        }
+        private set(value) {
+                Log.d(TAG, "New currentState = ${value.name}")
+                field = value
+        }
     private var isCreated = false
-
-    fun getCurrentState(): State {
-        return currentState
-    }
 
     fun setNewState(newState: State) {
 

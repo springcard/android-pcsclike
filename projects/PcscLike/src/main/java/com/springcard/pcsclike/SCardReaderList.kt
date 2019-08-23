@@ -289,7 +289,7 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
 
     internal fun mayConnectCard() {
         synchronized(locker) {
-            if (!isLocked && !isSleeping && machineState.getCurrentState() == State.Idle) {
+            if (!isLocked && !isSleeping && machineState.currentState == State.Idle) {
                 /* Check if there are some cards to connect */
                 Log.d(TAG, "There is ${slotsToConnect.size} card(s) to connect")
 

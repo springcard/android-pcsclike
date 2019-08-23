@@ -87,7 +87,7 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
     }
 
     fun onDisconnected() {
-        when(scardReaderList.machineState.getCurrentState()) {
+        when(scardReaderList.machineState.currentState) {
             State.Closed -> {
                 Log.w(TAG, "Impossible to close device if it's already closed")
             }
@@ -109,7 +109,7 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
                 scardReaderList.machineState.setNewState(State.Closed)
             }
             else -> {
-                Log.w(TAG, "Impossible state: ${scardReaderList.machineState.getCurrentState()}")
+                Log.w(TAG, "Impossible state: ${scardReaderList.machineState.currentState}")
             }
         }
     }
