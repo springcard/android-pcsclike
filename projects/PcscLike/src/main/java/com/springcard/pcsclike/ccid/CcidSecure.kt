@@ -8,6 +8,7 @@ package com.springcard.pcsclike.ccid
 
 import android.util.Log
 import com.springcard.pcsclike.utils.*
+import java.lang.Exception
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -19,9 +20,8 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
     private val TAG = this::class.java.simpleName
 
-    private var debugSecureConnection: Boolean = false
-
     private val  protocolCode: Byte = 0x00
+    private val useRandom = true
 
     private lateinit var sessionEncKey: MutableList<Byte>
     private lateinit var sessionMacKey: MutableList<Byte>
@@ -45,26 +45,26 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         /* Extract the data */
         var data = frame.raw.drop(10).toMutableList()
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >     (crypted data) ${data.toHexString()}")
+        Log.d(TAG, "   >     (crypted data) ${data.toHexString()}")
 
         /* Decipher the data */
         data = aesCbcDecrypt(sessionEncKey, sessionRecvIV, data)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >      (padded data) ${data.toHexString()}")
+        Log.d(TAG, "   >      (padded data) ${data.toHexString()}")
 
         var dataLen = data.size
         while (dataLen > 0 && data[dataLen - 1] == 0x00.toByte())
             dataLen--
+
         if (dataLen == 0 || data[dataLen - 1] != 0x80.toByte()) {
-            Log.d(TAG, "Padding is invalid (decryption failed/wrong session key?)")
+            val msg = "Padding is invalid (decryption failed/wrong session key?)"
+            Log.e(TAG, msg)
+            throw Exception(msg)
         }
         dataLen -= 1
         data = data.take(dataLen).toMutableList()
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >       (plain data) ${data.toHexString()}")
+        Log.d(TAG, "   >       (plain data) ${data.toHexString()}")
 
         /* Extract the header and re-create a valid buffer */
         frame.raw = frame.raw.take(10).toMutableList()
@@ -74,11 +74,12 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         /* Compute the CMAC */
         val computedCmac = computeCmac(sessionMacKey, sessionRecvIV, frame.raw)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >${frame.raw.toHexString()} -> CMAC=${computedCmac.take(8).toHexString()}")
+        Log.d(TAG, "   >${frame.raw.toHexString()} -> CMAC=${computedCmac.take(8).toHexString()}")
 
         if (receivedCmac != computedCmac.take(8)) {
-            Log.d(TAG, "CMAC is invalid (wrong session key?)")
+            val msg = "CMAC is invalid (wrong session key?)"
+            Log.e(TAG, msg)
+            throw Exception(msg)
         }
 
         sessionRecvIV = computedCmac
@@ -92,14 +93,12 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         /* Compute the CMAC of the plain buffer */
         val cmac = computeCmac(sessionMacKey, sessionSendIV, frame.raw)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   <${frame.raw.toHexString()} -> CMAC=${cmac.take(8).toMutableList().toHexString()}")
+        Log.d(TAG, "   <${frame.raw.toHexString()} -> CMAC=${cmac.take(8).toMutableList().toHexString()}")
 
         /* Extract the data */
         var data = frame.raw.drop(10).toMutableList()
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   <       (plain data) ${data.toHexString()}")
+        Log.d(TAG, "   <       (plain data) ${data.toHexString()}")
 
         /* Cipher the data */
         data.add(0x80.toByte())
@@ -107,13 +106,11 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
             data.add(0x00)
         }
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   <      (padded data) ${data.toHexString()}")
+        Log.d(TAG, "   <      (padded data) ${data.toHexString()}")
 
         data = aesCbcEncrypt(sessionEncKey, sessionSendIV, data)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   <     (crypted data) ${data.toHexString()}")
+        Log.d(TAG, "   <     (crypted data) ${data.toHexString()}")
 
         /* Update the length */
         frame.length = data.size + 8
@@ -132,7 +129,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
     private fun getRandom(length: Int): MutableList<Byte>
     {
         var result = mutableListOf<Byte>()
-        if (debugSecureConnection) {
+        if (!useRandom) {
             for (i in 0 until length) {
                 result.add((0xA0 or (i and 0x0F)).toByte())
             }
@@ -149,8 +146,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
         cmac = iv
 
-        if (debugSecureConnection)
-            Log.d(TAG, "Compute CMAC")
+        Log.d(TAG, "Compute CMAC")
 
         while ((actualLength % 16) != 0) actualLength++
 
@@ -165,8 +161,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
                 }
             }
 
-            if (debugSecureConnection)
-                Log.d(TAG, "\tBlock=${block.toHexString()}, IV=${cmac.toHexString()}, key=${key.toHexString()}")
+            Log.d(TAG, "\tBlock=${block.toHexString()}, IV=${cmac.toHexString()}, key=${key.toHexString()}")
 
             for (j in 0 until 16)
                 block[j] = block[j].xor(cmac[j])
@@ -175,8 +170,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
             cmac = aesEcbEncrypt(key, block)
 
-            if (debugSecureConnection)
-                Log.d(TAG, "\t\t-> ${cmac.toHexString()}")
+            Log.d(TAG, "\t\t-> ${cmac.toHexString()}")
         }
 
         return cmac
@@ -234,10 +228,8 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         /* Generate host nonce */
         rndA = getRandom(16)
 
-        if (debugSecureConnection) {
-            Log.d(TAG, "key=${keyValue.toHexString()}")
-            Log.d(TAG, "rndA=${rndA.toHexString()}")
-        }
+        Log.d(TAG, "key=${keyValue.toHexString()}")
+        Log.d(TAG, "rndA=${rndA.toHexString()}")
 
         /* Host->Device AUTHENTICATE command */
         /* --------------------------------- */
@@ -249,8 +241,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         cmdAuthenticate.add(0x01) /* Version & mode = AES128 */
         cmdAuthenticate.add(keySelect)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   <                    ${cmdAuthenticate.toHexString()}")
+        Log.d(TAG, "   <                    ${cmdAuthenticate.toHexString()}")
 
         return cmdAuthenticate.toByteArray()
     }
@@ -259,8 +250,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
         val rspStep1 = response.toMutableList()
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >                    ${rspStep1.toHexString()}")
+        Log.d(TAG, "   >                    ${rspStep1.toHexString()}")
 
         /* Device->Host Authentication Step 1 */
         /* ---------------------------------- */
@@ -287,8 +277,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         val t = rspStep1.slice(1..16).toMutableList()
         rndB = aesEcbDecrypt(secureConnectionParameters.keyValue, t)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "rndB=${rndB.toHexString()}")
+        Log.d(TAG, "rndB=${rndB.toHexString()}")
 
         /* Host->Device Authentication Step 2 */
         /* ---------------------------------- */
@@ -300,9 +289,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         cmdStep2.addAll(aesEcbEncrypt(secureConnectionParameters.keyValue, rndA))
         cmdStep2.addAll(aesEcbEncrypt(secureConnectionParameters.keyValue, rndB.toByteArray().RotateLeftOneByte().toMutableList()))
 
-
-        if (debugSecureConnection)
-            Log.d(TAG, "   <                    ${cmdStep2.toHexString()}")
+        Log.d(TAG, "   <                    ${cmdStep2.toHexString()}")
 
         return cmdStep2.toByteArray()
     }
@@ -311,8 +298,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
 
         val rspStep3 = response.toMutableList()
 
-        if (debugSecureConnection)
-            Log.d(TAG, "   >                    ${rspStep3.toHexString()}")
+        Log.d(TAG, "   >                    ${rspStep3.toHexString()}")
 
         /* Device->Host Authentication Step 3 */
         /* ---------------------------------- */
@@ -351,8 +337,7 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         sv1.addAll(8, rndA.slice(8..11))
         sv1.addAll(12, rndB.slice(8..11))
 
-        if (debugSecureConnection)
-            Log.d(TAG, "SV1=${sv1.toHexString()}")
+        Log.d(TAG, "SV1=${sv1.toHexString()}")
 
         val sv2 = mutableListOf<Byte>()
         sv2.addAll(0, rndA.slice(4..7))
@@ -360,22 +345,20 @@ internal class CcidSecure(private val secureConnectionParameters: CcidSecurePara
         sv2.addAll(8, rndA.slice(12..15))
         sv2.addAll(12, rndB.slice(12..15))
 
-        if (debugSecureConnection)
-            Log.d(TAG, "SV2=${sv2.toHexString()}")
+        Log.d(TAG, "SV2=${sv2.toHexString()}")
 
         sessionEncKey = aesEcbEncrypt(secureConnectionParameters.keyValue, sv1)
-        if (debugSecureConnection)
-            Log.d(TAG, "Kenc=${sessionEncKey.toHexString()}")
+
+        Log.d(TAG, "Kenc=${sessionEncKey.toHexString()}")
 
         sessionMacKey = aesEcbEncrypt(secureConnectionParameters.keyValue, sv2)
-        if (debugSecureConnection)
-            Log.d(TAG, "Kmac=${sessionMacKey.toHexString()}")
+
+        Log.d(TAG, "Kmac=${sessionMacKey.toHexString()}")
 
         t = XOR(rndA, rndB)
         t = aesEcbEncrypt(sessionMacKey, t)
 
-        if (debugSecureConnection)
-            Log.d(TAG, "IV0=${t.toHexString()}")
+        Log.d(TAG, "IV0=${t.toHexString()}")
 
         sessionSendIV = t
         sessionRecvIV = t

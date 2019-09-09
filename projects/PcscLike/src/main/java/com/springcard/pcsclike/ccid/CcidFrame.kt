@@ -85,10 +85,10 @@ internal abstract class CcidFrame {
         }
     set(value) {
         val lengthArray = value.bytes()
-        raw[1] = (raw[1] and CIPHERED_BIT) or lengthArray[0]
+        raw[1] = lengthArray[0]
         raw[2] = lengthArray[1]
         raw[3] = lengthArray[2]
-        raw[4] = lengthArray[3]
+        raw[4] = (raw[4] and CIPHERED_BIT) or lengthArray[3]
     }
 
         var slotNumber: Byte
