@@ -103,6 +103,8 @@ internal class CcidHandler(private val scardReaderList: SCardReaderList) {
         }
 
         if (isSecure && authenticateOk) {
+            /* Remove the flag to process the frmae */
+            response.ciphered = false
             response = ccidSecure.decryptCcidBuffer(response)
         }
 
