@@ -29,6 +29,11 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      */
     fun transmit(command: ByteArray) {
 
+        if(parent.parent.isSleeping) {
+            parent.parent.postCallback {parent.parent.callbacks.onReaderListError (parent.parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
+
         /* Update to new state and lock machine state if necessary */
         parent.parent.enterExclusive()
         parent.parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
@@ -47,6 +52,12 @@ class SCardChannel internal  constructor(val parent: SCardReader) {
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun disconnect() {
+        
+        if(parent.parent.isSleeping) {
+            parent.parent.postCallback {parent.parent.callbacks.onReaderListError (parent.parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
+
         parent.parent.enterExclusive()
         parent.parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = parent.parent.ccidHandler.scardDisconnect(parent.index.toByte())

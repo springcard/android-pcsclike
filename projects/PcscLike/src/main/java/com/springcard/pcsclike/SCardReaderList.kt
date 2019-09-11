@@ -188,6 +188,12 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
      * @throws Exception if the device is sleeping, there is a command already processing, the slot number exceed 255
      */
     fun control(command: ByteArray) {
+
+        if(isSleeping) {
+            postCallback {callbacks.onReaderListError (this, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
+
         enterExclusive()
         machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = ccidHandler.scardControl(command)

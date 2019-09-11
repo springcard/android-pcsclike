@@ -31,6 +31,12 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
     /* Actions */
 
     fun connect(ctx : Context) {
+
+        if(scardReaderList.isSleeping) {
+            scardReaderList.postCallback {scardReaderList.callbacks.onReaderListError (scardReaderList, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
+
         scardReaderList.enterExclusive()
         scardReaderList.machineState.setNewState(State.Creating)
         //scardReaderList.libHandler.post {

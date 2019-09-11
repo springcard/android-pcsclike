@@ -119,6 +119,10 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     /* Deprecated */
     private fun getStatus() {
+        if(parent.isSleeping) {
+            parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
         parent.enterExclusive()
         parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = parent.ccidHandler.scardStatus(index.toByte())
@@ -127,6 +131,10 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
 
     /* Deprecated */
     private fun cardDisconnect() {
+        if(parent.isSleeping) {
+            parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+            return
+        }
         parent.enterExclusive()
         parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = parent.ccidHandler.scardDisconnect(index.toByte())
@@ -144,6 +152,10 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
             parent.postCallback { parent.callbacks.onCardConnected(channel) }
         }
         else {
+            if(parent.isSleeping) {
+                parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
+                return
+            }
             parent.enterExclusive()
             parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
             val ccidCmd = parent.ccidHandler.scardConnect(index.toByte())
