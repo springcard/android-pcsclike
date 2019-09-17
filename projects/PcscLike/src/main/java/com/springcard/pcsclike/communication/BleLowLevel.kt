@@ -344,8 +344,20 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                     }
                     else {
                         Log.w(TAG, "Useless subscribing (again) on characteristic ${descriptor.uuid }")
-                    }
 
+                        /* Device is active */
+                        val isSleeping = false
+
+                        /* Product waking-up */
+                        if (scardReaderList.isSleeping && !isSleeping) {
+                            /* Set var before sending callback */
+                            scardReaderList.isSleeping = isSleeping
+                            scardReaderList.commLayer.onDeviceState(isSleeping)
+                        }
+
+                        /* Update device state */
+                        scardReaderList.isSleeping = isSleeping
+                    }
                 }
             }
 
