@@ -36,7 +36,6 @@ import java.lang.Exception
  * @property firmwareVersionMajor The MM part of libraryVersion
  * @property firmwareVersionMinor The mm part of libraryVersion
  * @property firmwareVersionBuild The build number (bb part of libraryVersion)
- * @property isConnected True the device is connected to the phone
  * @property isCorrectlyKnown True if the device has previously been correctly connected (and the library as not been unloaded or SCardReaderList.clearCache has not been called)
  * @property isSleeping True if the device is gone to sleep
  * @property readers List of SCardReader
@@ -110,8 +109,6 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
     internal var pnpId: String = ""
 
     var isSleeping = false
-        internal set
-    var isConnected = false
         internal set
     var isCorrectlyKnown = false
         internal set
