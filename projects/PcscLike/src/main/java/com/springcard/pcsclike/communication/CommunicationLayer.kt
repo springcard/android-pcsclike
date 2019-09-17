@@ -129,11 +129,18 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
             return
         }
 
-        for (slot in listSlotsUpdated) {
-            scardReaderList.postCallback {scardReaderList.callbacks.onReaderStatus(slot, slot.cardPresent, slot.cardConnected)}
+        if(scardReaderList.machineState.currentState != State.Creating) {
+            for (slot in listSlotsUpdated) {
+                scardReaderList.postCallback {
+                    scardReaderList.callbacks.onReaderStatus(
+                        slot,
+                        slot.cardPresent,
+                        slot.cardConnected
+                    )
+                }
+            }
+            scardReaderList.mayConnectCard()
         }
-
-        scardReaderList.mayConnectCard()
     }
 
     fun onResponseReceived(data: ByteArray) {

@@ -114,13 +114,6 @@ abstract class SCardReaderList internal constructor(internal val layerDevice: An
         internal set
 
     internal var readers: MutableList<SCardReader> = mutableListOf<SCardReader>()
-
-    internal var powerState: Int  = 0
-        private set
-
-    internal var batterylevel: Int  = 0
-        private set
-
     internal var lastError = SCardError(SCardError.ErrorCodes.NO_ERROR)
 
     internal val machineState by lazy { DeviceMachineState(this) }
