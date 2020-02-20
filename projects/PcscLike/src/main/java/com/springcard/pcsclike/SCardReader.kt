@@ -135,6 +135,14 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
             parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
             return
         }
+
+        /* If card not connected */
+        if(channel.atr.isEmpty() || !cardConnected)
+        {
+            parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.CARD_ABSENT, "Error: card is not connected"))}
+            return
+        }
+
         parent.enterExclusive()
         parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
         val ccidCmd = parent.ccidHandler.scardDisconnect(index.toByte())
@@ -156,6 +164,14 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
                 parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.BUSY, "Error: Device is sleeping"))}
                 return
             }
+
+            /* If card not present */
+            if(channel.atr.isEmpty() || !cardPowered || !cardConnected || !cardPresent)
+            {
+                parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.CARD_ABSENT, "Error: card is not present"))}
+                return
+            }
+
             parent.enterExclusive()
             parent.machineState.setNewState(State.WritingCmdAndWaitingResp)
             val ccidCmd = parent.ccidHandler.scardConnect(index.toByte())
