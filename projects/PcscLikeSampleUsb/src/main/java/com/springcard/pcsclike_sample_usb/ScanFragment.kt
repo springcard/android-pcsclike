@@ -54,7 +54,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         /* Check if device  support USB */
         mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_USB_HOST) }?.also {
-           Toast.makeText(mainActivity, R.string.ble_not_supported, Toast.LENGTH_SHORT).show()
+           Toast.makeText(mainActivity, R.string.usb_host_not_supported, Toast.LENGTH_SHORT).show()
         }
 
         val mUsbAttachReceiver: BroadcastReceiver = object : BroadcastReceiver() {
