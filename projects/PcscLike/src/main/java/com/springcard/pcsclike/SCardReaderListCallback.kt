@@ -14,59 +14,62 @@ internal class LoggedSCardReaderListCallback(private var callbacks: SCardReaderL
     private val TAG = this::class.java.simpleName
 
     /* TODO CRA: use it in AOP class*/
-    private fun logMethodName(name: String) {
-        Log.d(TAG, "<-- $name()")
+    private fun logMethodName(name: String?) {
+        if(name != null)
+            Log.d(TAG, "<-- $name()")
+        else
+            Log.d(TAG, "<-- callback()")
     }
 
     /* Methods overwritten */
 
     override fun onReaderListCreated(readerList: SCardReaderList) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderListCreated(readerList)
     }
 
     override fun onReaderListClosed(readerList: SCardReaderList?) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderListClosed(readerList)
     }
 
     override fun onControlResponse(readerList: SCardReaderList, response: ByteArray) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onControlResponse(readerList, response)
     }
 
     override fun onReaderStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderStatus(slot, cardPresent, cardConnected)
     }
 
     override fun onCardConnected(channel: SCardChannel) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onCardConnected(channel)
     }
 
     override fun onCardDisconnected(channel: SCardChannel) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onCardDisconnected(channel)
     }
 
     override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onTransmitResponse(channel, response)
     }
 
     override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderListError(readerList, error)
     }
 
     override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderOrCardError(readerOrCard, error)
     }
 
     override fun onReaderListState(readerList: SCardReaderList, isInLowPowerMode: Boolean) {
-        logMethodName(object{}.javaClass.enclosingMethod!!.name)
+        logMethodName(object{}.javaClass.enclosingMethod?.name)
         callbacks.onReaderListState(readerList, isInLowPowerMode)
     }
 }
