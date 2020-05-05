@@ -467,6 +467,7 @@ abstract class DeviceFragment : Fragment() {
                 if(mainActivity.preferences.enableTimeMeasurement) {
                     apduListStopTime = SystemClock.elapsedRealtime()
                     val elapsedTime = apduListStopTime - apduListStartTime
+                    Log.d(TAG, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s")
                     Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                 }
                 disconnectCardButton.isEnabled = true

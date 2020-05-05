@@ -7,6 +7,7 @@
 package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothDevice.*
 import android.content.Context
 import android.os.Build
 import android.support.annotation.RequiresApi
@@ -365,6 +366,16 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                 Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
                 Log.d(TAG, "MTU size = $mtu")
                 super.onMtuChanged(gatt, mtu, status)
+            }
+
+
+            override fun onPhyUpdate (gatt: BluetoothGatt, txPhy: Int, rxPhy: Int,  status: Int) {
+                Log.i(TAG, "BLE event (${object{}.javaClass.enclosingMethod!!.name})")
+                if(status != BluetoothGatt.GATT_SUCCESS) {
+                    Log.i(TAG, "${object{}.javaClass.enclosingMethod!!.name}: Invalid status ($status)")
+                    return
+                }
+                Log.d(TAG, "PHY changed, txPhy = $txPhy, rxPhy = $rxPhy")
             }
         }
 
