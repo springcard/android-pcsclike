@@ -2,7 +2,7 @@
 
 The SpringCard PC/SC-like library and sample applciations for Android provides access to all the compliant SpringCard USB and BLE contact or contactless smartcard readers, including NFC/RFID @ 13.56MHz readers.
 
-The documentation of this library is avalaible online: http://docs.springcard.net/apis/Android/PCSC-Like/
+The documentation of this library is avalaible online: https://docs.springcard.com/apis/Android/PCSC-Like/
 
 This is the source code to the SpringCard PC/SC over BLE application for Android. If you are looking for the binaries, please download the application from the Play Store or from the release section.
 
