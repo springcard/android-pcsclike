@@ -8,7 +8,10 @@ package com.springcard.pcsclike.communication
 
 import android.bluetooth.*
 import android.bluetooth.BluetoothDevice.*
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.support.annotation.RequiresApi
 import android.util.Log
@@ -381,17 +384,28 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
 
     /* Utilities methods */
 
+    private lateinit var appContext: Context
+
     override fun connect(ctx: Context) {
         Log.d(TAG, "Connect")
         /* Context is useless and could be set to null */
         /* cf https://stackoverflow.com/questions/56642912/why-android-bluetoothdevice-conenctgatt-require-context-if-it-not-use-it */
         mBluetoothGatt = bluetoothDevice.connectGatt(ctx, false, mGattCallback)
+
+        /* Save Context */
+        appContext = ctx
+
+        /* Register STATE_CHANGED callback */
+        appContext.registerReceiver(mReceiver,  IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
     override fun disconnect() {
         Log.d(TAG, "Disconnect")
         mBluetoothGatt.disconnect()
         Log.i(TAG, "BLE action (${object{}.javaClass.enclosingMethod!!.name})")
+
+        /* Unregister STATE_CHANGED callback */
+        appContext.unregisterReceiver(mReceiver);
     }
 
     override fun close() {
@@ -497,4 +511,26 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
     fun enableNotifOnCcidStatus() {
         enableNotifications(charCcidStatus)
     }
+
+    private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.action
+            if (BluetoothAdapter.ACTION_STATE_CHANGED == action) {
+                when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)) {
+                    BluetoothAdapter.STATE_OFF -> {
+                        scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DEVICE_NOT_CONNECTED, "Bluetooth has been disabled"))
+                        /* We must call the onDisconnected() cb ourself because android will not dot it... */
+                        scardReaderList.commLayer.onDisconnected()
+                    }
+                    BluetoothAdapter.STATE_TURNING_ON -> {
+                    }
+                    BluetoothAdapter.STATE_ON -> {
+                    }
+                    BluetoothAdapter.STATE_TURNING_OFF -> {
+                    }
+                }
+            }
+        }
+    }
+
 }
