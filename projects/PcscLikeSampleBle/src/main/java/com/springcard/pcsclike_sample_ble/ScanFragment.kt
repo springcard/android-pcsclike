@@ -34,6 +34,11 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     private var mScanning: Boolean = false
     private var mBluetoothScanner: BluetoothLeScanner? = null
 
+    private val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
+        val bluetoothManager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothManager.adapter
+    }
+
     private val android.bluetooth.BluetoothAdapter.isDisabled: Boolean
         get() = !isEnabled
 
@@ -54,39 +59,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         }
 
         /* Location permission */
-
-        /* var lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-         var gps_enabled = false
-         var network_enabled = false
-
-         try {
-             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
-         } catch(ex: Exception) {}
-
-         try {
-             network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-         } catch(ex: Exception) {}
-
-         if(!gps_enabled && !network_enabled) {
-             // notify user
-             var dialog = AlertDialog.Builder(this)
-             dialog.setMessage(resources.getString(R.string.gps_network_not_enabled))
-             dialog.setPositiveButton(resources.getString(R.string.open_location_settings),  DialogInterface.OnClickListener {
-
-                 fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
-                     // TODO Auto-generated method stub
-                     var myIntent: Intent = Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                     startActivity(myIntent)
-                 }
-             })
-             dialog.setNegativeButton(getString(R.string.Cancel), DialogInterface.OnClickListener() {
-                 fun onClick(paramDialogInterface: DialogInterface , paramInt: Int ) {
-                         // TODO Auto-generated method stub
-                 }
-             })
-             dialog.show()
-         }*/
-
         // TODO CRA : check if location already activated
         /* val intent: Intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
          startActivity(intent)*/
@@ -102,15 +74,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             }
         }
 
-        //------------------------------------------------------------------------------------------------------
-
         /* Set up BLE */
-
-        /* Bluetooth Adapter */
-        val mBluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
-            val bluetoothManager = mainActivity.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            bluetoothManager.adapter
-        }
         val REQUEST_ENABLE_BT = 6
         /* Ensures Bluetooth is available on the device and it is enabled. If not, */
         /* displays a dialog requesting user permission to enable Bluetooth. */
@@ -118,7 +82,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
         }
-
         mBluetoothScanner = mBluetoothAdapter?.bluetoothLeScanner
 
         /* Inflate the layout for this fragment */
@@ -145,6 +108,9 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         // handle item selection
         return when (item.itemId) {
             R.id.scan_button -> {
+                deviceList.clear()
+                bleDeviceList.clear()
+                adapter?.notifyDataSetChanged()
                 scanLeDevice(true)
                 true
             }
@@ -203,7 +169,10 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             }
             else -> {
                 mScanning = false
-                mBluetoothScanner?.stopScan(mLeScanCallback)
+                if(mBluetoothAdapter?.isEnabled!!)
+                {
+                    mBluetoothScanner?.stopScan(mLeScanCallback)
+                }
                 progressBarScanning?.visibility = ProgressBar.GONE
                 mainActivity.logInfo("Scan stopped")
             }
