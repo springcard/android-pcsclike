@@ -166,7 +166,7 @@ class SCardReader internal  constructor(val parent: SCardReaderList) {
             }
 
             /* If card not present */
-            if(channel.atr.isEmpty() || !cardPowered || !cardConnected || !cardPresent)
+            if(!cardPresent)
             {
                 parent.postCallback {parent.callbacks.onReaderListError (parent, SCardError(SCardError.ErrorCodes.CARD_ABSENT, "Error: card is not present"))}
                 return
