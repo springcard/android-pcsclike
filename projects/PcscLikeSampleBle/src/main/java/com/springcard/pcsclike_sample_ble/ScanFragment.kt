@@ -64,12 +64,17 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
          startActivity(intent)*/
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val PERMISSION_REQUEST_COARSE_LOCATION = 5
-            /* Android M Permission check */
+            val PERMISSION_REQUEST_FINE_LOCATION = 5
+            /* Android Permission check */
+            /* As of Android M (6.0) and above, location permission is required for the app to get BLE scan results.                                  */
+            /* The main motivation behind having to explicitly require the users to grant this permission is to protect users’ privacy.                */
+            /* A BLE scan can often unintentionally reveal the user’s location to unscrupulous app developers who scan for specific BLE beacons,       */
+             /* or some BLE device may advertise location-specific information. Before Android 10, ACCESS_COARSE_LOCATION can be used to gain access   */
+             /* to BLE scan results, but we recommend using ACCESS_FINE_LOCATION instead since it works for all versions of Android.                   */
             if (mainActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
-                    arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
-                    PERMISSION_REQUEST_COARSE_LOCATION
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    PERMISSION_REQUEST_FINE_LOCATION
                 )
             }
         }
