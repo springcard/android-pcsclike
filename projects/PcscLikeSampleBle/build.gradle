@@ -15,11 +15,11 @@ android {
             storePassword localProperties['key_password']?: ""
         }
     }
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.springcard.pcsclike_sample_ble"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
         def date = new Date()
         versionName = 'v' + date.format('yy.MM')

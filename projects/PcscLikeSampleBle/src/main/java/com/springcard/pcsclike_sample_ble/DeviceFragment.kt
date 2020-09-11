@@ -24,6 +24,9 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
             if(mainActivity.supportCrypto && mainActivity.preferences.useAuthentication) {
                 mainActivity.logInfo("Create readerList with authentication")
 
+                /* Add lock emoji to device name */
+                deviceName = "\uD83D\uDD12 $deviceName"
+
                 val key: MutableList<Byte>
                 if(mainActivity.preferences.authenticationKey.isHex()) {
                     key = mainActivity.preferences.authenticationKey.hexStringToByteArray().toMutableList()

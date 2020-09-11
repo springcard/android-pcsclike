@@ -161,7 +161,7 @@ abstract class DeviceFragment : Fragment() {
             /* Check if device is sleeping */
             /* Could also be checked via readerList.isSleeping */
             if(isInLowPowerMode) {
-                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName } (z)")
+                mainActivity.setActionBarTitle("${this@DeviceFragment.deviceName } \uD83D\uDCA4")
 
                 /* Disable all UI */
                 updateCardStatus(currentSlot!!, cardPresent = false, cardConnected = false)
