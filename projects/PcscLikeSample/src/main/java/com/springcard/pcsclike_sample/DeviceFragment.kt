@@ -180,6 +180,8 @@ abstract class DeviceFragment : Fragment() {
         override fun onReaderListError(readerList: SCardReaderList?, error: SCardError) {
             mainActivity.logInfo("onReaderListError")
 
+            Toast.makeText(activity, "${error.message}\n${error.detail}", Toast.LENGTH_LONG).show()
+
             if(readerList == null || !isDeviceInitialized) {
                 mainActivity.logInfo("SCardReaderList not initialized")
                 return
@@ -201,6 +203,8 @@ abstract class DeviceFragment : Fragment() {
 
         override fun onReaderOrCardError(readerOrCard: Any, error: SCardError) {
             mainActivity.logInfo("onReaderOrCardError")
+
+            Toast.makeText(activity, "${error.message}\n${error.detail}", Toast.LENGTH_LONG).show()
 
             if(!(readerOrCard == currentChannel || readerOrCard == currentSlot)) {
                 mainActivity.logInfo("Error: wrong channel or slot")
