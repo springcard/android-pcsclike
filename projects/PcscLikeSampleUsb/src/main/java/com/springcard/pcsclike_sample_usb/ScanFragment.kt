@@ -54,7 +54,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         /* Check if device  support USB */
         mainActivity.packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_USB_HOST) }?.also {
-           Toast.makeText(mainActivity, R.string.usb_host_not_supported, Toast.LENGTH_SHORT).show()
+            Toast.makeText(mainActivity, R.string.usb_host_not_supported, Toast.LENGTH_SHORT).show()
         }
 
         val mUsbAttachReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -95,21 +95,21 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         /* Parse device_filter.xml */
         val xmlResourceParser = context!!.resources.getXml(R.xml.device_filter)
-         var eventType = xmlResourceParser.eventType
-         while (eventType != XmlPullParser.END_DOCUMENT) {
-             when (eventType) {
-                 XmlPullParser.START_TAG -> {
-                     if(xmlResourceParser.name == "usb-device") {
-                         val vid = xmlResourceParser.getAttributeIntValue(1, 0)
-                         val pid = xmlResourceParser.getAttributeIntValue(0, 0)
-                         if(pid!=0 && vid !=0) {
-                             deviceFilter.add(getDeviceIdsAsString(vid, pid))
-                         }
-                     }
-                 }
-             }
+        var eventType = xmlResourceParser.eventType
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            when (eventType) {
+                XmlPullParser.START_TAG -> {
+                    if(xmlResourceParser.name == "usb-device") {
+                        val vid = xmlResourceParser.getAttributeIntValue(1, 0)
+                        val pid = xmlResourceParser.getAttributeIntValue(0, 0)
+                        if(pid!=0 && vid !=0) {
+                            deviceFilter.add(getDeviceIdsAsString(vid, pid))
+                        }
+                    }
+                }
+            }
             eventType = xmlResourceParser.next()
-         }
+        }
 
 
         /* Create ListView */
@@ -125,29 +125,29 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         /* Request permission */
 
         /* load device list  from XML file (the same used by the intent part */
-       /* val compliantDevice = ArrayList<Int>()
-        try {
-            val devicesFromResources = context?.resources?.getXml(R.xml.device_filter)
-            devicesFromResources!!.next()
-            var eventType = devicesFromResources.eventType
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if (eventType == XmlPullParser.START_TAG) {
-                    if (devicesFromResources.name == "usb-device") {
-                        /* if vendor id is SpringCard */
-                        if (devicesFromResources.getAttributeIntValue(0, 0) == spVendorId) {
-                            compliantDevice.add(devicesFromResources.getAttributeIntValue(1, 0))
-                        }
-                    }
-                }
-                eventType = devicesFromResources.next()
-            }
+        /* val compliantDevice = ArrayList<Int>()
+         try {
+             val devicesFromResources = context?.resources?.getXml(R.xml.device_filter)
+             devicesFromResources!!.next()
+             var eventType = devicesFromResources.eventType
+             while (eventType != XmlPullParser.END_DOCUMENT) {
+                 if (eventType == XmlPullParser.START_TAG) {
+                     if (devicesFromResources.name == "usb-device") {
+                         /* if vendor id is SpringCard */
+                         if (devicesFromResources.getAttributeIntValue(0, 0) == spVendorId) {
+                             compliantDevice.add(devicesFromResources.getAttributeIntValue(1, 0))
+                         }
+                     }
+                 }
+                 eventType = devicesFromResources.next()
+             }
 
-        } catch (e1: XmlPullParserException) {
-            e1.printStackTrace()
-        } catch (e1: IOException) {
-            e1.printStackTrace()
-        }
-*/
+         } catch (e1: XmlPullParserException) {
+             e1.printStackTrace()
+         } catch (e1: IOException) {
+             e1.printStackTrace()
+         }
+ */
     }
 
 
@@ -168,8 +168,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
         val deviceIdentifier = getDeviceIdsAsString(device.vendorId, device.productId)
         if(!deviceFilter.contains(deviceIdentifier)) {
-            Log.d(TAG, "Device is not in device filter list")
-            return
+            Log.d(TAG, "Device is not in device filter list (not a SpringCard device?)")
         }
 
         if (!deviceList.contains(newItem)) {

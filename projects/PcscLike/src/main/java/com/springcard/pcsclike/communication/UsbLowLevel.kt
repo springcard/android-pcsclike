@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReader
 import com.springcard.pcsclike.SCardReaderList
@@ -55,6 +56,7 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
 
     /* Utilities func */
 
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun connect(ctx: Context) {
 
         context = ctx
@@ -132,7 +134,8 @@ internal class UsbLowLevel(private val scardReaderList: SCardReaderList, private
         }
 
         if (!::interruptIn.isInitialized || !::bulkOut.isInitialized || !::bulkIn.isInitialized) {
-            Log.e(TAG, "Device $usbDevice miss one or more endpoint")
+            Log.e(TAG, "Device ${usbDevice.productName} miss one or more endpoint")
+            scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.DUMMY_DEVICE, "Device ${usbDevice.productName} miss one or more endpoint"))
             return
         }
 
