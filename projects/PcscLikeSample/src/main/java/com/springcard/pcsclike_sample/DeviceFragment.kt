@@ -9,9 +9,9 @@ package com.springcard.pcsclike_sample
 import android.app.ProgressDialog
 import android.os.Bundle
 import android.os.SystemClock
-import android.support.v4.app.Fragment
-import android.support.v4.view.GravityCompat
-import android.support.v7.app.AlertDialog
+import androidx.fragment.app.Fragment
+import androidx.core.view.GravityCompat
+import androidx.appcompat.app.AlertDialog
 import android.util.Log
 import android.view.*
 import android.widget.*

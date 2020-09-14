@@ -8,7 +8,7 @@ package com.springcard.pcsclike_sample
 
 
 import android.content.pm.PackageManager
-import android.support.v4.app.Fragment
+import androidx.fragment.app.Fragment
 
 
 abstract class ScanFragment : Fragment() {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<androidx.constraintlayout.widget.ConstraintLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -83,7 +83,7 @@
         <TableRow android:layout_width="match_parent" android:layout_height="wrap_content"
                   app:layout_constraintTop_toTopOf="parent"
                   android:gravity="center_horizontal">
-            <android.support.design.widget.TextInputLayout
+            <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/keyWrapper"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -97,8 +97,8 @@
                         android:maxLength="32"
                         android:id="@+id/editTextAuthenticationKey" android:textSize="14sp"
                         android:hint="@string/authentication_key"/>
-            </android.support.design.widget.TextInputLayout>
+            </com.google.android.material.textfield.TextInputLayout>
         </TableRow>
     </TableLayout>
 
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

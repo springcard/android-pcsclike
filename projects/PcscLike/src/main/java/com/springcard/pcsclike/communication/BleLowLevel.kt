@@ -13,7 +13,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.util.Log
 import com.springcard.pcsclike.SCardError
 import com.springcard.pcsclike.SCardReader

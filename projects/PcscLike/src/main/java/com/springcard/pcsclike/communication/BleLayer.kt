@@ -8,7 +8,7 @@ package com.springcard.pcsclike.communication
 
 import android.bluetooth.BluetoothDevice
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import com.springcard.pcsclike.SCardReaderList
 import com.springcard.pcsclike.SCardReaderListCallback
 
