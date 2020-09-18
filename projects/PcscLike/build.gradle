@@ -4,10 +4,10 @@ apply plugin: 'org.jetbrains.dokka-android'
 apply plugin: 'com.archinamon.aspectj'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode = (getRevisionMajor() + getRevisionMinor()).toInteger()
         versionName getRevision()
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -29,12 +29,14 @@ android {
             buildConfigField "Boolean", "libraryDebug", "true"
         }
     }
-    libraryVariants.all { variant ->
-        variant.outputs.all {
-            def buildType =  variant.buildType.name
-            def date = new Date()
-            def formattedDate = date.format('yyyy_MM_dd')
-            outputFileName = "SpringCardPcscAndroidLibrary_${getRevision()}_${formattedDate}_${buildType}.aar"
+    afterEvaluate {
+        android.libraryVariants.all { variant ->
+            variant.outputs.all {
+                def buildType = variant.buildType.name
+                def date = new Date()
+                def formattedDate = date.format('yyyy_MM_dd')
+                outputFileName = "SpringCardPcscAndroidLibrary_${getRevision()}_${formattedDate}_${buildType}.aar"
+            }
         }
     }
 
@@ -57,10 +59,10 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
