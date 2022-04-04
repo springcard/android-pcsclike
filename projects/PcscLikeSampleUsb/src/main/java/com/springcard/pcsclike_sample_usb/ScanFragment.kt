@@ -191,11 +191,10 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     }
 
     fun getDeviceExtraInfo(device: UsbDevice): String {
-        return if(device.serialNumber != null) {
-            device.serialNumber!!
-        } else {
-            device.deviceId.toString()
-        }
+        val vid = device.vendorId.toString(16).toUpperCase().padStart(2, '0')
+        val pid = device.productId.toString(16).toUpperCase().padStart(2, '0')
+        val cla = device.getInterface(0).getInterfaceClass().toString(16).toUpperCase().padStart(2, '0')
+        return "PID=0x${vid}, VID=0x${pid}, Class=0x${cla}"
     }
 
     private fun getDeviceIdsAsString(vid: Int, pid: Int): String {
