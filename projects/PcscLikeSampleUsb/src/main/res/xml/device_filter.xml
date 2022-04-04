@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
-    <usb-device vendor-id="7220" product-id="37162" /> <!-- SpringCore PC/SC only -->
-    <usb-device vendor-id="7220" product-id="24866" /> <!-- SpringCore PC/SC + Direct -->
-    <usb-device vendor-id="7220" product-id="37297" /> <!-- H663 -->
+	<usb-device vendor-id="7220" product-id="24594" /> <!-- SpringCore CCID + direct -->
+	<usb-device vendor-id="7220" product-id="24602" /> <!-- SpringCore CCID only -->
+	<usb-device vendor-id="7220" product-id="24866" /> <!-- H518 CCID + direct --> 
+	<usb-device vendor-id="7220" product-id="24874" /> <!-- H518 CCID only -->
+	<usb-device vendor-id="7220" product-id="24882" /> <!-- Puck CCID + direct -->
+	<usb-device vendor-id="7220" product-id="24890" /> <!-- Puck CCID only -->
+    <usb-device vendor-id="7220" product-id="37162" /> <!-- Generic SpringCore CCID only -->
+    <usb-device vendor-id="7220" product-id="37297" /> <!-- H663 CCID only -->
     <usb-device vendor-id="7220" product-id="44992" /> <!-- AFC0 -->
     <usb-device vendor-id="7220" product-id="44993" /> <!-- AFC1 -->
     <usb-device vendor-id="7220" product-id="44994" /> <!-- AFC2 -->
