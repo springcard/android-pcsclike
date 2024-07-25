@@ -7,13 +7,14 @@
 package com.springcard.pcsclike_sample_ble
 
 import android.os.Bundle
-import com.springcard.pcsclike_sample.DeviceFragment
+import com.android.volley.BuildConfig
 import com.springcard.pcsclike_sample.MainActivity
+import com.springcard.pcsclike_sample_ble.ScanFragment
 
 class MainActivity : MainActivity() {
 
-    override val deviceFragment: DeviceFragment = com.springcard.pcsclike_sample_ble.DeviceFragment()
-    override val scanFragment: ScanFragment = com.springcard.pcsclike_sample_ble.ScanFragment()
+    override val deviceFragment: DeviceFragment = DeviceFragment()
+    override val scanFragment: ScanFragment = ScanFragment()
     override var supportCrypto = true // BLE support AES authentication
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,22 +26,23 @@ class MainActivity : MainActivity() {
     private fun setAboutInfo() {
 
         val appInfo = ApplicationInfo(
-            com.springcard.pcsclike_sample_ble.BuildConfig.DEBUG,
-            com.springcard.pcsclike_sample_ble.BuildConfig.APPLICATION_ID,
-            com.springcard.pcsclike_sample_ble.BuildConfig.BUILD_TYPE,
-            com.springcard.pcsclike_sample_ble.BuildConfig.FLAVOR,
-            com.springcard.pcsclike_sample_ble.BuildConfig.VERSION_CODE,
-            com.springcard.pcsclike_sample_ble.BuildConfig.VERSION_NAME,
-            com.springcard.pcsclike_sample_ble.BuildConfig.appDebug)
+            BuildConfig.DEBUG,
+            BuildConfig.APPLICATION_ID,
+            BuildConfig.BUILD_TYPE,
+            "NO",
+            BuildConfig.VERSION_CODE,
+            BuildConfig.VERSION_NAME,
+            BuildConfig.DEBUG
+        )
 
         val libInfo = LibraryInfo(
+            BuildConfig.DEBUG,
+            BuildConfig.APPLICATION_ID,
+            BuildConfig.BUILD_TYPE,
+            "NO",
+            BuildConfig.VERSION_CODE,
+            BuildConfig.VERSION_NAME,
             com.springcard.pcsclike.BuildConfig.DEBUG,
-            com.springcard.pcsclike.BuildConfig.APPLICATION_ID,
-            com.springcard.pcsclike.BuildConfig.BUILD_TYPE,
-            com.springcard.pcsclike.BuildConfig.FLAVOR,
-            com.springcard.pcsclike.BuildConfig.VERSION_CODE,
-            com.springcard.pcsclike.BuildConfig.VERSION_NAME,
-            com.springcard.pcsclike.BuildConfig.libraryDebug,
             com.springcard.pcsclike.BuildConfig.libraryName,
             com.springcard.pcsclike.BuildConfig.librarySpecial,
             com.springcard.pcsclike.BuildConfig.libraryVersion,

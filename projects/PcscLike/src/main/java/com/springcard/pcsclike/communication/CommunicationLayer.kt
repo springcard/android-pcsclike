@@ -114,9 +114,6 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
                 lowLayer.close()
                 scardReaderList.machineState.setNewState(State.Closed)
             }
-            else -> {
-                Log.w(TAG, "Impossible state: ${scardReaderList.machineState.currentState}")
-            }
         }
     }
 
@@ -160,7 +157,6 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
             SubState.Authenticate -> interpretResponseAuthenticate(ccidResponse)
             SubState.ReadingInfo ->  interpretResponseInfo(ccidResponse)
             SubState.ConnectingToCards -> interpretResponseConnectingToCard(ccidResponse)
-            else -> Log.w(TAG,"Impossible SubState: $creatingSubState")
         }
     }
 
@@ -276,13 +272,13 @@ internal abstract class CommunicationLayer(protected var scardReaderList : SCard
                 }
                 CcidCommand.CommandCode.PC_To_RDR_XfrBlock -> {
                     if(slot.cardPresent && !slot.cardPowered) {
-                        val error = SCardError(
+                        val newerror = SCardError(
                             SCardError.ErrorCodes.CARD_COMMUNICATION_ERROR,
                             "Transmit invoked, but card not powered"
                         )
                         /* call setNewState before processing because it will unlock the state machine */
                         scardReaderList.machineState.setNewState(State.Idle)
-                        scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, error)}
+                        scardReaderList.postCallback {scardReaderList.callbacks.onReaderOrCardError(slot, newerror)}
                     }
                     // TODO CRA else ...
                 }

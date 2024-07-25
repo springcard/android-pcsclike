@@ -11,7 +11,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.ImageView
 import android.widget.TextView
+import com.springcard.pcsclike_sample.R
 
 class DeviceListAdapter(private val context: Context,
                         private val dataSource: ArrayList<DeviceListElement>) : BaseAdapter() {
@@ -32,20 +34,51 @@ class DeviceListAdapter(private val context: Context,
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        // Get view for row item
-        val rowView = inflater.inflate(R.layout.row_device, parent, false)
+        val viewHolder: ViewHolder
+        val rowView: View
 
-        // Get title element
-        val titleTextView = rowView.findViewById(R.id.name) as TextView
-
-        // Get subtitle element
-        val subtitleTextView = rowView.findViewById(R.id.rssi) as TextView
+        if (convertView == null) {
+            rowView = inflater.inflate(R.layout.row_device, parent, false)
+            viewHolder = ViewHolder().apply {
+                titleTextView = rowView.findViewById(R.id.name)
+                subtitleTextView = rowView.findViewById(R.id.rssi)
+                signalImageView = rowView.findViewById(R.id.signalIcon)
+            }
+            rowView.tag = viewHolder
+        } else {
+            rowView = convertView
+            viewHolder = rowView.tag as ViewHolder
+        }
 
         val device = getItem(position) as DeviceListElement
+        viewHolder.titleTextView.text = device.name
+        viewHolder.subtitleTextView.text = device.info.toString()
 
-        titleTextView.text = device.name
-        subtitleTextView.text = device.info.toString()
+        val rssi = device.info.toInt()
+        when {
+            rssi < -100 -> {
+                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_0_bar)
+            }
+            rssi < -75 -> {
+                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_1_bar)
+            }
+            rssi < -50 -> {
+                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_2_bar)
+            }
+            rssi < -25 -> {
+                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_3_bar)
+            }
+            else -> {
+                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_4_bar)
+            }
+        }
 
         return rowView
     }
+}
+
+private class ViewHolder {
+    lateinit var titleTextView: TextView
+    lateinit var subtitleTextView: TextView
+    lateinit var signalImageView: ImageView
 }

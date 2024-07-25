@@ -7,18 +7,32 @@
 package com.springcard.pcsclike_sample_ble
 
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.ccid.*
 import com.springcard.pcsclike.utils.*
+import com.springcard.pcsclike_sample.DeviceFragment
 
-
-class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
+class DeviceFragment : DeviceFragment() {
 
     override fun connectToDevice() {
 
         if(device is BluetoothDevice) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                    return
+                }
+            }
+            else{
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return
+                }
+            }
             deviceName = (device as BluetoothDevice).name
 
             if(mainActivity.supportCrypto && mainActivity.preferences.useAuthentication) {

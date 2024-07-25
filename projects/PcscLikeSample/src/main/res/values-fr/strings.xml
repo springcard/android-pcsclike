@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_app_name">PCSC</string>
+    <string name="ble_not_supported">BLE non supporté</string>
+    <string name="usb_host_not_supported">Hôte USB non supporté</string>
+    <string name="navigation_drawer_open">Ouvrir le tiroir de navigation</string>
+    <string name="navigation_drawer_close">Fermer le tiroir de navigation</string>
+    <string name="device_info">Informations du périphériques</string>
+    <string name="transmit">Lancer</string>
+    <string name="scan_button">Scanner</string>
+    <string name="info">Informations</string>
+
+    <string name="connected">Connecté</string>
+    <string name="disconnected">Déconnecté</string>
+    <string name="atr">ATR</string>
+    <string name="cardMute">Carte muette</string>
+    <string name="retrievingDeviceInformation">Récupération des données</string>
+    <string name="loading">Chargement…</string>
+    <string name="absent">Absent</string>
+    <string name="present">Present</string>
+    <string name="shutdown">Arréter</string>
+    <string name="send_mail">Envoyer par mail</string>
+
+    <string name="no_capdu">Pas de C-APDU</string>
+    <string name="no_card">Pas de carte</string>
+    <string name="wake_up">Réveiller</string>
+
+    <string name="menu_options">Options</string>
+    <string name="menu_about">À propos</string>
+    <string name="menu_logs">Journal</string>
+    <string name="menu_device_list">Périphériques</string>
+
+    <string name="enable_logs">Activer les Logs</string>
+    <string name="stop_on_error">Arrêt en cas d\'erreur</string>
+    <string name="time_measurement">Mesurer le temps d\'exécution</string>
+    <string name="use_authentication">Sécuriser la communication</string>
+    <string name="key_index">Index Clef</string>
+    <string name="authentication_key">Clef de sécurité</string>
+    <string name="error_key_length">La taille de la clé doit être de 16 octets</string>
+
+    <string name="button_connect">Connecter</string>
+    <string name="button_discconnect">Déconnecter</string>
+
+    <string name="logo">Logo</string>
+    <string name="application_information">Informations sur l\'application</string>
+    <string name="library_information">Informations sur la librairie</string>
+    <string name="linkSpringcard">www.springcard.com</string>
+</resources>

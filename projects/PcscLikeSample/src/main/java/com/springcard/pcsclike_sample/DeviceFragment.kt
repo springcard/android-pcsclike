@@ -17,17 +17,14 @@ import android.view.*
 import android.widget.*
 import com.springcard.pcsclike.*
 import com.springcard.pcsclike.utils.*
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_device.*
-import kotlinx.android.synthetic.main.content_main.*
+import com.springcard.pcsclike_sample.databinding.FragmentDeviceBinding
 import java.lang.Exception
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.experimental.and
-import kotlin.experimental.inv
-
 
 abstract class DeviceFragment : Fragment() {
+
+    private var _binding: FragmentDeviceBinding? = null
+    private val binding get() = _binding!!
 
     protected val TAG = this::class.java.simpleName
 
@@ -50,6 +47,9 @@ abstract class DeviceFragment : Fragment() {
     private var isDeviceInitialized = false
     private var readingPower = false
 
+    private var currentSlotIndex = 0
+    private var torcIndex = 0
+    private var modelIndex = 0
 
     /* Various callback methods defined by the ScardReaderLis */
     protected var scardCallbacks: SCardReaderListCallback = object : SCardReaderListCallback() {
@@ -69,8 +69,6 @@ abstract class DeviceFragment : Fragment() {
             else {
                 isUInitialized = false
             }
-
-            loadDefaultApdus()
         }
 
         override fun onReaderListClosed(readerList: SCardReaderList?) {
@@ -112,7 +110,7 @@ abstract class DeviceFragment : Fragment() {
             }
 
             /* Is update concerning selected slot */
-            if(spinnerSlots?.selectedItemPosition == slot.index) {
+            if(currentSlotIndex == slot.index) {
                 updateCardStatus(slot, cardPresent, cardConnected)
             }
         }
@@ -120,11 +118,11 @@ abstract class DeviceFragment : Fragment() {
         override fun onCardConnected(channel: SCardChannel) {
             mainActivity.logInfo("onCardConnected")
             currentChannel = channel
-            textState.text = getString(R.string.connected)
-            textAtr.text = channel.atr.toHexString()
+            binding.textState.text = getString(R.string.connected)
+            binding.textAtr.text = channel.atr.toHexString()
 
-            connectCardButton.isEnabled = false
-            disconnectCardButton.isEnabled = true
+            binding.connectCardButton.isEnabled = false
+            binding.disconnectCardButton.isEnabled = true
         }
 
 
@@ -137,11 +135,11 @@ abstract class DeviceFragment : Fragment() {
             }
 
             currentChannel = channel
-            textState.text = getString(R.string.disconnected)
-            textAtr.text = getString(R.string.atr)
+            binding.textState.text = getString(R.string.disconnected)
+            binding.textAtr.text = getString(R.string.atr)
 
-            connectCardButton.isEnabled = true
-            disconnectCardButton.isEnabled = false
+            binding.connectCardButton.isEnabled = true
+            binding.disconnectCardButton.isEnabled = false
         }
 
         override fun onTransmitResponse(channel: SCardChannel, response: ByteArray) {
@@ -165,13 +163,13 @@ abstract class DeviceFragment : Fragment() {
 
                 /* Disable all UI */
                 updateCardStatus(currentSlot!!, cardPresent = false, cardConnected = false)
-                disconnectCardButton.isEnabled = false
-                connectCardButton.isEnabled = false
-                transmitButton.isEnabled = false
+                binding.disconnectCardButton.isEnabled = false
+                binding.connectCardButton.isEnabled = false
+                binding.transmitButton.isEnabled = false
             }
             else{
                 mainActivity.setActionBarTitle(this@DeviceFragment.deviceName)
-                transmitButton.isEnabled = true
+                binding.transmitButton.isEnabled = true
             }
         }
 
@@ -211,9 +209,9 @@ abstract class DeviceFragment : Fragment() {
                 return
             }
 
-            rapduTextBox.text.clear()
-            rapduTextBox.text.append(getString(R.string.cardMute))
-            transmitButton.isEnabled = true
+            binding.rapduTextBox.text.clear()
+            binding.rapduTextBox.text.append(getString(R.string.cardMute))
+            binding.transmitButton.isEnabled = true
         }
     }
 
@@ -227,8 +225,14 @@ abstract class DeviceFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_device, container, false)
+        _binding = FragmentDeviceBinding.inflate(inflater, container, false)
+
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onCreateOptionsMenu(
@@ -269,13 +273,13 @@ abstract class DeviceFragment : Fragment() {
 
         mainActivity.setDrawerState(false)
 
-        val toolbar = mainActivity.toolbar
+        val toolbar = mainActivity.getToolbar()
         mainActivity.setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener {
             // do something here, such as start an Intent to the parent activity.
 
             quitAndDisconnect()
-            mainActivity.drawer_layout.closeDrawer(GravityCompat.START)
+            mainActivity.getDrawerLayout().closeDrawer(GravityCompat.START)
         }
 
         if(!isUInitialized && ::scardDevice.isInitialized) {
@@ -297,7 +301,7 @@ abstract class DeviceFragment : Fragment() {
             progressDialog.setCancelable(false)
             progressDialog.show()
 
-            rapduTextBox.text.clear()
+            binding.rapduTextBox.text.clear()
 
             //-------------------------------------------------------------------
 
@@ -312,26 +316,26 @@ abstract class DeviceFragment : Fragment() {
             // No auto-correct
             //capduTextBox.inputType = InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
-            transmitButton.setOnClickListener {
+            binding.transmitButton.setOnClickListener {
 
                 mainActivity.logInfo("Click on Run APDU")
 
                 if((!currentSlot?.cardPresent!! || !currentSlot?.cardConnected!! || !currentSlot?.cardPowered!!) &&
-                    spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
+                    torcIndex == sendCommands.indexOf("Transmit")) {
                     updateCardStatus(currentSlot!!, false, false)
-                    rapduTextBox.text.clear()
-                    rapduTextBox.text.append(getString(R.string.no_card))
+                    binding.rapduTextBox.text.clear()
+                    binding.rapduTextBox.text.append(getString(R.string.no_card))
                 }
                 else {
-                    disconnectCardButton.isEnabled = false
-                    connectCardButton.isEnabled = false
-                    transmitButton.isEnabled = false
+                    binding.disconnectCardButton.isEnabled = false
+                    binding.connectCardButton.isEnabled = false
+                    binding.transmitButton.isEnabled = false
                     /* save command */
                     /* TODO CRA */
                     // addExecutedApdu(capduTextBox.text.toString())
 
                     cApdu = mutableListOf<ByteArray>()
-                    for (line in capduTextBox.text.lines()) {
+                    for (line in binding.capduTextBox.text.lines()) {
 
                         /* Remove all nasty characters */
                         var line2 = line.trim()
@@ -351,18 +355,18 @@ abstract class DeviceFragment : Fragment() {
                     }
 
                     cptApdu = 0
-                    rapduTextBox.text.clear()
+                    binding.rapduTextBox.text.clear()
 
                     if(cApdu.size == 0) {
-                        rapduTextBox.text.append(getString(R.string.no_capdu))
-                        disconnectCardButton.isEnabled = true
-                        connectCardButton.isEnabled = true
-                        transmitButton.isEnabled = true
+                        binding.rapduTextBox.text.append(getString(R.string.no_capdu))
+                        binding.disconnectCardButton.isEnabled = true
+                        binding.connectCardButton.isEnabled = true
+                        binding.transmitButton.isEnabled = true
                     }
                     else {
 
                         /* Save default APDU */
-                        mainActivity.preferences.defaultApdus = ApduModel(0, "default APDUs", capduTextBox.text.toString(), spinnerTransmitControl.selectedItemPosition,"", "" )
+                        mainActivity.preferences.defaultApdus = ApduModel(0, "default APDUs", binding.capduTextBox.text.toString(), torcIndex,"", "" )
 
                         if (mainActivity.preferences.enableTimeMeasurement) {
                             apduListStartTime = SystemClock.elapsedRealtime()
@@ -373,11 +377,11 @@ abstract class DeviceFragment : Fragment() {
                 }
             }
 
-            disconnectCardButton.setOnClickListener {
+            binding.disconnectCardButton.setOnClickListener {
                 currentChannel.disconnect()
             }
 
-            connectCardButton.setOnClickListener{
+            binding.connectCardButton.setOnClickListener{
                 currentSlot?.cardConnect()
             }
 
@@ -385,45 +389,12 @@ abstract class DeviceFragment : Fragment() {
 
             /* Load Model List  */
 
-            val listApduString = mutableListOf<String>()
 
-            for (apdu in modelsApdus) {
-                listApduString.add("${apdu.id} - ${apdu.title}")
-            }
-
-            val dataAdapter = ArrayAdapter<String>(
-                activity?.applicationContext!!,
-                android.R.layout.simple_spinner_item, listApduString
-            )
-            // Drop down layout style - list view
-            dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            spinnerModels.adapter = dataAdapter
-
-
-            spinnerModels.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-
-                }
-
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    capduTextBox.text.clear()
-                    capduTextBox.text.append(modelsApdus[spinnerModels.selectedItemPosition].apdu)
-                    spinnerTransmitControl.setSelection(modelsApdus[spinnerModels.selectedItemPosition].mode)
-                }
-            }
 
             connectToNewDevice = false
         }
         else {
             mainActivity.logInfo("DeviceFragment onResume, device already connected")
-        }
-    }
-
-    private fun loadDefaultApdus() {
-        if(mainActivity.preferences.defaultApdus != null) {
-            capduTextBox.text.clear()
-            capduTextBox.text.append(mainActivity.preferences.defaultApdus!!.apdu)
-            spinnerTransmitControl.setSelection(mainActivity.preferences.defaultApdus!!.mode)
         }
     }
 
@@ -440,10 +411,10 @@ abstract class DeviceFragment : Fragment() {
         mainActivity.logInfo("<${cApdu[cptApdu].toHexString()}")
 
         // TODO CRA create resource string
-        if(spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Transmit")) {
+        if(torcIndex == sendCommands.indexOf("Transmit")) {
             currentChannel.transmit(cApdu[cptApdu])
         }
-        else if (spinnerTransmitControl.selectedItemPosition == sendCommands.indexOf("Control")) {
+        else if (torcIndex == sendCommands.indexOf("Control")) {
             scardDevice.control(cApdu[cptApdu])
         }
     }
@@ -457,7 +428,7 @@ abstract class DeviceFragment : Fragment() {
 
         val responseString = response.toHexString()
         mainActivity.logInfo(">$responseString")
-        rapduTextBox.text.append(responseString + "\n")
+        binding.rapduTextBox.text.append(responseString + "\n")
 
         if(responseString.takeLast(4) != "9000" && mainActivity.preferences.stopOnError) {
             mainActivity.logInfo("Stop on error : ${responseString.takeLast(4)}")
@@ -474,9 +445,9 @@ abstract class DeviceFragment : Fragment() {
                     Log.d(TAG, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s")
                     Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                 }
-                disconnectCardButton.isEnabled = true
-                connectCardButton.isEnabled = true
-                transmitButton.isEnabled = true
+                binding.disconnectCardButton.isEnabled = true
+                binding.connectCardButton.isEnabled = true
+                binding.transmitButton.isEnabled = true
             }
         }
     }
@@ -515,7 +486,7 @@ abstract class DeviceFragment : Fragment() {
         }
 
         /* Info dialog */
-        val builder = AlertDialog.Builder(activity!!)
+        val builder = AlertDialog.Builder(requireActivity())
 
         builder.setTitle(deviceName)
 
@@ -545,27 +516,27 @@ abstract class DeviceFragment : Fragment() {
 
     private fun updateCardStatus(slot: SCardReader, cardPresent: Boolean, cardConnected: Boolean) {
 
-        rapduTextBox.text.clear()
+        binding.rapduTextBox.text.clear()
 
         if(cardPresent && !cardConnected) {
             slot.cardConnect()
-            textAtr?.text = getString(R.string.atr)
-            textState?.text = getString(R.string.present)
-            connectCardButton.isEnabled = true
-            disconnectCardButton.isEnabled = false
+            binding.textAtr?.text = getString(R.string.atr)
+            binding.textState?.text = getString(R.string.present)
+            binding.connectCardButton.isEnabled = true
+            binding.disconnectCardButton.isEnabled = false
         }
         else if(cardPresent && cardConnected) {
-            textAtr.text = currentSlot?.channel!!.atr.toHexString()
-            textState?.text = getString(R.string.connected)
+            binding.textAtr.text = currentSlot?.channel!!.atr.toHexString()
+            binding.textState?.text = getString(R.string.connected)
             currentChannel = slot.channel
-            connectCardButton.isEnabled = false
-            disconnectCardButton.isEnabled = true
+            binding.connectCardButton.isEnabled = false
+            binding.disconnectCardButton.isEnabled = true
         }
         else if(!cardPresent && !cardConnected) {
-            textAtr?.text = getString(R.string.atr)
-            textState?.text = getString(R.string.absent)
-            connectCardButton.isEnabled = false
-            disconnectCardButton.isEnabled = false
+            binding.textAtr?.text = getString(R.string.atr)
+            binding.textState?.text = getString(R.string.absent)
+            binding.connectCardButton.isEnabled = false
+            binding.disconnectCardButton.isEnabled = false
         }
         else {
            mainActivity.logInfo("Impossible value: card not present but powered!")
@@ -587,38 +558,72 @@ abstract class DeviceFragment : Fragment() {
             spinnerList.add("$i - ${readerList.slots[i]}")
         }
 
-        val adapter = ArrayAdapter<String>(
+        // SLOT
+        val arrayAdapter = ArrayAdapter<String>(
             activity?.applicationContext!!,
-            android.R.layout.simple_spinner_item, spinnerList
+            android.R.layout.simple_spinner_item,
+            spinnerList
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerSlots.adapter = adapter
-
-        val dataAdapter = ArrayAdapter<String>(
-            activity?.applicationContext!!,
-            android.R.layout.simple_spinner_item, sendCommands
-        )
-        // Drop down layout style - list view
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerTransmitControl.adapter = dataAdapter
-
-        textState.text = getString(R.string.absent)
-        connectCardButton.isEnabled = false
-        disconnectCardButton.isEnabled = false
-
-        currentSlot = readerList.getReader(spinnerSlots.selectedItemPosition)
-
-        spinnerSlots.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-
-            }
-
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                currentSlot = readerList.getReader(spinnerSlots.selectedItemPosition)
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerSlots.setText(arrayAdapter.getItem(currentSlotIndex).toString(), false)
+        binding.spinnerSlots.apply {
+            setAdapter(arrayAdapter)
+            setOnItemClickListener { _, _, position, _ ->
+                currentSlotIndex = position
+                currentSlot = readerList.getReader(currentSlotIndex)
                 currentChannel = currentSlot?.channel!!
                 updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
             }
         }
+
+        // T&C
+        val dataAdapter = ArrayAdapter<String>(
+            activity?.applicationContext!!,
+            android.R.layout.simple_spinner_item,
+            sendCommands
+        )
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerTransmitControl.setText(dataAdapter.getItem(torcIndex).toString(), false)
+        binding.spinnerTransmitControl.apply {
+            setAdapter(dataAdapter)
+            setOnItemClickListener { _, _, position, _ ->
+                torcIndex = position
+            }
+        }
+
+        val listApduString = mutableListOf<String>()
+
+        for (apdu in modelsApdus) {
+            listApduString.add("${apdu.id} - ${apdu.title}")
+        }
+
+        val modelAdapter = ArrayAdapter(
+            activity?.applicationContext!!,
+            android.R.layout.simple_spinner_item,
+            listApduString
+        )
+
+        modelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerModels.setText(modelAdapter.getItem(modelIndex).toString(), false)
+        binding.spinnerModels.apply {
+            setAdapter(modelAdapter)
+            setOnItemClickListener { _, _, position, _ ->
+                modelIndex = position
+                binding.capduTextBox.text.clear()
+                var model = modelsApdus[position]
+                binding.capduTextBox.text.append(model.apdu)
+                torcIndex = model.mode
+                binding.spinnerTransmitControl.setText(dataAdapter.getItem(torcIndex).toString(), false)
+            }
+        }
+
+
+        binding.textState.text = getString(R.string.absent)
+        binding.connectCardButton.isEnabled = false
+        binding.disconnectCardButton.isEnabled = false
+
+        currentSlot = readerList.getReader(currentSlotIndex)
+
         progressDialog.dismiss()
 
         isUInitialized = true

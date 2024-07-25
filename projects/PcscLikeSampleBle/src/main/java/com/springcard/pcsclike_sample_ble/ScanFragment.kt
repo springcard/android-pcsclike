@@ -19,14 +19,29 @@ import android.os.Bundle
 import android.os.ParcelUuid
 import android.util.Log
 import android.widget.AdapterView
-import kotlinx.android.synthetic.main.fragment_scan.*
 import java.util.ArrayList
 import android.view.*
 import android.widget.ProgressBar
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
+import androidx.lifecycle.Lifecycle
 import com.springcard.pcsclike.communication.*
 import com.springcard.pcsclike_sample.*
+import com.springcard.pcsclike_sample_ble.databinding.FragmentScanBinding
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
+import com.springcard.pcsclike_sample.ScanFragment
+import com.springcard.pcsclike_sample.R
 
-class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
+class ScanFragment : ScanFragment() {
+
+
+    private var _binding: FragmentScanBinding? = null
+    private val binding get() = _binding!!
 
     private var deviceList = ArrayList<DeviceListElement>()
     private var adapter: DeviceListAdapter? = null
@@ -45,11 +60,10 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
-        setHasOptionsMenu(true)
         mainActivity = activity as MainActivity
-        mainActivity.setActionBarTitle(resources.getString(R.string.device_list))
+        mainActivity.setActionBarTitle(resources.getString(R.string.menu_device_list))
 
 
         /* Check if device  support BLE */
@@ -58,26 +72,7 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             finish()*/
         }
 
-        /* Location permission */
-        // TODO CRA : check if location already activated
-        /* val intent: Intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-         startActivity(intent)*/
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val PERMISSION_REQUEST_FINE_LOCATION = 5
-            /* Android Permission check */
-            /* As of Android M (6.0) and above, location permission is required for the app to get BLE scan results.                                  */
-            /* The main motivation behind having to explicitly require the users to grant this permission is to protect users’ privacy.                */
-            /* A BLE scan can often unintentionally reveal the user’s location to unscrupulous app developers who scan for specific BLE beacons,       */
-             /* or some BLE device may advertise location-specific information. Before Android 10, ACCESS_COARSE_LOCATION can be used to gain access   */
-             /* to BLE scan results, but we recommend using ACCESS_FINE_LOCATION instead since it works for all versions of Android.                   */
-            if (mainActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    PERMISSION_REQUEST_FINE_LOCATION
-                )
-            }
-        }
+        checkAndRequestPermissions()
 
         /* Set up BLE */
         val REQUEST_ENABLE_BT = 6
@@ -90,7 +85,13 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         mBluetoothScanner = mBluetoothAdapter?.bluetoothLeScanner
 
         /* Inflate the layout for this fragment */
-        return inflater.inflate(R.layout.fragment_scan, container, false)
+        _binding = FragmentScanBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -99,39 +100,38 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
         mainActivity.setDrawerState(true)
 
         /* Create ListView */
-        adapter = DeviceListAdapter(this.context!!, deviceList)
-        device_list_view.adapter = adapter
+        adapter = DeviceListAdapter(this.requireContext(), deviceList)
+        binding.deviceListView.adapter = adapter
 
         /* Click on item of ListView */
-        device_list_view.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-            mainActivity.logInfo("Device ${bleDeviceList[position].name} selected")
+        binding.deviceListView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+            //mainActivity.logInfo("Device ${bleDeviceList[position].name} selected")
             mainActivity.goToDeviceFragment(bleDeviceList[position])
         }
-    }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // handle item selection
-        return when (item.itemId) {
-            R.id.scan_button -> {
-                deviceList.clear()
-                bleDeviceList.clear()
-                adapter?.notifyDataSetChanged()
-                scanLeDevice(true)
-                true
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(com.springcard.pcsclike_sample_ble.R.menu.scan_app_bar, menu)
             }
-            else -> super.onOptionsItemSelected(item)
-        }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    com.springcard.pcsclike_sample_ble.R.id.scan_button -> {
+                        deviceList.clear()
+                        bleDeviceList.clear()
+                        adapter?.notifyDataSetChanged()
+                        scanLeDevice(true)
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
-
-
-    override fun onCreateOptionsMenu(
-        menu: Menu, inflater: MenuInflater
-    ) {
-        inflater.inflate(com.springcard.pcsclike_sample_ble.R.menu.scan_app_bar, menu)
-    }
-
 
     private fun scanLeDevice(enable: Boolean) {
+
         when (enable) {
             true -> {
                 /* Scan settings */
@@ -153,11 +153,34 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                     val scanFilterSpringCoreBonded = ScanFilter.Builder()
                         .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_CCID_BONDED_SERVICE))
                         .build()
+
+                    val scanFilterS320Bonded = ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_S320_BONDED_SERVICE))
+                        .build()
+
+                    val scanFilterS320Plain = ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_S320_PLAIN_SERVICE))
+                        .build()
+
+                    val scanFilterS370Bounded = ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_S370_BONDED_SERVICE))
+                        .build()
+
+                    val scanFilterS370Plain = ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(GattAttributesSpringCore.UUID_SPRINGCARD_S370_PLAIN_SERVICE))
+                        .build()
+
                     scanFilters.add(scanFilterD600)
                     scanFilters.add(scanFilterSpringCorePlain)
                     scanFilters.add(scanFilterSpringCoreBonded)
+
+                    scanFilters.add(scanFilterS320Bonded)
+                    scanFilters.add(scanFilterS320Plain)
+                    scanFilters.add(scanFilterS370Bounded)
+                    scanFilters.add(scanFilterS370Plain)
+
                 } catch (e: Exception) {
-                    Log.e(TAG, e.message)
+                    Log.e(TAG, e.message.toString())
                 }
 
                 /* Reset devices list anyway */
@@ -167,8 +190,20 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
 
                 if (!mScanning) {
                     mScanning = true
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                            return
+                        }
+                    }
+                    else{
+                        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            return
+                        }
+                    }
+
                     mBluetoothScanner?.startScan(scanFilters, settingsBuilt, mLeScanCallback)
-                    progressBarScanning?.visibility = ProgressBar.VISIBLE
+                    binding.progressBarScanning?.visibility = ProgressBar.VISIBLE
                     mainActivity.logInfo("Scan started")
                 }
             }
@@ -178,11 +213,54 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
                 {
                     mBluetoothScanner?.stopScan(mLeScanCallback)
                 }
-                progressBarScanning?.visibility = ProgressBar.GONE
+                binding.progressBarScanning.visibility = ProgressBar.GONE
                 mainActivity.logInfo("Scan stopped")
             }
         }
     }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val allPermissionsGranted = permissions.entries.all { it.value }
+
+            if (allPermissionsGranted) {
+                // Toutes les permissions ont été accordées
+                // Vous pouvez maintenant procéder avec les opérations nécessitant les permissions
+            } else {
+                // Au moins une permission a été refusée
+                // Gérez le cas où les permissions ne sont pas accordées
+            }
+        }
+
+
+    private fun checkAndRequestPermissions() {
+        val requiredPermissions = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Pour Android 12 (API niveau 31) et versions ultérieures
+            requiredPermissions.add(Manifest.permission.BLUETOOTH_SCAN)
+            requiredPermissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+            requiredPermissions.add(Manifest.permission.BLUETOOTH_ADMIN)
+        } else {
+            // Pour Android 6 (Marshmallow, API niveau 23) à Android 11 (API niveau 30)
+            requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            requiredPermissions.add(Manifest.permission.BLUETOOTH_ADMIN)
+        }
+
+        // Vérifier si les permissions sont déjà accordées
+        val missingPermissions = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            // Demander les permissions manquantes
+            requestPermissionLauncher.launch(missingPermissions.toTypedArray())
+        } else {
+            // Toutes les permissions nécessaires sont déjà accordées
+            // Continuez avec les opérations nécessitant les permissions
+        }
+    }
+
 
     override fun onPause() {
         super.onPause()
@@ -258,4 +336,6 @@ class ScanFragment : com.springcard.pcsclike_sample.ScanFragment() {
             adapter?.notifyDataSetChanged()
         }
     }
+
+
 }

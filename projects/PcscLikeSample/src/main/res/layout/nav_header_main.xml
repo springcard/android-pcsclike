@@ -9,22 +9,23 @@
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark"
+
         android:gravity="bottom">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
             android:layout_width="58dp"
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/nav_header_vertical_spacing"
-            android:contentDescription="@string/nav_header_desc"
+
             android:src="@mipmap/ic_launcher_round"/>
 
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/nav_header_vertical_spacing"
             android:text="@string/app_name"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1" android:paddingLeft="15dp"
+            android:textColor="#FFFFFF"
+            android:paddingLeft="15dp"
             android:paddingBottom="20dp" android:textSize="24sp"/>
 
 </LinearLayout>

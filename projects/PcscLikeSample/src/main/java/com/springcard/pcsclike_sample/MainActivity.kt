@@ -6,6 +6,7 @@
 
 package com.springcard.pcsclike_sample
 
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.SystemClock
@@ -13,18 +14,24 @@ import androidx.core.view.GravityCompat
 import androidx.appcompat.app.ActionBarDrawerToggle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+import androidx.appcompat.widget.Toolbar
 import com.google.android.material.navigation.NavigationView
 import androidx.drawerlayout.widget.DrawerLayout
+import com.android.volley.BuildConfig
 import com.android.volley.Request
 import com.android.volley.Response
 import com.google.gson.GsonBuilder
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.content_main.*
 import org.json.JSONArray
 import com.android.volley.toolbox.*
-
+import com.springcard.pcsclike_sample.R
+import com.springcard.pcsclike_sample.databinding.ActivityMainBinding
 
 abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+
+    lateinit var binding: ActivityMainBinding
 
     private val TAG = this::class.java.simpleName
     abstract val scanFragment : ScanFragment
@@ -42,8 +49,25 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.contentMain.toolbar)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(true)
+            window.insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        }
 
         logInfo("Application started")
 
@@ -51,7 +75,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         val fragmentTransaction = fragmentManager.beginTransaction()
         fragmentTransaction.add(R.id.fragment_container, scanFragment)
         fragmentTransaction.commit()
-        nav_view.setCheckedItem(R.id.nav_scan)
+        binding.navView.setCheckedItem(R.id.nav_scan)
 
 
         /* Get APDU model List */
@@ -66,22 +90,22 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         /* Request a string response from the provided URL */
         val stringRequest = StringRequest(
             Request.Method.GET, url,
-            Response.Listener<String> { response ->
-                /* Store the JSON response string */
+            { response ->
                 preferences.modelsApdusJson = response.toString()
                 loadJsonApduModel(preferences.modelsApdusJson)
             },
-            Response.ErrorListener {
-                /* Do nothing, we already used the JSON previously stored in config */
+            { error ->
+                Log.e("HTTP Request Error", error.toString())
             })
 
-        /* Add the request to the RequestQueue */
         requestQueue.add(stringRequest)
 
-
-        logInfo("Lib rev = ${com.springcard.pcsclike.BuildConfig.VERSION_NAME}")
-        logInfo("App rev = ${com.springcard.pcsclike_sample.BuildConfig.VERSION_NAME}")
+        logInfo("Lib rev = ${BuildConfig.VERSION_NAME}")
+        logInfo("App rev = ${BuildConfig.VERSION_NAME}")
     }
+
+    fun getToolbar(): Toolbar = binding.contentMain.toolbar
+    fun getDrawerLayout(): DrawerLayout = binding.drawerLayout
 
     private fun loadJsonApduModel(json: String) {
         val modelsApdus: MutableList<ApduModel>
@@ -100,23 +124,24 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
     fun setDrawerState(isEnabled: Boolean) {
 
         drawerToggle = ActionBarDrawerToggle(
-            this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+            this, binding.drawerLayout, binding.contentMain.toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
-        drawer_layout.addDrawerListener(drawerToggle)
+        binding.drawerLayout.addDrawerListener(drawerToggle)
 
         if (isEnabled) {
-            drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
-            drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_UNLOCKED)
+            binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+            /* A MODIFIER */
+            //drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_UNLOCKED)
             drawerToggle.syncState()
 
             supportActionBar?.setHomeButtonEnabled(true)
-            nav_view.setNavigationItemSelectedListener(this)
-
+            binding.navView.setNavigationItemSelectedListener(this)
         } else {
-            drawer_layout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-            drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+            binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+            /* A MODIFIER */
+            //drawerToggle.onDrawerStateChanged(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
             drawerToggle.syncState()
-            toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_material)
+            binding.contentMain.toolbar.setNavigationIcon(androidx.constraintlayout.widget.R.drawable.abc_ic_ab_back_material)
         }
     }
 
@@ -125,8 +150,8 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
             deviceFragment.quitAndDisconnect()
         }
         else {
-            if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
-                drawer_layout.closeDrawer(GravityCompat.START)
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
             } else {
                 super.onBackPressed()
             }
@@ -154,7 +179,7 @@ abstract class MainActivity  :  AppCompatActivity(), NavigationView.OnNavigation
         transaction.addToBackStack(null)
         transaction.commit()
 
-        drawer_layout.closeDrawer(GravityCompat.START)
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
 
         return true
     }

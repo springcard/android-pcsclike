@@ -19,7 +19,7 @@ import com.springcard.pcsclike.communication.*
 class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, callbacks: SCardReaderListCallback): SCardReaderList(layerDevice as Any, callbacks) {
 
     override fun create(ctx : Context) {
-        Log.i("PcscLikeLibrary", "Lib rev = ${BuildConfig.VERSION_NAME}")
+        //Log.i("PcscLikeLibrary", "Lib rev = ${BuildConfig.VERSION_NAME}")
         if(layerDevice is BluetoothDevice) {
             commLayer = BleLayer(this, layerDevice)
             commLayer.connect(ctx)
@@ -27,7 +27,7 @@ class SCardReaderListBle internal constructor(layerDevice: BluetoothDevice, call
     }
 
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
-        Log.i("PcscLikeLibrary", "Lib rev = ${BuildConfig.VERSION_NAME}")
+        //Log.i("PcscLikeLibrary", "Lib rev = ${BuildConfig.VERSION_NAME}")
         if(layerDevice is BluetoothDevice) {
             commLayer = BleLayer(this, layerDevice)
             ccidHandler = CcidHandler(this, secureConnexionParameters)

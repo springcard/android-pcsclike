@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:showIn="navigation_view">
+      tools:showIn="navigation_view"
+    >
 
     <group android:checkableBehavior="single">
         <item
                 android:id="@+id/nav_scan"
-                android:icon="@android:drawable/ic_menu_search"
-                android:title="@string/device_list"/>
+                android:icon="@drawable/search"
+                android:title="@string/menu_device_list"
+            />
         <item
                 android:id="@+id/nav_about"
-                android:icon="@android:drawable/ic_menu_help"
-                android:title="@string/about"/>
+                android:icon="@drawable/about"
+                android:title="@string/menu_about"/>
         <item
                 android:id="@+id/nav_options"
-                android:icon="@android:drawable/ic_menu_manage"
-                android:title="@string/options"/>
+                android:icon="@drawable/settings"
+                android:title="@string/menu_options"/>
         <item
                 android:id="@+id/nav_log"
-                android:icon="@android:drawable/ic_menu_sort_by_size"
-                android:title="@string/log"/>
+                android:icon="@drawable/logs"
+                android:title="@string/menu_logs"/>
     </group>
 
 </menu>
