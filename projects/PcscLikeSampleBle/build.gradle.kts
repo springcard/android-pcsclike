@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.springcard.pcsclike_sample_ble"
-    compileSdk = 34
+    compileSdk = 35
 
     buildFeatures{
         buildConfig = true
@@ -19,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "com.springcard.pcsclike_sample_ble"
         minSdk = 22
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 13
         versionName = "1.3"
 

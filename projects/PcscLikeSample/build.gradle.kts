@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.springcard.pcsclike_sample"
-    compileSdk = 34
+    compileSdk = 35
 
     buildFeatures {
         compose = true
