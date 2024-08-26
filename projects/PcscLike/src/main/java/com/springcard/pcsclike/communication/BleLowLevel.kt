@@ -154,8 +154,7 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                 }
 
                 if(uuidCharacteristicsCanIndicate.size != characteristicsCanIndicate.size
-                    || uuidCharacteristicsToRead.size != characteristicsToRead.size
-                    || uuidCharacteristicsToReadPower.size != characteristicsToReadPower.size) {
+                    || uuidCharacteristicsToRead.size != characteristicsToRead.size) {
                     scardReaderList.commLayer.onCommunicationError(SCardError(SCardError.ErrorCodes.MISSING_CHARACTERISTIC, "One or more characteristic are missing in the GATT"))
                     return
                 }
