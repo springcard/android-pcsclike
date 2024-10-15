@@ -41,11 +41,11 @@ fun Collection<Byte>.toHexString(): String {
 }
 
 fun Byte.toHexString(): String {
-    return "0x${this.toString(16).toUpperCase().padStart(2, '0')}"
+    return "0x${this.toString(16).uppercase().padStart(2, '0')}"
 }
 
 fun UByte.toHexString(): String {
-    return "0x${this.toString(16).toUpperCase().padStart(2, '0')}"
+    return "0x${this.toString(16).uppercase().padStart(2, '0')}"
 }
 
 /*

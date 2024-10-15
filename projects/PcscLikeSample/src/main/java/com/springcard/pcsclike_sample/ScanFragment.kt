@@ -19,6 +19,4 @@ abstract class ScanFragment : Fragment() {
     protected fun PackageManager.missingSystemFeature(name: String): Boolean = !hasSystemFeature(name)
 
     protected lateinit var mainActivity: MainActivity
-
-
 }

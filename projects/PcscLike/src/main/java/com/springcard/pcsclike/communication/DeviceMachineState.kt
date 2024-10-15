@@ -169,10 +169,6 @@ internal class DeviceMachineState(private val scardReaderList: SCardReaderList) 
                     }
                 }
             }
-            else -> {
-                Log.w(TAG, "Impossible new state: $newState")
-                currentState = oldState
-            }
         }
 
 

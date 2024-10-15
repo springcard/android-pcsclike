@@ -294,8 +294,8 @@ internal class CcidHandler(private val scardReaderList: SCardReaderList) {
 
         Log.e(TAG, "Error in CCID Header: 0x${String.format("%02X", slotError)}")
 
-        var errorCode = SCardError.ErrorCodes.NO_ERROR
-        var detail = ""
+        var errorCode:SCardError.ErrorCodes
+        var detail:String
 
         when (slotError) {
             SCardReader.SlotError.CCID_ERR_CMD_ABORTED.code -> {

@@ -10,9 +10,10 @@ import android.hardware.usb.UsbDevice
 import com.springcard.pcsclike.*
 import android.view.Menu
 import android.view.MenuInflater
+import com.springcard.pcsclike_sample.DeviceFragment
+import com.springcard.pcsclike_sample.R
 
-
-class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
+class DeviceFragment : DeviceFragment() {
 
     override fun connectToDevice() {
 
@@ -42,8 +43,8 @@ class DeviceFragment : com.springcard.pcsclike_sample.DeviceFragment() {
         super.onCreateOptionsMenu(menu, inflater)
 
         /* Hide shutdown and wake-up buttons when we are on USB */
-        menu.findItem(com.springcard.pcsclike_sample.R.id.action_shutdown).isVisible = false
-        menu.findItem(com.springcard.pcsclike_sample.R.id.action_wakeup).isVisible = false
+        menu.findItem(R.id.action_shutdown).isVisible = false
+        menu.findItem(R.id.action_wakeup).isVisible = false
     }
 
 }

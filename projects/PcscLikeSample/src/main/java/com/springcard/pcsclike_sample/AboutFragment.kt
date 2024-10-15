@@ -10,13 +10,16 @@ import android.graphics.Typeface
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.*
-import kotlinx.android.synthetic.main.fragment_about.*
 import android.widget.TextView
 import android.widget.TableLayout
 import android.widget.TableRow
-
+import androidx.core.content.ContextCompat
+import com.springcard.pcsclike_sample.databinding.FragmentAboutBinding
 
 class AboutFragment : Fragment() {
+
+    private var _binding: FragmentAboutBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var appInfo: MainActivity.ApplicationInfo
     private lateinit var libInfo: MainActivity.LibraryInfo
@@ -25,24 +28,28 @@ class AboutFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        setHasOptionsMenu(false)
         val mainActivity = activity as MainActivity
-        mainActivity.setActionBarTitle("About")
+        mainActivity.setActionBarTitle(getString(R.string.menu_about))
 
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_about, container, false)
+        _binding = FragmentAboutBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        addNewLine(appInfoTable,"Version Code", appInfo.VERSION_CODE.toString())
-        addNewLine(appInfoTable,"Version Name", appInfo.VERSION_NAME)
-        addNewLine(appInfoTable,"Debug", appInfo.DEBUG.toString())
+        addNewLine(binding.appInfoTable,"Version Code", appInfo.VERSION_CODE.toString())
+        addNewLine(binding.appInfoTable,"Version Name", appInfo.VERSION_NAME)
+        addNewLine(binding.appInfoTable,"Debug", appInfo.DEBUG.toString())
 
-        addNewLine(libInfoTable,"Library Name", libInfo.libraryName)
-        addNewLine(libInfoTable,"Version Name", libInfo.libraryVersion)
-        addNewLine(libInfoTable,"Debug", libInfo.libraryDebug.toString())
+        addNewLine(binding.libInfoTable,"Library Name", libInfo.libraryName)
+        addNewLine(binding.libInfoTable,"Version Name", libInfo.libraryVersion)
+        addNewLine(binding.libInfoTable,"Debug", libInfo.libraryDebug.toString())
     }
 
     private fun addNewLine(table: TableLayout, key: String, value: String) {
@@ -50,18 +57,20 @@ class AboutFragment : Fragment() {
         val tv1 = TextView(activity)
         val tv2 = TextView(activity)
 
-        // cell 1
         tv1.text =  key
         tv1.typeface = Typeface.DEFAULT_BOLD
+        tv1.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+        val params1 = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
+        tv1.layoutParams = params1
 
-        // cell 2
         tv2.text = value
+        tv2.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_color))
+        val params2 = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f)
+        tv2.layoutParams = params2
 
-        // add cell to row
         row.addView(tv1)
         row.addView(tv2)
 
-        // add row to table
         table.addView(row)
     }
 

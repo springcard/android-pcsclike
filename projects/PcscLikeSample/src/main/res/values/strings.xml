@@ -1,27 +1,15 @@
 <resources>
-    <string name="app_name">PCSC</string>
+    <string name="local_app_name">PCSC</string>
     <string name="ble_not_supported">BLE not supported</string>
     <string name="usb_host_not_supported">USB HOST not supported</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_desc">Navigation header</string>
-    <string name="DeviceInfo">Device Information</string>
-    <string name="transmit">Run</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="device_info">Device Information</string>
+    <string name="transmit">Run</string>
     <string name="scan_button">scan_button</string>
     <string name="info">Info</string>
-    <string name="logo">Logo</string>
-    <string name="application_information">Application Information</string>
-    <string name="linkSpringcard">www.springcard.com</string>
-    <string name="library_information">Library Information</string>
-    <string name="enable_logs">Enable Logs</string>
-    <string name="stop_on_error">Stop on error</string>
-    <string name="time_measurement">Time measurement</string>
-    <string name="device_list">device_list</string>
-    <string name="about">About</string>
-    <string name="options">Options</string>
-    <string name="log">Log</string>
+
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="atr">ATR</string>
@@ -32,12 +20,29 @@
     <string name="present">Present</string>
     <string name="shutdown">Shutdown</string>
     <string name="send_mail">Send mail</string>
-    <string name="use_authentication">Use authentication</string>
-    <string name="key_index">Key index</string>
-    <string name="authentication_key">Authentication key</string>
+
     <string name="no_capdu">no C-APDU</string>
     <string name="no_card">no card</string>
     <string name="wake_up">Wake-up</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="menu_options">Options</string>
+    <string name="menu_about">About</string>
+    <string name="menu_logs">Logs</string>
+    <string name="menu_device_list">Devices</string>
+
+    <string name="enable_logs">Enable Logs</string>
+    <string name="stop_on_error">Stop on error</string>
+    <string name="time_measurement">Time measurement</string>
+    <string name="use_authentication">Use authentication</string>
+    <string name="key_index">Key index</string>
+    <string name="authentication_key">Authentication key</string>
+    <string name="error_key_length">The key must be 16 bytes long</string>
+
+    <string name="button_connect">Connect</string>
+    <string name="button_discconnect">Disconnect</string>
+
+    <string name="logo">Logo</string>
+    <string name="application_information">Application Information</string>
+    <string name="library_information">Library Information</string>
+    <string name="linkSpringcard">www.springcard.com</string>
 </resources>

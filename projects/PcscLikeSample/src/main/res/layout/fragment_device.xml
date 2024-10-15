@@ -5,56 +5,106 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_color"
     tools:context=".DeviceFragment">
 
-    <Spinner
-            android:layout_width="193dp"
-            android:layout_height="26dp"
-            android:id="@+id/spinnerSlots" app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="8dp" android:visibility="visible"
-            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintVertical_bias="1.0"/>
-    <Spinner
-            android:layout_width="140dp"
-            android:layout_height="26dp"
-            android:id="@+id/spinnerTransmitControl" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:visibility="visible"
-            app:layout_constraintVertical_bias="0.0"/>
-    <Spinner
-            android:layout_width="165dp"
-            android:layout_height="26dp"
-            android:id="@+id/spinnerModels" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="8dp" android:visibility="visible"
-            app:layout_constraintHorizontal_bias="0.694" app:layout_constraintVertical_bias="0.0"/>
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/spinnerSlotsWrapper"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+        android:layout_width="193dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
 
-    <ImageButton
+        <AutoCompleteTextView
+            android:id="@+id/spinnerSlots"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/spinnerTransmitControlWrapper"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+        android:layout_width="140dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
+
+        <AutoCompleteTextView
+            android:id="@+id/spinnerTransmitControl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/spinnerModelsWrapper"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+        android:layout_width="165dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.694"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
+
+        <AutoCompleteTextView
+            android:id="@+id/spinnerModels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" app:srcCompat="@android:drawable/ic_media_next"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/forward"
+            app:iconTint="@color/colorPrimary"
             android:id="@+id/nextButton" android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.0"
             android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginEnd="6dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0" android:contentDescription="@string/DeviceInfo"
-            android:background="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
-    <ImageButton
+            app:layout_constraintHorizontal_bias="1.0" android:contentDescription="@string/device_info"
+            android:backgroundTint="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
+    <com.google.android.material.button.MaterialButton
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" app:srcCompat="@android:drawable/ic_media_previous"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/backward"
+            app:iconTint="@color/colorPrimary"
             android:id="@+id/prevButton" android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="8dp"
             app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.0"
             android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginEnd="6dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.905" android:contentDescription="@string/DeviceInfo"
-            android:background="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
-    <Button
+            app:layout_constraintHorizontal_bias="0.905" android:contentDescription="@string/device_info"
+            android:backgroundTint="@android:color/transparent" android:clickable="false" android:visibility="invisible"/>
+    <com.google.android.material.button.MaterialButton
             android:text="@string/transmit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -63,10 +113,10 @@
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginEnd="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="8dp" app:layout_constraintVertical_bias="0.04"
-            app:layout_constraintTop_toBottomOf="@+id/capduTextBox"/>
+            app:layout_constraintTop_toBottomOf="@+id/capduTextInputLayout"/>
 
-    <Button
-            android:text="Disconnect Card"
+    <com.google.android.material.button.MaterialButton
+            android:text="@string/button_discconnect"
             android:layout_width="119dp"
             android:layout_height="wrap_content"
             android:id="@+id/disconnectCardButton" android:layout_marginTop="8dp"
@@ -74,9 +124,9 @@
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginEnd="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="8dp" app:layout_constraintVertical_bias="0.04"
-            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintTop_toBottomOf="@+id/capduTextBox"/>
-    <Button
-            android:text="Connect Card"
+            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintTop_toBottomOf="@+id/capduTextInputLayout"/>
+    <com.google.android.material.button.MaterialButton
+            android:text="@string/button_connect"
             android:layout_width="113dp"
             android:layout_height="wrap_content"
             android:id="@+id/connectCardButton" android:layout_marginTop="8dp"
@@ -84,47 +134,80 @@
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginEnd="8dp" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="8dp" app:layout_constraintVertical_bias="0.04"
-            app:layout_constraintHorizontal_bias="1.0" app:layout_constraintTop_toBottomOf="@+id/capduTextBox"/>
+            app:layout_constraintHorizontal_bias="1.0" app:layout_constraintTop_toBottomOf="@+id/capduTextInputLayout"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/capduTextInputLayout"
+        style="TextInputLayoutStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:hintEnabled="false"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="3dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.093">
+
     <EditText
-            android:layout_width="0dp"
-            android:layout_height="158dp"
-            android:inputType="textMultiLine"
-            android:ems="10"
-            android:id="@+id/capduTextBox" android:layout_marginBottom="3dp"
-            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginStart="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintVertical_bias="0.093" android:fontFamily="monospace" android:typeface="monospace"
-            android:hint="C-APDUS" android:gravity="top"
-            android:lines="16" android:singleLine="false" android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toEndOf="parent"/>
+        android:id="@+id/capduTextBox"
+        android:layout_width="match_parent"
+        android:layout_height="158dp"
+        android:textColorHint="@color/colorGraySecondary"
+        android:inputType="textMultiLine"
+        android:fontFamily="monospace"
+        android:hint="C-APDUS"
+        android:gravity="top"
+        android:ems="10"
+        android:lines="16"
+        android:singleLine="false"/>
+
+</com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/rapduTextInputLayout"
+        style="TextInputLayoutStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:hintEnabled="false"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="3dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/transmitButton"
+        app:layout_constraintVertical_bias="0.024">
+
     <EditText
-            android:layout_width="0dp"
-            android:layout_height="165dp"
-            android:inputType="textMultiLine"
-            android:ems="10"
-            android:id="@+id/rapduTextBox" android:layout_marginBottom="3dp"
-            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginStart="8dp"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintHorizontal_bias="0.333"
-            app:layout_constraintVertical_bias="0.024" android:fontFamily="monospace" android:typeface="monospace"
-            android:textAlignment="viewStart" android:singleLine="false" android:hint="R-APDUS" android:gravity="top"
-            app:layout_constraintTop_toBottomOf="@+id/transmitButton" android:enabled="true" android:lines="128"/>
-    <TextView
-            android:text="TextView"
+        android:id="@+id/rapduTextBox"
+        android:layout_width="match_parent"
+        android:layout_height="165dp"
+        android:inputType="textMultiLine"
+        android:fontFamily="monospace"
+        android:hint="R-APDUS"
+        android:gravity="top"
+        android:ems="10"
+        android:lines="128"
+        android:singleLine="false"/>
+</com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_color"
             android:id="@+id/textState" android:layout_marginTop="11dp"
             app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintVertical_bias="1.0"
             android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginStart="8dp"
             app:layout_constraintStart_toStartOf="parent" app:layout_constraintHorizontal_bias="0.987"/>
-    <TextView
+    <com.google.android.material.textview.MaterialTextView
             android:text="ATR"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/text_color"
             android:id="@+id/textAtr" android:layout_marginTop="11dp"
             app:layout_constraintTop_toTopOf="parent" android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintVertical_bias="0.945"

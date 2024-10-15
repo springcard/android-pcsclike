@@ -13,10 +13,13 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.*
 import android.widget.*
-import kotlinx.android.synthetic.main.fragment_options.*
+import com.springcard.pcsclike_sample.databinding.FragmentOptionsBinding
 
 
-class OptionsFragment : Fragment(), TextWatcher {
+class OptionsFragment : Fragment() {
+
+    private var _binding: FragmentOptionsBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var  mainActivity: MainActivity
     private val indexkey = listOf("User", "Admin")
@@ -24,15 +27,16 @@ class OptionsFragment : Fragment(), TextWatcher {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-
-        setHasOptionsMenu(false)
-
+    ): View {
         mainActivity = activity as MainActivity
-        mainActivity.setActionBarTitle("Options")
+        mainActivity.setActionBarTitle(getString(R.string.menu_options))
+        _binding = FragmentOptionsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        /* Inflate the layout for this fragment */
-        return inflater.inflate(R.layout.fragment_options, container, false)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -40,52 +44,63 @@ class OptionsFragment : Fragment(), TextWatcher {
 
         mainActivity.setDrawerState(true)
 
-        switchLog.isChecked = mainActivity.preferences.enableLog
-        switchStopOnError.isChecked = mainActivity.preferences.stopOnError
-        switchEnableTimeMeasurement.isChecked = mainActivity.preferences.enableTimeMeasurement
+        binding.switchLog.isChecked = mainActivity.preferences.enableLog
+        binding.switchStopOnError.isChecked = mainActivity.preferences.stopOnError
+        binding.switchEnableTimeMeasurement.isChecked = mainActivity.preferences.enableTimeMeasurement
 
-        switchLog.setOnCheckedChangeListener { _, isChecked ->
+        binding.switchLog.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.preferences.enableLog = isChecked
             mainActivity.logInfo("Enable logs = $isChecked")
         }
 
-        switchStopOnError.setOnCheckedChangeListener { _, isChecked ->
+        binding.switchStopOnError.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.preferences.stopOnError = isChecked
             mainActivity.logInfo("Stop on error = $isChecked")
         }
 
-        switchEnableTimeMeasurement.setOnCheckedChangeListener { _, isChecked ->
+        binding.switchEnableTimeMeasurement.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.preferences.enableTimeMeasurement = isChecked
             mainActivity.logInfo("Enable time measurement = $isChecked")
         }
 
         val dataAdapter = ArrayAdapter<String>(
-            activity?.applicationContext!!,
-            android.R.layout.simple_spinner_item, indexkey
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            indexkey
         )
-        // Drop down layout style - list view
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerKeyIndex.adapter = dataAdapter
-
-        spinnerKeyIndex.setSelection(mainActivity.preferences.authenticationKeyIndex)
+        (binding.spinnerKeyIndex as? AutoCompleteTextView)?.apply {
+            setAdapter(dataAdapter)
+            setText(dataAdapter.getItem(mainActivity.preferences.authenticationKeyIndex), false)
+            onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                mainActivity.preferences.authenticationKeyIndex = position
+            }
+        }
 
         if(mainActivity.supportCrypto) {
 
-            /* Initial state */
-            editTextAuthenticationKey.isEnabled = mainActivity.preferences.useAuthentication
-            editTextAuthenticationKey.setText(mainActivity.preferences.authenticationKey, TextView.BufferType.EDITABLE)
-            if(editTextAuthenticationKey.text.length != 32) {
-                editTextAuthenticationKey.error = "The key must be 16 bytes long"
+            binding.switchUseAuthentication.isChecked = mainActivity.preferences.useAuthentication
+
+            binding.editTextAuthenticationKey.setText(mainActivity.preferences.authenticationKey, TextView.BufferType.EDITABLE)
+            if(binding.editTextAuthenticationKey.text?.length != 32) {
+                binding.editTextAuthenticationKey.error = getString(R.string.error_key_length)
             }
-            editTextAuthenticationKey.addTextChangedListener(this)
+            binding.editTextAuthenticationKey.addTextChangedListener(object : TextWatcher {
 
-            switchUseAuthentication.isChecked = mainActivity.preferences.useAuthentication
+                override fun afterTextChanged(s: Editable?) {
+                    if(binding.editTextAuthenticationKey.text?.length != 32) {
+                        binding.editTextAuthenticationKey.error = getString(R.string.error_key_length)
+                    }
+                    else {
+                        mainActivity.preferences.authenticationKey = binding.editTextAuthenticationKey.text.toString()
+                    }
+                }
 
-            spinnerKeyIndex.isEnabled = mainActivity.preferences.useAuthentication
-            textViewKeyIndex.isEnabled = mainActivity.preferences.useAuthentication
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
-            /* On key index changed*/
-            spinnerKeyIndex.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
+
+            binding.spinnerKeyIndex.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
                 override fun onNothingSelected(parent: AdapterView<*>?) {
                 }
 
@@ -94,46 +109,36 @@ class OptionsFragment : Fragment(), TextWatcher {
                 }
             }
 
-            /* On key value changed */
-            switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
-                mainActivity.preferences.useAuthentication = isChecked
-                mainActivity.logInfo("Enable authentication = $isChecked")
-
-                /* Enable or not key text box */
-                editTextAuthenticationKey.isEnabled = isChecked
-                spinnerKeyIndex.isEnabled = isChecked
-                textViewKeyIndex.isEnabled = isChecked
-            }
+            setAuthenticationFieldsEnabled(binding.switchUseAuthentication.isChecked)
 
         }
         else {
-            switchUseAuthentication.isEnabled = false
-            switchUseAuthentication.visibility = Switch.INVISIBLE
+            binding.switchUseAuthentication.isEnabled = false
+            binding.switchUseAuthentication.visibility = Switch.INVISIBLE
+            setAuthenticationFieldsEnabled(false)
+        }
 
-            editTextAuthenticationKey.isEnabled = false
-            editTextAuthenticationKey.visibility = Switch.INVISIBLE
+        binding.switchUseAuthentication.setOnCheckedChangeListener { _, isChecked ->
+            mainActivity.preferences.useAuthentication = isChecked
+            mainActivity.logInfo("Enable authentication = $isChecked")
 
-            keyWrapper.isEnabled = false
-            keyWrapper.visibility = TextInputLayout.INVISIBLE
-
-            spinnerKeyIndex.isEnabled = false
-            spinnerKeyIndex.visibility = Spinner.INVISIBLE
-
-            textViewKeyIndex.isEnabled = false
-            textViewKeyIndex.visibility = TextView.INVISIBLE
+            setAuthenticationFieldsEnabled(isChecked)
         }
     }
 
-    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-    }
+    private fun setAuthenticationFieldsEnabled(isEnabled: Boolean) {
+        val visibility = if (isEnabled) View.VISIBLE else View.INVISIBLE
+        with(binding) {
+            editTextAuthenticationKey.isEnabled = isEnabled
+            keyWrapper.isEnabled = isEnabled
+            spinnerKeyIndex.isEnabled = isEnabled
+            textViewKeyIndex.isEnabled = isEnabled
 
-    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-    }
-
-    override fun afterTextChanged(s: Editable?) {
-        if(editTextAuthenticationKey.text.length != 32) {
-            editTextAuthenticationKey.error = "The key must be 16 bytes long"
+            editTextAuthenticationKey.visibility = visibility
+            keyWrapper.visibility = visibility
+            spinnerLayout.visibility = visibility
+            spinnerKeyIndex.visibility = visibility
+            textViewKeyIndex.visibility = visibility
         }
-        mainActivity.preferences.authenticationKey = editTextAuthenticationKey.text.toString()
     }
 }
