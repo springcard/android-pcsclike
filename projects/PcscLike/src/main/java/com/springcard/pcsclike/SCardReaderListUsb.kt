@@ -24,6 +24,10 @@ class SCardReaderListUsb internal constructor(layerDevice: UsbDevice, callbacks:
 
     override fun create(ctx : Context, secureConnexionParameters: CcidSecureParameters) {
         //Log.i("PcscLikeLibrary", "Lib rev = ${BuildConfig.VERSION_NAME}")
-        throw NotImplementedError("Cannot create SCardReaderListUsb with secure parameters for the moment")
+        if(layerDevice is UsbDevice) {
+            commLayer = UsbLayer(this, layerDevice)
+            ccidHandler = CcidHandler(this, secureConnexionParameters)
+            commLayer.connect(ctx)
+        }
     }
 }

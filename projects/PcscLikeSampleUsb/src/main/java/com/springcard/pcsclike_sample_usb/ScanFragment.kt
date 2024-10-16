@@ -148,6 +148,7 @@ class ScanFragment : ScanFragment() {
         binding.deviceListView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             mainActivity.logInfo("Device ${usbDeviceList[position].deviceName} selected")
             usbManager.requestPermission(usbDeviceList[position], mPermissionIntent)
+            mainActivity.goToDeviceFragment(usbDeviceList[position])
         }
 
         /* Request permission */

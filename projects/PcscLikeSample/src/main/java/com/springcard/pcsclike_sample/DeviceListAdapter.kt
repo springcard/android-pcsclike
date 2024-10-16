@@ -54,24 +54,30 @@ class DeviceListAdapter(private val context: Context,
         viewHolder.titleTextView.text = device.name
         viewHolder.subtitleTextView.text = device.info.toString()
 
-        val rssi = device.info.toInt()
-        when {
-            rssi < -100 -> {
-                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_0_bar)
-            }
-            rssi < -75 -> {
-                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_1_bar)
-            }
-            rssi < -50 -> {
-                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_2_bar)
-            }
-            rssi < -25 -> {
-                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_3_bar)
-            }
-            else -> {
-                viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_4_bar)
+        try{
+            val rssi = device.info.toInt()
+            when {
+                rssi < -100 -> {
+                    viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_0_bar)
+                }
+                rssi < -75 -> {
+                    viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_1_bar)
+                }
+                rssi < -50 -> {
+                    viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_2_bar)
+                }
+                rssi < -25 -> {
+                    viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_3_bar)
+                }
+                else -> {
+                    viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_4_bar)
+                }
             }
         }
+        catch (e: Exception){
+            viewHolder.signalImageView.setImageResource(R.drawable.ic_signal_cellular_4_bar)
+        }
+
 
         return rowView
     }
