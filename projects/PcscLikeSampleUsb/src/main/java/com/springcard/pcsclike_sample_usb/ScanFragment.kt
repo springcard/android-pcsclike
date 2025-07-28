@@ -46,8 +46,17 @@ class ScanFragment : ScanFragment() {
         mainActivity.getSystemService(Context.USB_SERVICE) as UsbManager
     }
     private val mPermissionIntent: PendingIntent by lazy {
-        PendingIntent.getBroadcast(mainActivity, 0, Intent(ACTION_USB_PERMISSION),
-            PendingIntent.FLAG_IMMUTABLE)
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        PendingIntent.getBroadcast(
+            mainActivity,
+            0,
+            Intent(ACTION_USB_PERMISSION),
+            flags
+        )
     }
 
 
@@ -148,7 +157,7 @@ class ScanFragment : ScanFragment() {
         binding.deviceListView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             mainActivity.logInfo("Device ${usbDeviceList[position].deviceName} selected")
             usbManager.requestPermission(usbDeviceList[position], mPermissionIntent)
-            mainActivity.goToDeviceFragment(usbDeviceList[position])
+            //mainActivity.goToDeviceFragment(usbDeviceList[position])
         }
 
         /* Request permission */
