@@ -25,7 +25,7 @@
 # cf https://medium.com/@trionkidnapper/stripping-log-statements-using-proguard-73dedc68ee97
 
 -dontwarn **
--target 1.8
+-target 17
 -dontusemixedcaseclassnames
 -dontskipnonpubliclibraryclasses
 -dontpreverify
