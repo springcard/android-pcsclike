@@ -29,13 +29,6 @@ import kotlin.experimental.inv
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class BleLowLevel(private val scardReaderList: SCardReaderList, private val bluetoothDevice: BluetoothDevice): LowLevelLayer {
 
-    private val uuidCharacteristicsToReadPower by lazy {
-        mutableListOf<UUID>(
-            GattAttributesSpringCore.UUID_BATTERY_POWER_STATE_CHAR,
-            GattAttributesSpringCore.UUID_BATTERY_LEVEL_CHAR
-        )
-    }
-
     private val uuidCharacteristicsToRead by lazy {
         mutableListOf<UUID>(
             GattAttributesSpringCore.UUID_MODEL_NUMBER_STRING_CHAR,
@@ -140,9 +133,10 @@ internal class BleLowLevel(private val scardReaderList: SCardReaderList, private
                         if(uuidCharacteristicsToRead.contains(chr.uuid)){
                             characteristicsToRead.add(chr)
                         }
+                        /*
                         if(uuidCharacteristicsToReadPower.contains(chr.uuid)) {
                             characteristicsToReadPower.add(chr)
-                        }
+                        }*/
                         if(GattAttributesSpringCore.UUID_CCID_PC_TO_RDR_CHAR == chr.uuid) {
                             charCcidPcToRdr = chr
                         }
