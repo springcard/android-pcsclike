@@ -51,12 +51,9 @@ class ScanFragment : ScanFragment() {
         } else {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
-        PendingIntent.getBroadcast(
-            mainActivity,
-            0,
-            Intent(ACTION_USB_PERMISSION),
-            flags
-        )
+        PendingIntent.getBroadcast(mainActivity, 0,
+            Intent(ACTION_USB_PERMISSION).apply { setPackage(mainActivity.packageName) },
+            flags)
     }
 
 

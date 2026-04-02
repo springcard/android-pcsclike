@@ -20,8 +20,8 @@ android {
         applicationId = "com.springcard.pcsclike_sample_usb"
         minSdk = 22
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.3.1"
+        versionCode = 132
+        versionName = "1.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

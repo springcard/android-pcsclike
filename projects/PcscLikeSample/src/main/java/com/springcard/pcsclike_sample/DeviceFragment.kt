@@ -194,6 +194,7 @@ abstract class DeviceFragment : Fragment() {
             Toast.makeText(activity, text, Toast.LENGTH_LONG).show()
             mainActivity.logInfo(text)
 
+            readerList.close()
             progressDialog.dismiss()
             mainActivity.backToScanFragment()
 
@@ -359,8 +360,8 @@ abstract class DeviceFragment : Fragment() {
 
                     if(cApdu.size == 0) {
                         binding.rapduTextBox.text.append(getString(R.string.no_capdu))
-                        binding.disconnectCardButton.isEnabled = true
-                        binding.connectCardButton.isEnabled = true
+                        binding.disconnectCardButton.isEnabled = currentSlot?.cardConnected == true
+                        binding.connectCardButton.isEnabled = currentSlot?.cardPresent == true && currentSlot?.cardConnected != true
                         binding.transmitButton.isEnabled = true
                     }
                     else {
@@ -378,7 +379,9 @@ abstract class DeviceFragment : Fragment() {
             }
 
             binding.disconnectCardButton.setOnClickListener {
-                currentChannel.disconnect()
+                if (currentSlot?.cardConnected == true) {
+                    currentChannel.disconnect()
+                }
             }
 
             binding.connectCardButton.setOnClickListener{
@@ -445,8 +448,8 @@ abstract class DeviceFragment : Fragment() {
                     Log.d(TAG, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s")
                     Toast.makeText(activity, "${cApdu.size} APDU executed in ${"%.3f".format(elapsedTime.toFloat() / 1000F)}s", Toast.LENGTH_LONG).show()
                 }
-                binding.disconnectCardButton.isEnabled = true
-                binding.connectCardButton.isEnabled = true
+                binding.disconnectCardButton.isEnabled = currentSlot?.cardConnected == true
+                binding.connectCardButton.isEnabled = currentSlot?.cardPresent == true && currentSlot?.cardConnected != true
                 binding.transmitButton.isEnabled = true
             }
         }
@@ -618,11 +621,8 @@ abstract class DeviceFragment : Fragment() {
         }
 
 
-        binding.textState.text = getString(R.string.absent)
-        binding.connectCardButton.isEnabled = false
-        binding.disconnectCardButton.isEnabled = false
-
         currentSlot = readerList.getReader(currentSlotIndex)
+        updateCardStatus(currentSlot!!, currentSlot?.cardPresent!!, currentSlot?.cardConnected!!)
 
         progressDialog.dismiss()
 
