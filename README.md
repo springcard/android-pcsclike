@@ -1,20 +1,15 @@
-# PC/SC Like Android library
+# SpringCard PC/SC-like library for Android (archived)
 
-The SpringCard PC/SC-like library and sample applciations for Android provides access to all the compliant SpringCard USB and BLE contact or contactless smartcard readers, including NFC/RFID @ 13.56MHz readers.
+> **This repository is archived and remains available as a reference resource.**
 
-The documentation of this library is avalaible online: https://docs.springcard.com/apis/Android/PCSC-Like/
+The SpringCard PC/SC-like library and sample applications for Android provide access to compatible SpringCard USB and Bluetooth Low Energy (BLE) smart card readers, including contact and contactless NFC/RFID readers operating at 13.56 MHz.
 
-This is the source code to the SpringCard PC/SC over BLE application for Android. If you are looking for the binaries, please download the application from the Play Store or from the release section.
+The samples illustrate connecting to a smart card, retrieving its ATR, exchanging ISO 7816 APDUs, and reading or writing NFC tags and RFID labels.
 
-SpringCard PC/SC over BLE or USB are the reference applications to work with SpringCard smartcard and NFC/RFID readers over a Bluetooth Low Energy or USB connection.
+The project is no longer actively maintained. Its source code remains available to help developers explore USB and BLE communication and smart card integration on Android.
 
-Use this application together with Puck, Prox'N'Roll, and a lot of other SpringCard smartcard readers. Connect to a contact or contactless smartcard, retrieve its ATR, exchange ISO 7816 APDUs; read/write NFC tags or RFID @ 13.56MHz labels; explore and validate your own use cases.
+When reusing this library or its samples, review and adapt them to your target Android version, development tools, USB host capabilities and reader model.
 
-Once ready, download the AAR in the release section and start developing your own Android application together with SpringCard products!
+## Documentation
 
-NB: the above-mentionned PC/SC USB devices will work only on Android devices featuring a "real" USB host port. USB on-the-go is not supported.
-
-You can download and install these applications here:
-* https://play.google.com/store/apps/details?id=com.springcard.pcsclike_sample_ble
-* https://play.google.com/store/apps/details?id=com.springcard.pcsclike_sample_usb
-
+The [Android PC/SC-like library documentation](https://docs.springcard.com/apis/Android/PCSC-Like/) provides further details on the API.
